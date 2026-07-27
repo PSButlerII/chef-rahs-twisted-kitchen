@@ -303,45 +303,9 @@ $env:ALLOW_LOCAL_UPLOADS_IN_PRODUCTION = "false"
 Launch posture:
 
 - Admins should use durable public image URLs for menu and gallery images.
-- Do not rely on `public/uploads` in production unless the host explicitly provides durable, shared storage.
-- If direct production uploads are required later, choose a durable object-storage provider first and add a provider-specific upload adapter in a future code change.
-
-### Hostinger Upload Storage Feasibility Probe
-
-The temporary `/api/setup/upload-storage-probe` endpoint tests whether the deployed Next.js Node runtime can create and read a file in Hostinger's public uploads directory. It is not an upload feature, accepts no file or path input, and does not change the existing gallery or menu upload behavior. The endpoint is unavailable unless `UPLOAD_STORAGE_PROBE_TOKEN` contains at least 32 characters.
-
-Run the production test as follows:
-
-1. Create `public_html/uploads` in Hostinger if it does not already exist.
-2. Generate a temporary random token of at least 32 characters and set `UPLOAD_STORAGE_PROBE_TOKEN`.
-3. Set `UPLOAD_PROBE_FILESYSTEM_DIR` to the absolute Hostinger path for `public_html/uploads`.
-4. Set `UPLOAD_PROBE_PUBLIC_BASE_URL` to `https://rahstwistedkitchen.com/uploads/.probe`.
-5. Redeploy or restart the app so the running Node process receives the variables. Do not change the Hostinger build lifecycle.
-6. Send a bodyless POST request with the token header:
-
-   ```powershell
-   $headers = @{
-     "x-upload-storage-probe-token" = $env:UPLOAD_STORAGE_PROBE_TOKEN
-   }
-
-   $result = Invoke-RestMethod `
-     -Method Post `
-     -Uri "https://rahstwistedkitchen.com/api/setup/upload-storage-probe" `
-     -Headers $headers
-   ```
-
-7. Open `$result.publicUrl` in a browser.
-8. If the text file loads, the runtime can write to storage that Hostinger serves publicly, so direct filesystem upload storage is viable. If the endpoint cannot write/read the file or the URL does not load, investigate SFTP/FTPS-backed storage instead.
-9. Clean up files created by the probe. DELETE removes only matching probe files inside the configured uploads directory's `.probe` child and never removes the main uploads directory:
-
-   ```powershell
-   Invoke-RestMethod `
-     -Method Delete `
-     -Uri "https://rahstwistedkitchen.com/api/setup/upload-storage-probe" `
-     -Headers $headers
-   ```
-
-10. Remove `UPLOAD_STORAGE_PROBE_TOKEN`, then redeploy or restart. Confirm the endpoint returns `404` after removal. The directory and public base variables may also be removed when the feasibility test is complete.
+- Hostinger testing confirmed that the deployed Node/Next.js runtime can write, read, and publicly serve files from `public_html/image_uploads`.
+- The temporary storage probe has been removed, and no application upload feature is enabled for launch.
+- Defer direct filesystem upload implementation until after launch; see `docs/post-launch-backlog.md`.
 
 ## 10. Payment Launch Posture
 

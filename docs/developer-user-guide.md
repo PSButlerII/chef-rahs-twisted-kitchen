@@ -153,9 +153,6 @@ Start from `.env.example`.
 | `OWNER_EMAIL` | Existing registered user's email for the one-time owner bootstrap. It is never a user-creation input. |
 | `OWNER_BOOTSTRAP_TOKEN` | Temporary long random secret for `POST /api/setup/promote-owner` when the host has no console. Remove it and restart/redeploy immediately after success. |
 | `FOUNDATION_SEED_TOKEN` | Temporary long random secret for `POST /api/setup/seed-foundation` when the host has no console. Remove it and restart/redeploy immediately after success. |
-| `UPLOAD_STORAGE_PROBE_TOKEN` | Temporary secret of at least 32 characters that enables the protected Hostinger storage probe. Remove it and restart/redeploy after testing. |
-| `UPLOAD_PROBE_FILESYSTEM_DIR` | Absolute filesystem path to the Hostinger public uploads directory being tested. |
-| `UPLOAD_PROBE_PUBLIC_BASE_URL` | Public URL for the probe child directory, currently `https://rahstwistedkitchen.com/uploads/.probe`. |
 | `ADMIN_EMAIL` | Legacy single-user input for `npm run admin:promote`. Not needed for owner-managed admins. |
 | `ADMIN_ROLE` | Legacy role for `npm run admin:promote`; defaults to `ADMIN`. |
 
@@ -243,22 +240,7 @@ Notes:
 
 ### Hostinger Upload Storage Feasibility
 
-The protected `POST /api/setup/upload-storage-probe` route is a temporary operational probe, not a real file-upload implementation. It takes no body, file, or caller-selected path. It creates a uniquely named text file in the fixed `.probe` child of `UPLOAD_PROBE_FILESYSTEM_DIR`, reads the same file back, and returns the file's public URL. `DELETE` on the same route removes only probe-created files from that `.probe` directory.
-
-Production test flow:
-
-1. Create `public_html/uploads` if needed.
-2. Set a random `UPLOAD_STORAGE_PROBE_TOKEN` of at least 32 characters.
-3. Set `UPLOAD_PROBE_FILESYSTEM_DIR` to the absolute `public_html/uploads` path.
-4. Set `UPLOAD_PROBE_PUBLIC_BASE_URL=https://rahstwistedkitchen.com/uploads/.probe`.
-5. Redeploy or restart without changing Hostinger's build lifecycle.
-6. Send a bodyless POST to `/api/setup/upload-storage-probe` with `x-upload-storage-probe-token` set to the token.
-7. Open the returned `publicUrl` in a browser.
-8. If it loads, direct filesystem storage is viable for a future upload design. If it does not, consider SFTP/FTPS storage.
-9. Send DELETE to the same endpoint with the same header to remove probe files.
-10. Remove `UPLOAD_STORAGE_PROBE_TOKEN` and redeploy or restart so the endpoint returns `404`.
-
-The endpoint uses setup-specific rate limiting and no-store responses. It leaves a successful POST file in place for the browser check and never deletes the uploads directory. Existing production uploads remain governed by `ALLOW_LOCAL_UPLOADS_IN_PRODUCTION`; this probe does not enable or alter them.
+Production testing confirmed that the deployed Node/Next.js runtime can write, read, and publicly serve files from Hostinger's `public_html/image_uploads` directory. The temporary feasibility endpoint and its environment variables have been removed. This finding and the future upload implementation plan are preserved in `docs/post-launch-backlog.md`; no upload feature is enabled in the current release.
 
 Hostinger runs the fixed command `npm run build`. Before deployment, configure `DATABASE_URL` in the Hostinger environment and confirm it points to the production MySQL/MariaDB database that the build environment can reach with migration permissions.
 

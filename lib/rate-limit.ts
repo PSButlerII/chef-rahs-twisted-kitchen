@@ -117,9 +117,4 @@ export const rateLimits = {
     limit: 10,
     windowMs: 15 * 60 * 1000,
   },
-  uploadStorageProbe: {
-    keyPrefix: "setup:upload-storage-probe",
-    limit: 10,
-    windowMs: 15 * 60 * 1000,
-  },
 };
