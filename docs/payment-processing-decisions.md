@@ -142,6 +142,8 @@ Sandbox test flow:
 
 Deposits, final balances, refunds, invoices, retry links, expiration processing, and public guest order tracking are not included.
 
+The current CSP permits the Sandbox Web Payments SDK, Google Pay sandbox scripts, and Square wallet font assets. React/Turbopack `unsafe-eval` support is enabled only while `NODE_ENV=development`; production responses omit it. Production Square hosts and a final production CSP review remain a later pass.
+
 ## Follow-Up For Live Square Integration
 
 1. Review production credentials, hosts, CSP endpoints, wallet domain registration, webhook URL, and operational controls before permitting the production environment.

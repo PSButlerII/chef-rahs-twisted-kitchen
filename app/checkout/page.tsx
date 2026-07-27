@@ -475,13 +475,18 @@ export default function CheckoutPage() {
         }
       }
 
-      if (effectivePaymentMethod === "manual" && !details.payByDate) {
+      const usesSquare = !requiresApproval && !manualPaymentCheckoutAllowed;
+
+      if (
+        !usesSquare &&
+        effectivePaymentMethod === "manual" &&
+        !details.payByDate
+      ) {
         alert("Please choose a pay-by date.");
         return;
       }
 
       let squareSourceId = walletSourceId;
-      const usesSquare = !requiresApproval && !manualPaymentCheckoutAllowed;
 
       if (usesSquare && !squareSourceId) {
         try {

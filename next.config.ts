@@ -1,5 +1,14 @@
 import type { NextConfig } from "next";
 
+const isDevelopment = process.env.NODE_ENV === "development";
+const scriptSources = [
+  "'self'",
+  "'unsafe-inline'",
+  ...(isDevelopment ? ["'unsafe-eval'"] : []),
+  "https://sandbox.web.squarecdn.com",
+  "https://pay.google.com",
+].join(" ");
+
 const securityHeaders = [
   ...(process.env.NODE_ENV === "production"
     ? [
@@ -28,8 +37,7 @@ const securityHeaders = [
   },
   {
     key: "Content-Security-Policy",
-    value:
-      "default-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'; object-src 'none'; script-src 'self' 'unsafe-inline' https://sandbox.web.squarecdn.com; frame-src https://sandbox.web.squarecdn.com; connect-src 'self' https://sandbox.web.squarecdn.com https://pci-connect.squareupsandbox.com https://o160250.ingest.sentry.io; style-src 'self' 'unsafe-inline' https://sandbox.web.squarecdn.com; font-src 'self' https://square-fonts-production-f.squarecdn.com https://d1g145x70srn7h.cloudfront.net; img-src 'self' data: https:",
+    value: `default-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'; object-src 'none'; script-src ${scriptSources}; frame-src https://sandbox.web.squarecdn.com; connect-src 'self' https://sandbox.web.squarecdn.com https://pci-connect.squareupsandbox.com https://o160250.ingest.sentry.io; style-src 'self' 'unsafe-inline' https://sandbox.web.squarecdn.com; font-src 'self' https://square-fonts-production-f.squarecdn.com https://d1g145x70srn7h.cloudfront.net https://cash-f.squarecdn.com; img-src 'self' data: https:`,
   },
 ];
 

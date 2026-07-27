@@ -155,35 +155,44 @@ export const SquareSandboxPaymentForm = forwardRef<
         paymentMethods.push(card);
         cardRef.current = card;
 
-        const paymentRequest = payments.paymentRequest({
-          countryCode: "US",
-          currencyCode: "USD",
-          total: { amount: total.toFixed(2), label: "Total" },
-        });
+        if (cancelled) return;
+        setReady(true);
+        setMessage("Sandbox card fields are ready.");
+        onAvailabilityChange(true);
 
         try {
-          const googlePay = await payments.googlePay(paymentRequest);
-          await googlePay.attach?.("#square-sandbox-google-pay");
-          paymentMethods.push(googlePay);
-          googlePayRef.current = googlePay;
-          setWallets((current) => ({ ...current, googlePay: true }));
-        } catch {
-          // Wallet availability depends on browser, device, and Square account.
-        }
+          const paymentRequest = payments.paymentRequest({
+            countryCode: "US",
+            currencyCode: "USD",
+            total: { amount: total.toFixed(2), label: "Total" },
+          });
 
-        try {
-          const applePay = await payments.applePay(paymentRequest);
-          paymentMethods.push(applePay);
-          applePayRef.current = applePay;
-          setWallets((current) => ({ ...current, applePay: true }));
+          try {
+            const googlePay = await payments.googlePay(paymentRequest);
+            await googlePay.attach?.("#square-sandbox-google-pay");
+            paymentMethods.push(googlePay);
+            googlePayRef.current = googlePay;
+            setWallets((current) => ({ ...current, googlePay: true }));
+          } catch {
+            // Google Pay is optional; card checkout remains available.
+          }
+
+          try {
+            const applePay = await payments.applePay(paymentRequest);
+            paymentMethods.push(applePay);
+            applePayRef.current = applePay;
+            setWallets((current) => ({ ...current, applePay: true }));
+          } catch {
+            // Apple Pay is optional; card checkout remains available.
+          }
         } catch {
-          // Wallet availability depends on browser, device, and domain.
+          // Payment-request setup is optional; card checkout remains available.
         }
 
         if (cancelled) return;
-        setReady(true);
-        setMessage("Sandbox payment fields are ready.");
-        onAvailabilityChange(true);
+        setMessage(
+          "Sandbox card fields are ready. Wallets appear when supported.",
+        );
       } catch (error) {
         if (cancelled) return;
         setReady(false);
