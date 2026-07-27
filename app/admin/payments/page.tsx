@@ -22,15 +22,64 @@ type ReconciliationOrder = {
   paymentStatus: string | null;
   paidAt: Date | null;
   total: DecimalLike;
+  paymentAttempts: LedgerPaymentAttempt[];
 };
 
-function getWebsiteMismatchWarning(order: ReconciliationOrder) {
+type LedgerPaymentAttempt = {
+  id: string;
+  provider: string;
+  providerPaymentId: string | null;
+  providerReceiptUrl: string | null;
+  receiptReference: string | null;
+  providerStatus: string | null;
+  websiteStatus: string;
+  paymentPurpose: string;
+  amountCents: number;
+  tipCents: number;
+  currency: string;
+  expiresAt: Date | null;
+  paidAt: Date | null;
+  failedAt: Date | null;
+  cancelledAt: Date | null;
+  refundedAt: Date | null;
+  createdAt: Date;
+};
+
+function getWebsiteMismatchWarning(
+  order: ReconciliationOrder,
+  ledgerAttempt: LedgerPaymentAttempt | undefined,
+) {
   if (order.paymentStatus === "PAID" && !order.paidAt) {
     return "Paid status has no paid timestamp.";
   }
 
   if (order.paymentStatus !== "PAID" && order.paidAt) {
     return "Paid timestamp conflicts with website status.";
+  }
+
+  if (!ledgerAttempt) {
+    return null;
+  }
+
+  if (
+    (ledgerAttempt.websiteStatus === "PAID") !==
+    (order.paymentStatus === "PAID")
+  ) {
+    return "Ledger and order payment statuses disagree.";
+  }
+
+  if (
+    ledgerAttempt.paymentPurpose === "ORDER_TOTAL" &&
+    ledgerAttempt.amountCents !== Math.round(Number(order.total) * 100)
+  ) {
+    return "Ledger amount does not match the order total.";
+  }
+
+  if (
+    ledgerAttempt.websiteStatus === "PAID" &&
+    Boolean(ledgerAttempt.paidAt) !== Boolean(order.paidAt)
+  ) {
+    return "Ledger and order paid timestamps disagree.";
   }
 
   return null;
@@ -69,6 +118,31 @@ export default async function AdminPaymentsPage() {
         paymentStatus: true,
         paidAt: true,
         total: true,
+        paymentAttempts: {
+          orderBy: {
+            createdAt: "desc",
+          },
+          take: 20,
+          select: {
+            id: true,
+            provider: true,
+            providerPaymentId: true,
+            providerReceiptUrl: true,
+            receiptReference: true,
+            providerStatus: true,
+            websiteStatus: true,
+            paymentPurpose: true,
+            amountCents: true,
+            tipCents: true,
+            currency: true,
+            expiresAt: true,
+            paidAt: true,
+            failedAt: true,
+            cancelledAt: true,
+            refundedAt: true,
+            createdAt: true,
+          },
+        },
       },
     }) as Promise<ReconciliationOrder[]>,
   ]);
@@ -151,7 +225,21 @@ export default async function AdminPaymentsPage() {
 
               <tbody>
                 {reconciliationOrders.map((order) => {
-                  const mismatchWarning = getWebsiteMismatchWarning(order);
+                  const latestPaymentAttempt = order.paymentAttempts.find(
+                    (attempt) => attempt.paymentPurpose !== "REFUND",
+                  );
+                  const latestSquareAttempt = order.paymentAttempts.find(
+                    (attempt) =>
+                      attempt.provider === "SQUARE" &&
+                      attempt.paymentPurpose !== "REFUND",
+                  );
+                  const latestRefundAttempt = order.paymentAttempts.find(
+                    (attempt) => attempt.paymentPurpose === "REFUND",
+                  );
+                  const mismatchWarning = getWebsiteMismatchWarning(
+                    order,
+                    latestPaymentAttempt,
+                  );
 
                   return (
                     <tr key={order.id}>
@@ -171,21 +259,50 @@ export default async function AdminPaymentsPage() {
                             "Not set"}
                         </div>
                         <div className="mt-1 text-xs text-[#6b5a50]">
-                          Provider: {order.paymentProvider ?? "Not set"}
+                          Legacy provider: {order.paymentProvider ?? "Not set"}
+                        </div>
+                        <div className="mt-1 text-xs text-[#6b5a50]">
+                          Ledger:{" "}
+                          {latestPaymentAttempt?.websiteStatus ?? "No row"}
                         </div>
                       </td>
-                      <td className="text-[#6b5a50]">Not connected</td>
-                      <td className="text-[#6b5a50]">Not stored</td>
-                      <td className="text-[#6b5a50]">Not stored</td>
                       <td>
-                        {order.paidAt
-                          ? order.paidAt.toLocaleString()
-                          : "Not paid"}
+                        {latestSquareAttempt?.providerStatus ?? "No Square row"}
+                      </td>
+                      <td className="break-all text-[#6b5a50]">
+                        {latestSquareAttempt?.providerPaymentId ?? "Not set"}
                       </td>
                       <td>
-                        {order.status === "REFUNDED"
-                          ? "Website marked refunded"
-                          : "None recorded"}
+                        {latestSquareAttempt?.providerReceiptUrl ? (
+                          <a
+                            className="admin-action-link"
+                            href={latestSquareAttempt.providerReceiptUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            Square receipt
+                          </a>
+                        ) : (
+                          (latestSquareAttempt?.receiptReference ?? "Not set")
+                        )}
+                      </td>
+                      <td>
+                        {latestPaymentAttempt?.paidAt
+                          ? latestPaymentAttempt.paidAt.toLocaleString()
+                          : order.paidAt
+                            ? order.paidAt.toLocaleString()
+                            : "Not paid"}
+                      </td>
+                      <td>
+                        {latestRefundAttempt
+                          ? latestRefundAttempt.websiteStatus
+                          : latestPaymentAttempt?.websiteStatus ===
+                                "PARTIALLY_REFUNDED" ||
+                              latestPaymentAttempt?.websiteStatus === "REFUNDED"
+                            ? latestPaymentAttempt.websiteStatus
+                            : order.status === "REFUNDED"
+                              ? "Website marked refunded"
+                              : "None recorded"}
                       </td>
                       <td>
                         {mismatchWarning ? (
@@ -194,7 +311,9 @@ export default async function AdminPaymentsPage() {
                           </span>
                         ) : (
                           <span className="text-[#6b5a50]">
-                            Provider check unavailable
+                            {latestPaymentAttempt
+                              ? "No mismatch detected"
+                              : "Awaiting first ledger attempt"}
                           </span>
                         )}
                       </td>

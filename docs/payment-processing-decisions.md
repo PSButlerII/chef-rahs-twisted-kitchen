@@ -75,23 +75,38 @@ The owner performs payment reconciliation. The admin payment view must ultimatel
 - refund status; and
 - mismatch warnings.
 
-The current admin foundation shows existing website order/payment summaries and clearly marks unavailable Square fields. It can detect limited internal inconsistencies, such as a website `PAID` status without `paidAt`, but cannot reconcile against Square until provider records and webhooks exist.
+The admin payment view reads the internal payment ledger and compares it with existing order summary fields. It shows website/provider states, provider payment IDs, receipt references, paid/refund timestamps, amount mismatches, and missing timestamp/status warnings. It cannot reconcile with live Square state until verified API and webhook data populate the ledger.
 
 ## Data Model Review
 
 The current `Order` model has summary fields for `paymentProvider`, `paymentStatus`, `payByDate`, `paidAt`, `tipAmount`, and `total`. `CateringRequest` has quote, deposit amount, and deposit-paid summary fields. These are not enough for a durable payment ledger.
 
-No Prisma migration is included in this foundation pass. The actual Square phase should use a reviewed additive MySQL/MariaDB migration containing:
+The additive `20260727150000_add_payment_ledger_foundation` migration adds:
 
-- a payment-attempt/ledger model with provider, purpose, amount, currency, normalized status, provider payment/order IDs, receipt/reference, idempotency key, timestamps, and sanitized failure data;
-- relations to either an order or catering/personal-chef request;
-- a webhook-event ledger with unique provider event IDs and processing state;
-- refund records supporting full and future partial refunds;
-- pending-payment expiry and capacity-release state;
-- secure hashed guest retry-token records with expiration and revocation; and
-- transactionally maintained existing summary fields for compatibility.
+- `PaymentAttempt`, related optionally to one `Order` or one `CateringRequest`;
+- `PaymentWebhookEvent`, with a provider-scoped unique event ID for deduplication; and
+- `PaymentRetryToken`, which stores only a unique SHA-256 token hash.
 
-Do not force Square IDs, webhook history, refunds, and retries into a few nullable `Order` columns. The payment ledger and idempotent lifecycle should be designed and migrated together.
+`PaymentAttempt` stores provider identifiers and status, normalized website status, purpose, integer cent amounts, tip cents, currency, a unique idempotency key, receipt information, two-hour expiry, lifecycle timestamps, minimal JSON metadata, and optional parent/child lineage for refunds or retries. Existing order and service-request payment fields remain as compatibility summaries.
+
+Application payment creation must enforce that each attempt targets exactly one order or service request. This cross-column rule is not expressed as a database check because it must remain portable across the deployed MySQL/MariaDB versions. Refund and retry ledger rows should reference their original attempt through `parentPaymentId`.
+
+`PaymentWebhookEvent` stores the provider, event ID/type, optional matched attempt, processing state, payload hash, minimal non-sensitive summary, sanitized processing error, and receive/process timestamps. `@@unique([provider, eventId])` is the durable duplicate-delivery boundary. No webhook route or payload processing is implemented yet.
+
+`PaymentRetryToken` stores `tokenHash`, attempt scope, expiration, consumption, and revocation. Plaintext tokens must never be persisted. There is no public retry route in this pass; future issuance should generate a cryptographically random token, store only its SHA-256 hash, deliver the plaintext once, and enforce attempt ownership, two-hour expiry, revocation, and single-use behavior transactionally.
+
+## Website Payment State Flow
+
+The ledger supports this planned normalized flow:
+
+1. `CREATED` — trusted order/service amount and idempotency key are persisted.
+2. `PENDING` — provider work has started; `expiresAt` is set for the two-hour hold.
+3. `REQUIRES_ACTION` — a supported provider/customer action is still required.
+4. `PAID` — verified provider response or webhook confirms payment and `paidAt`.
+5. `FAILED`, `CANCELLED`, or `EXPIRED` — the attempt is terminal without payment.
+6. `PARTIALLY_REFUNDED` or `REFUNDED` — verified refund ledger rows update the original payment summary.
+
+The current pass creates no attempts automatically and performs none of these transitions. Future services must update ledger records, legacy summaries, order/capacity state, audit data, and one-time email decisions transactionally or idempotently.
 
 ## Environment Plan
 
@@ -110,13 +125,13 @@ ALLOW_MANUAL_PAYMENT_IN_CHECKOUT=false
 
 ## Follow-Up For Live Square Integration
 
-1. Approve and apply the additive payment, webhook, refund, expiry, and secure retry-token schema.
-2. Install the current supported Square SDK only after reviewing its official integration and dependency requirements.
-3. Add a provider boundary, idempotent payment creation, and trusted amount/currency checks.
-4. Add Square Web Payments SDK card/wallet UI and the required production CSP.
-5. Implement verified raw-body webhooks with duplicate and out-of-order event handling.
-6. Implement the two-hour expiry worker, weekly-capacity release, and non-payment cancellation email.
-7. Implement secure guest retry access without adding public guest order tracking.
-8. Implement deposit and final-balance request creation after approval.
-9. Implement full-refund operations, permissions, audit logs, and reconciliation.
+1. Install the current supported Square SDK only after reviewing its official integration and dependency requirements.
+2. Add a provider boundary, idempotent ledger/payment creation, and trusted amount/currency checks.
+3. Add Square Web Payments SDK card/wallet UI and the required production CSP.
+4. Implement verified raw-body webhooks using the event deduplication table, including out-of-order handling.
+5. Implement the two-hour expiry worker, weekly-capacity release, and non-payment cancellation email.
+6. Implement secure guest retry-token issuance and redemption without adding public guest order tracking.
+7. Implement deposit and final-balance request creation after approval.
+8. Implement full-refund operations, permissions, audit logs, and Square reconciliation.
+9. Define metadata retention/redaction rules and operational cleanup for expired retry tokens and old webhook summaries.
 10. Run sandbox, webhook, retry, expiration, duplicate-charge, capacity, refund, receipt, and production smoke tests before enabling Square.

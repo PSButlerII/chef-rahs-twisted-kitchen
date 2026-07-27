@@ -1,6 +1,8 @@
 # Payment Integration Roadmap
 
 > The client decisions that were previously open in this roadmap are now resolved. Use `docs/payment-processing-decisions.md` as the authoritative policy for implementation; retain this document for architecture and risk context.
+>
+> The additive internal ledger, webhook deduplication table, and hashed retry-token foundation were added in migration `20260727150000_add_payment_ledger_foundation`. No Square API, webhook route, or public retry flow is active.
 
 Date: July 15, 2026
 

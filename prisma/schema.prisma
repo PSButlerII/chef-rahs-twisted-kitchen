@@ -79,6 +79,40 @@ enum WeeklyMealPlanOptionType {
   PROTEIN_SUBSTITUTION
 }
 
+enum PaymentProvider {
+  SQUARE
+  PAYPAL
+  MANUAL
+}
+
+enum PaymentPurpose {
+  ORDER_TOTAL
+  SERVICE_DEPOSIT
+  SERVICE_FINAL_BALANCE
+  REFUND
+  RETRY
+}
+
+enum PaymentWebsiteStatus {
+  CREATED
+  PENDING
+  REQUIRES_ACTION
+  PAID
+  FAILED
+  CANCELLED
+  EXPIRED
+  PARTIALLY_REFUNDED
+  REFUNDED
+}
+
+enum PaymentEventProcessingStatus {
+  RECEIVED
+  PROCESSING
+  PROCESSED
+  FAILED
+  IGNORED
+}
+
 
 model CateringRequest {
   id              String         @id @default(cuid())
@@ -112,6 +146,7 @@ model CateringRequest {
   approvedAt     DateTime?
   deniedAt       DateTime?
   requestType ServiceRequestType @default(CATERING)
+  paymentAttempts PaymentAttempt[]
 }
 
 model User {
@@ -436,6 +471,7 @@ model Order {
   paidAt                   DateTime?
   paymentProvider          String?
   paymentStatus            String?
+  paymentAttempts          PaymentAttempt[]
 
   items                    OrderItem[]
   statusHistory            OrderStatusHistory[]
@@ -446,6 +482,82 @@ model Order {
   approvalNote   String?
   approvedAt     DateTime?
   deniedAt       DateTime?
+}
+
+model PaymentAttempt {
+  id                     String               @id @default(cuid())
+  provider               PaymentProvider
+  providerPaymentId      String?
+  providerOrderId        String?
+  providerReceiptUrl     String?              @db.Text
+  receiptReference       String?
+  providerStatus         String?
+  websiteStatus          PaymentWebsiteStatus @default(CREATED)
+  paymentPurpose         PaymentPurpose
+  amountCents            Int                  @db.UnsignedInt
+  tipCents               Int                  @default(0) @db.UnsignedInt
+  currency               String               @default("USD") @db.Char(3)
+  idempotencyKey         String               @unique
+  orderId                String?
+  order                  Order?               @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  serviceRequestId       String?
+  serviceRequest         CateringRequest?     @relation(fields: [serviceRequestId], references: [id], onDelete: SetNull)
+  parentPaymentId        String?
+  parentPayment          PaymentAttempt?      @relation("PaymentAttemptLineage", fields: [parentPaymentId], references: [id], onDelete: SetNull)
+  childPayments          PaymentAttempt[]     @relation("PaymentAttemptLineage")
+  expiresAt              DateTime?
+  paidAt                 DateTime?
+  failedAt               DateTime?
+  cancelledAt            DateTime?
+  refundedAt             DateTime?
+  metadata               Json?
+  webhookEvents          PaymentWebhookEvent[]
+  retryTokens            PaymentRetryToken[]
+  createdAt              DateTime             @default(now())
+  updatedAt              DateTime             @updatedAt
+
+  @@index([orderId, createdAt])
+  @@index([serviceRequestId, createdAt])
+  @@index([provider, providerStatus])
+  @@index([provider, providerOrderId])
+  @@index([websiteStatus, expiresAt])
+  @@index([parentPaymentId])
+  @@unique([provider, providerPaymentId])
+}
+
+model PaymentWebhookEvent {
+  id                       String                       @id @default(cuid())
+  provider                 PaymentProvider
+  eventId                  String
+  eventType                String
+  paymentAttemptId         String?
+  paymentAttempt           PaymentAttempt?              @relation(fields: [paymentAttemptId], references: [id], onDelete: SetNull)
+  processingStatus         PaymentEventProcessingStatus @default(RECEIVED)
+  payloadHash              String?                      @db.Char(64)
+  rawSummary               Json?
+  sanitizedProcessingError String?                      @db.Text
+  receivedAt               DateTime                     @default(now())
+  processedAt              DateTime?
+  createdAt                DateTime                     @default(now())
+  updatedAt                DateTime                     @updatedAt
+
+  @@unique([provider, eventId])
+  @@index([paymentAttemptId, receivedAt])
+  @@index([processingStatus, receivedAt])
+}
+
+model PaymentRetryToken {
+  id               String         @id @default(cuid())
+  paymentAttemptId String
+  paymentAttempt   PaymentAttempt @relation(fields: [paymentAttemptId], references: [id], onDelete: Cascade)
+  tokenHash        String         @unique @db.Char(64)
+  expiresAt        DateTime
+  consumedAt       DateTime?
+  revokedAt        DateTime?
+  createdAt        DateTime       @default(now())
+
+  @@index([paymentAttemptId, expiresAt])
+  @@index([expiresAt, consumedAt, revokedAt])
 }
 
 model OrderItem {

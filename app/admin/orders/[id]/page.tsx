@@ -78,6 +78,25 @@ type AdminOrderDetail = {
     note: string | null;
     createdAt: Date;
   }[];
+  paymentAttempts: {
+    id: string;
+    provider: string;
+    providerPaymentId: string | null;
+    providerReceiptUrl: string | null;
+    receiptReference: string | null;
+    providerStatus: string | null;
+    websiteStatus: string;
+    paymentPurpose: string;
+    amountCents: number;
+    tipCents: number;
+    currency: string;
+    expiresAt: Date | null;
+    paidAt: Date | null;
+    failedAt: Date | null;
+    cancelledAt: Date | null;
+    refundedAt: Date | null;
+    createdAt: Date;
+  }[];
 };
 
 export default async function AdminOrderDetailsPage({ params }: PageProps) {
@@ -105,6 +124,11 @@ export default async function AdminOrderDetailsPage({ params }: PageProps) {
         },
       },
       statusHistory: {
+        orderBy: {
+          createdAt: "desc",
+        },
+      },
+      paymentAttempts: {
         orderBy: {
           createdAt: "desc",
         },
@@ -502,6 +526,152 @@ export default async function AdminOrderDetailsPage({ params }: PageProps) {
                     )}
                   </div>
                 ))}
+              </div>
+            </div>
+
+            <div className="admin-card p-6">
+              <h2 className="text-2xl font-black">Payment Ledger</h2>
+
+              <div className="mt-5 space-y-4">
+                {order.paymentAttempts.map((attempt) => (
+                  <div
+                    key={attempt.id}
+                    className="rounded-lg border border-[#ead8c1] bg-[#fff8ee] p-4 text-sm"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <p className="font-black">
+                        {attempt.provider} ·{" "}
+                        {attempt.paymentPurpose.replaceAll("_", " ")}
+                      </p>
+                      <span className="admin-badge admin-badge-neutral">
+                        {attempt.websiteStatus}
+                      </span>
+                    </div>
+
+                    <dl className="mt-3 grid gap-2 text-[#6b5a50]">
+                      <div>
+                        <dt className="inline font-bold text-[#24130f]">
+                          Amount:
+                        </dt>{" "}
+                        <dd className="inline">
+                          {(attempt.amountCents / 100).toLocaleString("en-US", {
+                            style: "currency",
+                            currency: attempt.currency,
+                          })}
+                          {attempt.tipCents > 0
+                            ? ` (${(attempt.tipCents / 100).toLocaleString(
+                                "en-US",
+                                {
+                                  style: "currency",
+                                  currency: attempt.currency,
+                                },
+                              )} tip)`
+                            : ""}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="inline font-bold text-[#24130f]">
+                          Provider status:
+                        </dt>{" "}
+                        <dd className="inline">
+                          {attempt.providerStatus ?? "Not set"}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="inline font-bold text-[#24130f]">
+                          Provider payment ID:
+                        </dt>{" "}
+                        <dd className="inline break-all">
+                          {attempt.providerPaymentId ?? "Not set"}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="inline font-bold text-[#24130f]">
+                          Receipt:
+                        </dt>{" "}
+                        <dd className="inline">
+                          {attempt.providerReceiptUrl ? (
+                            <a
+                              className="admin-action-link"
+                              href={attempt.providerReceiptUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                            >
+                              Open provider receipt
+                            </a>
+                          ) : (
+                            (attempt.receiptReference ?? "Not set")
+                          )}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="inline font-bold text-[#24130f]">
+                          Created:
+                        </dt>{" "}
+                        <dd className="inline">
+                          {attempt.createdAt.toLocaleString()}
+                        </dd>
+                      </div>
+                      {attempt.expiresAt ? (
+                        <div>
+                          <dt className="inline font-bold text-[#24130f]">
+                            Expires:
+                          </dt>{" "}
+                          <dd className="inline">
+                            {attempt.expiresAt.toLocaleString()}
+                          </dd>
+                        </div>
+                      ) : null}
+                      {attempt.paidAt ? (
+                        <div>
+                          <dt className="inline font-bold text-[#24130f]">
+                            Paid:
+                          </dt>{" "}
+                          <dd className="inline">
+                            {attempt.paidAt.toLocaleString()}
+                          </dd>
+                        </div>
+                      ) : null}
+                      {attempt.failedAt ? (
+                        <div>
+                          <dt className="inline font-bold text-[#24130f]">
+                            Failed:
+                          </dt>{" "}
+                          <dd className="inline">
+                            {attempt.failedAt.toLocaleString()}
+                          </dd>
+                        </div>
+                      ) : null}
+                      {attempt.cancelledAt ? (
+                        <div>
+                          <dt className="inline font-bold text-[#24130f]">
+                            Cancelled:
+                          </dt>{" "}
+                          <dd className="inline">
+                            {attempt.cancelledAt.toLocaleString()}
+                          </dd>
+                        </div>
+                      ) : null}
+                      {attempt.refundedAt ? (
+                        <div>
+                          <dt className="inline font-bold text-[#24130f]">
+                            Refunded:
+                          </dt>{" "}
+                          <dd className="inline">
+                            {attempt.refundedAt.toLocaleString()}
+                          </dd>
+                        </div>
+                      ) : null}
+                    </dl>
+                  </div>
+                ))}
+
+                {order.paymentAttempts.length === 0 ? (
+                  <p className="rounded-lg border border-[#ead8c1] bg-[#fff8ee] p-4 text-sm text-[#6b5a50]">
+                    No payment ledger attempts have been recorded for this
+                    order.
+                  </p>
+                ) : null}
               </div>
             </div>
           </aside>
