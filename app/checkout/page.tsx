@@ -5,7 +5,7 @@ import { useCartStore } from "@/store/cart-store";
 import { calculateTip } from "@/lib/order-calculations";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   calculateLateFeeFromSettings,
   formatBusinessDateTimeInputValue,
@@ -25,6 +25,10 @@ import {
   PAYMENT_METHOD_AWAITING_APPROVAL,
   TIP_PRESET_PERCENTAGES,
 } from "@/lib/payment-config";
+import {
+  SquareSandboxPaymentForm,
+  type SquareSandboxPaymentHandle,
+} from "@/components/checkout/SquareSandboxPaymentForm";
 
 const sectionClass =
   "rounded-lg border border-[#ead8c1] bg-white/95 p-5 shadow-[0_18px_45px_rgba(76,36,18,0.08)] sm:p-6";
@@ -124,6 +128,12 @@ export default function CheckoutPage() {
   const [mounted, setMounted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [checkoutMode, setCheckoutMode] = useState<CheckoutMode>("loading");
+  const [squarePaymentAvailable, setSquarePaymentAvailable] = useState(false);
+  const squarePaymentRef = useRef<SquareSandboxPaymentHandle>(null);
+  const squareIdempotencyKeyRef = useRef<string | null>(null);
+  const handleSquareAvailability = useCallback((available: boolean) => {
+    setSquarePaymentAvailable(available);
+  }, []);
   const router = useRouter();
   const checkoutAllergenConflicts = items.flatMap((item) =>
     (item.allergens ?? []).filter((allergen) =>
@@ -342,7 +352,7 @@ export default function CheckoutPage() {
   const requiresApproval = items.some((item) => item.requiresApproval);
   const manualPaymentCheckoutAllowed = settings.manualPaymentCheckoutAllowed;
   const checkoutPaymentAvailable =
-    requiresApproval || manualPaymentCheckoutAllowed;
+    requiresApproval || manualPaymentCheckoutAllowed || squarePaymentAvailable;
   const developmentPaymentMethod =
     details.paymentMethod === "cash" ? "cash" : "manual";
   const effectivePaymentMethod = requiresApproval
@@ -373,7 +383,7 @@ export default function CheckoutPage() {
   const isGuestCheckout = checkoutMode === "guest";
   const isCheckoutModeLoading = checkoutMode === "loading";
 
-  async function submitOrder() {
+  async function submitOrder(walletSourceId?: string) {
     if (submitting) return;
 
     setSubmitting(true);
@@ -470,6 +480,31 @@ export default function CheckoutPage() {
         return;
       }
 
+      let squareSourceId = walletSourceId;
+      const usesSquare = !requiresApproval && !manualPaymentCheckoutAllowed;
+
+      if (usesSquare && !squareSourceId) {
+        try {
+          squareSourceId = await squarePaymentRef.current?.tokenizeCard();
+        } catch (error) {
+          alert(
+            error instanceof Error
+              ? error.message
+              : "Square could not tokenize the card.",
+          );
+          return;
+        }
+      }
+
+      if (usesSquare && !squareSourceId) {
+        alert("Square sandbox checkout is not ready.");
+        return;
+      }
+
+      if (usesSquare && !squareIdempotencyKeyRef.current) {
+        squareIdempotencyKeyRef.current = crypto.randomUUID();
+      }
+
       const response = await fetch("/api/orders", {
         method: "POST",
         headers: {
@@ -479,8 +514,14 @@ export default function CheckoutPage() {
           items,
           checkout: {
             ...details,
-            paymentMethod: effectivePaymentMethod,
+            paymentMethod: usesSquare ? "square" : effectivePaymentMethod,
           },
+          squarePayment: usesSquare
+            ? {
+                sourceId: squareSourceId,
+                idempotencyKey: squareIdempotencyKeyRef.current,
+              }
+            : undefined,
           subtotal,
           deliveryFee,
           lateFee,
@@ -498,6 +539,7 @@ export default function CheckoutPage() {
 
       const order = await response.json();
 
+      squareIdempotencyKeyRef.current = null;
       clearCart();
       resetCheckout();
 
@@ -1098,11 +1140,13 @@ export default function CheckoutPage() {
                     )}
                   </>
                 ) : (
-                  <p className="rounded-lg border border-[#ead8c1] bg-[#fff8ee] p-4 text-sm text-[#6b5a50]">
-                    Secure online payment through Square is being prepared.
-                    Standard orders cannot be submitted until online payment is
-                    enabled.
-                  </p>
+                  <SquareSandboxPaymentForm
+                    ref={squarePaymentRef}
+                    total={total}
+                    disabled={submitting}
+                    onWalletToken={submitOrder}
+                    onAvailabilityChange={handleSquareAvailability}
+                  />
                 )}
 
                 {requiresApproval && (
@@ -1246,10 +1290,12 @@ export default function CheckoutPage() {
                       : requiresAllergenAcknowledgement
                         ? "Acknowledge Allergen Warning"
                         : !checkoutPaymentAvailable
-                          ? "Online Payment Coming Soon"
+                          ? "Square Sandbox Unavailable"
                           : requiresApproval
                             ? "Submit for Approval"
-                            : "Submit Order"}
+                            : manualPaymentCheckoutAllowed
+                              ? "Submit Order"
+                              : "Pay with Card (Sandbox)"}
               </button>
             </section>
           </aside>

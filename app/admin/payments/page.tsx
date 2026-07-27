@@ -199,6 +199,9 @@ export default async function AdminPaymentsPage() {
         <section className="admin-card mt-10 overflow-hidden">
           <div className="border-b border-[#ead8c1] p-6">
             <h2 className="text-2xl font-black">Payment Reconciliation</h2>
+            <p className="mt-2 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm font-bold text-amber-950">
+              Square rows shown here are sandbox/test payment data only.
+            </p>
             <p className="mt-2 text-sm text-[#6b5a50]">
               Website payment summaries are available now. Square status,
               payment IDs, receipts, refunds, and provider mismatch checks

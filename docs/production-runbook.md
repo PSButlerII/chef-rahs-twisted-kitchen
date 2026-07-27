@@ -28,39 +28,39 @@ TypeScript launch posture:
 
 Configure these variables in the production host before deploying:
 
-| Variable | Production value or note |
-| --- | --- |
-| `DATABASE_URL` | Production MySQL/MariaDB connection string. The Prisma datasource is `provider = "mysql"` and the app uses the MariaDB Prisma adapter. |
-| `AUTH_SECRET` | Production-only Auth.js secret, at least 32 characters. Generate a new secret; do not reuse local values. |
-| `AUTH_URL` | `https://rahstwistedkitchen.com` |
-| `NEXTAUTH_URL` | `https://rahstwistedkitchen.com` |
-| `NEXT_PUBLIC_APP_URL` | `https://rahstwistedkitchen.com` |
-| `BUSINESS_TIME_ZONE` | `America/New_York` unless the business confirms another timezone. |
-| `RESEND_API_KEY` | Production Resend API key. |
-| `EMAIL_FROM_ADDRESS` | Verified production sender, such as `Chef Rah's Twisted Kitchen <orders@rahstwistedkitchen.com>`. |
-| `EMAIL_DRY_RUN` | `false` only when ready for live customer email. |
-| `EMAIL_PREVIEW_FILES` | `false` in production. |
-| `ALLOW_LOCAL_UPLOADS_IN_PRODUCTION` | `false` or unset. Keep local production uploads disabled for launch. |
-| `ALLOW_MANUAL_PAYMENT_IN_CHECKOUT` | `false` or unset in production. The development/test override is ignored in production. |
+| Variable                            | Production value or note                                                                                                               |
+| ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`                      | Production MySQL/MariaDB connection string. The Prisma datasource is `provider = "mysql"` and the app uses the MariaDB Prisma adapter. |
+| `AUTH_SECRET`                       | Production-only Auth.js secret, at least 32 characters. Generate a new secret; do not reuse local values.                              |
+| `AUTH_URL`                          | `https://rahstwistedkitchen.com`                                                                                                       |
+| `NEXTAUTH_URL`                      | `https://rahstwistedkitchen.com`                                                                                                       |
+| `NEXT_PUBLIC_APP_URL`               | `https://rahstwistedkitchen.com`                                                                                                       |
+| `BUSINESS_TIME_ZONE`                | `America/New_York` unless the business confirms another timezone.                                                                      |
+| `RESEND_API_KEY`                    | Production Resend API key.                                                                                                             |
+| `EMAIL_FROM_ADDRESS`                | Verified production sender, such as `Chef Rah's Twisted Kitchen <orders@rahstwistedkitchen.com>`.                                      |
+| `EMAIL_DRY_RUN`                     | `false` only when ready for live customer email.                                                                                       |
+| `EMAIL_PREVIEW_FILES`               | `false` in production.                                                                                                                 |
+| `ALLOW_LOCAL_UPLOADS_IN_PRODUCTION` | `false` or unset. Keep local production uploads disabled for launch.                                                                   |
+| `ALLOW_MANUAL_PAYMENT_IN_CHECKOUT`  | `false` or unset in production. The development/test override is ignored in production.                                                |
 
 Workflow-specific variables:
 
-| Variable | Production value or note |
-| --- | --- |
-| `OWNER_EMAIL` | Exact email of the first registered owner account. The bootstrap process never creates this user. |
+| Variable                | Production value or note                                                                                                                                                                             |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `OWNER_EMAIL`           | Exact email of the first registered owner account. The bootstrap process never creates this user.                                                                                                    |
 | `OWNER_BOOTSTRAP_TOKEN` | Temporary long random secret for `POST /api/setup/promote-owner` when production has no console. Remove it and restart/redeploy immediately after bootstrap; it is not a permanent runtime variable. |
-| `FOUNDATION_SEED_TOKEN` | Temporary long random secret for `POST /api/setup/seed-foundation` when production has no console. Remove it and restart/redeploy immediately after foundation seeding. |
-| `ADMIN_EMAIL` | Legacy single-account input for `npm run admin:promote`; not required for normal role management. |
-| `ADMIN_ROLE` | Legacy role for `npm run admin:promote`; defaults to `ADMIN`. |
+| `FOUNDATION_SEED_TOKEN` | Temporary long random secret for `POST /api/setup/seed-foundation` when production has no console. Remove it and restart/redeploy immediately after foundation seeding.                              |
+| `ADMIN_EMAIL`           | Legacy single-account input for `npm run admin:promote`; not required for normal role management.                                                                                                    |
+| `ADMIN_ROLE`            | Legacy role for `npm run admin:promote`; defaults to `ADMIN`.                                                                                                                                        |
 
-Planned payment variables:
+Square sandbox payment variables:
 
 - Legacy Stripe environment variables may remain documented or blank while current env parsing exists.
 - Stripe is not the planned launch provider.
-- Square is the first planned provider; PayPal follows later.
-- `SQUARE_ENVIRONMENT`, `SQUARE_APPLICATION_ID`, `SQUARE_LOCATION_ID`, `SQUARE_ACCESS_TOKEN`, and `SQUARE_WEBHOOK_SIGNATURE_KEY` are placeholders until the reviewed Square integration is implemented.
+- Square is the first provider; PayPal follows later.
+- Standard checkout sandbox testing uses `SQUARE_ENVIRONMENT=sandbox`, `SQUARE_APPLICATION_ID`, `SQUARE_LOCATION_ID`, `SQUARE_ACCESS_TOKEN`, `SQUARE_WEBHOOK_SIGNATURE_KEY`, and the exact `SQUARE_WEBHOOK_NOTIFICATION_URL`.
 - Keep Square access tokens and webhook signature keys server-side. Never expose them through `NEXT_PUBLIC_*` variables, browser code, logs, or API responses.
-- This foundation does not make Square API calls. See `docs/payment-processing-decisions.md`.
+- Only Sandbox Payments API calls are allowed in this phase. Live production payments remain disabled. See `docs/payment-processing-decisions.md`.
 
 ## 3. Database Setup
 
@@ -321,7 +321,7 @@ Launch posture:
 - Manual/offline checkout can be enabled only in development/testing with `ALLOW_MANUAL_PAYMENT_IN_CHECKOUT=true`.
 - Approval-required orders are submitted without payment and receive payment requests only after approval in a future phase.
 - Admins should mark orders or deposits paid only after payment is actually confirmed outside the app.
-- Do not configure live Square credentials until the future API/webhook implementation is reviewed and ready for sandbox validation.
+- Do not configure live Square credentials. Validate card/wallet tokenization, a completed test payment, receipt data, webhook reconciliation, and missing-config disablement in Sandbox.
 - Do not add Stripe launch wording; Stripe is legacy/optional only while current env parsing still exists.
 
 ## 11. Security Launch Posture

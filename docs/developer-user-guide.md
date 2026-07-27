@@ -20,15 +20,15 @@ The server is authoritative for prices, fees, weekly windows, option upcharges, 
 
 ## 2. Tech Stack
 
-| Area | Technology |
-| --- | --- |
-| Application | Next.js App Router, React, TypeScript, Tailwind CSS |
-| Database ORM | Prisma |
-| Production database | MySQL/MariaDB through `@prisma/adapter-mariadb` |
-| Authentication | Auth.js / NextAuth credentials provider with Prisma adapter |
-| Email delivery | Resend |
-| Email templates | React Email |
-| Client cart state | Zustand |
+| Area                | Technology                                                  |
+| ------------------- | ----------------------------------------------------------- |
+| Application         | Next.js App Router, React, TypeScript, Tailwind CSS         |
+| Database ORM        | Prisma                                                      |
+| Production database | MySQL/MariaDB through `@prisma/adapter-mariadb`             |
+| Authentication      | Auth.js / NextAuth credentials provider with Prisma adapter |
+| Email delivery      | Resend                                                      |
+| Email templates     | React Email                                                 |
+| Client cart state   | Zustand                                                     |
 
 This repository uses Next.js 16.2.10. Before changing Next.js APIs or conventions, follow `AGENTS.md` and read the relevant installed guide under `node_modules/next/dist/docs/`.
 
@@ -137,32 +137,34 @@ Neither `npm run db:seed` nor `npm run db:seed-demo` runs automatically during t
 
 Start from `.env.example`.
 
-| Variable | Purpose |
-| --- | --- |
-| `DATABASE_URL` | MySQL-compatible Prisma URL. Hostinger production currently uses `mysql://DB_USER:URL_ENCODED_PASSWORD@127.0.0.1:3306/DB_NAME`. |
-| `AUTH_SECRET` | Auth.js signing/encryption secret. Use a strong, stable value. |
-| `AUTH_URL` | Canonical Auth.js origin. Local default is `http://localhost:3000`; production is `https://rahstwistedkitchen.com`. |
-| `NEXTAUTH_URL` | Compatibility Auth.js origin; keep it aligned with `AUTH_URL`. |
-| `NEXT_PUBLIC_APP_URL` | Public application origin used for links and email assets. |
-| `BUSINESS_TIME_ZONE` | Business-local scheduling zone, expected to be `America/New_York` for launch. |
-| `RESEND_API_KEY` | Resend API key used only when live sending is enabled. |
-| `EMAIL_FROM_ADDRESS` | Verified sender name/address used by transactional email. |
-| `EMAIL_DRY_RUN` | `true` logs/renders without sending; `false` permits live Resend delivery. |
-| `EMAIL_PREVIEW_FILES` | Enables local preview file output when supported by the email utility. Keep it `false` in production unless intentionally debugging. |
-| `ALLOW_LOCAL_UPLOADS_IN_PRODUCTION` | Keep `false` or unset for launch; local production uploads are not durable. |
-| `ALLOW_MANUAL_PAYMENT_IN_CHECKOUT` | Development/test-only manual checkout override. It must be explicitly `true` and is ignored in production. |
-| `SQUARE_ENVIRONMENT` | Planned Square environment (`sandbox` before production); no API calls exist yet. |
-| `SQUARE_APPLICATION_ID` | Planned Square application identifier. |
-| `SQUARE_LOCATION_ID` | Planned Square location identifier. |
-| `SQUARE_ACCESS_TOKEN` | Planned server-side Square secret; never expose through `NEXT_PUBLIC_*`. |
-| `SQUARE_WEBHOOK_SIGNATURE_KEY` | Planned server-side webhook verification secret; never expose to browser code. |
-| `OWNER_EMAIL` | Existing registered user's email for the one-time owner bootstrap. It is never a user-creation input. |
-| `OWNER_BOOTSTRAP_TOKEN` | Temporary long random secret for `POST /api/setup/promote-owner` when the host has no console. Remove it and restart/redeploy immediately after success. |
-| `FOUNDATION_SEED_TOKEN` | Temporary long random secret for `POST /api/setup/seed-foundation` when the host has no console. Remove it and restart/redeploy immediately after success. |
-| `ADMIN_EMAIL` | Legacy single-user input for `npm run admin:promote`. Not needed for owner-managed admins. |
-| `ADMIN_ROLE` | Legacy role for `npm run admin:promote`; defaults to `ADMIN`. |
+| Variable                            | Purpose                                                                                                                                                    |
+| ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`                      | MySQL-compatible Prisma URL. Hostinger production currently uses `mysql://DB_USER:URL_ENCODED_PASSWORD@127.0.0.1:3306/DB_NAME`.                            |
+| `AUTH_SECRET`                       | Auth.js signing/encryption secret. Use a strong, stable value.                                                                                             |
+| `AUTH_URL`                          | Canonical Auth.js origin. Local default is `http://localhost:3000`; production is `https://rahstwistedkitchen.com`.                                        |
+| `NEXTAUTH_URL`                      | Compatibility Auth.js origin; keep it aligned with `AUTH_URL`.                                                                                             |
+| `NEXT_PUBLIC_APP_URL`               | Public application origin used for links and email assets.                                                                                                 |
+| `BUSINESS_TIME_ZONE`                | Business-local scheduling zone, expected to be `America/New_York` for launch.                                                                              |
+| `RESEND_API_KEY`                    | Resend API key used only when live sending is enabled.                                                                                                     |
+| `EMAIL_FROM_ADDRESS`                | Verified sender name/address used by transactional email.                                                                                                  |
+| `EMAIL_DRY_RUN`                     | `true` logs/renders without sending; `false` permits live Resend delivery.                                                                                 |
+| `EMAIL_PREVIEW_FILES`               | Enables local preview file output when supported by the email utility. Keep it `false` in production unless intentionally debugging.                       |
+| `ALLOW_LOCAL_UPLOADS_IN_PRODUCTION` | Keep `false` or unset for launch; local production uploads are not durable.                                                                                |
+| `ALLOW_MANUAL_PAYMENT_IN_CHECKOUT`  | Development/test-only manual checkout override. It must be explicitly `true` and is ignored in production.                                                 |
+| `SQUARE_ENVIRONMENT`                | Must be `sandbox`; other values disable checkout in this phase.                                                                                            |
+| `SQUARE_APPLICATION_ID`             | Sandbox Web Payments SDK application identifier.                                                                                                           |
+| `SQUARE_LOCATION_ID`                | Sandbox location identifier.                                                                                                                               |
+| `SQUARE_ACCESS_TOKEN`               | Server-side Sandbox secret; never expose through `NEXT_PUBLIC_*`.                                                                                          |
+| `SQUARE_WEBHOOK_SIGNATURE_KEY`      | Server-only signature key used with the raw webhook body.                                                                                                  |
+| `SQUARE_WEBHOOK_NOTIFICATION_URL`   | Exact Square webhook subscription URL used during signature verification.                                                                                  |
+| `SQUARE_WEBHOOK_SIGNATURE_KEY`      | Planned server-side webhook verification secret; never expose to browser code.                                                                             |
+| `OWNER_EMAIL`                       | Existing registered user's email for the one-time owner bootstrap. It is never a user-creation input.                                                      |
+| `OWNER_BOOTSTRAP_TOKEN`             | Temporary long random secret for `POST /api/setup/promote-owner` when the host has no console. Remove it and restart/redeploy immediately after success.   |
+| `FOUNDATION_SEED_TOKEN`             | Temporary long random secret for `POST /api/setup/seed-foundation` when the host has no console. Remove it and restart/redeploy immediately after success. |
+| `ADMIN_EMAIL`                       | Legacy single-user input for `npm run admin:promote`. Not needed for owner-managed admins.                                                                 |
+| `ADMIN_ROLE`                        | Legacy role for `npm run admin:promote`; defaults to `ADMIN`.                                                                                              |
 
-Legacy Stripe placeholders may remain blank while the existing env parser supports them. Stripe is not the selected launch payment integration. Square is planned first and PayPal later, but neither provider is integrated in this foundation. See `docs/payment-processing-decisions.md`.
+Legacy Stripe placeholders may remain blank while the existing env parser supports them. Stripe is not the selected payment integration. Square standard checkout is Sandbox-only and PayPal remains later work. See `docs/payment-processing-decisions.md`.
 
 ## 6. Owner And Admin Setup
 
@@ -177,7 +179,7 @@ The application does not create privileged users from environment variables.
 npm run owner:promote
 ```
 
-   If the host has no console, temporarily set a random `OWNER_BOOTSTRAP_TOKEN` of at least 32 characters, restart/redeploy, and call the POST-only endpoint:
+If the host has no console, temporarily set a random `OWNER_BOOTSTRAP_TOKEN` of at least 32 characters, restart/redeploy, and call the POST-only endpoint:
 
 ```powershell
 $headers = @{
@@ -190,7 +192,7 @@ Invoke-RestMethod `
   -Headers $headers
 ```
 
-   Remove `OWNER_BOOTSTRAP_TOKEN` and restart/redeploy immediately after the successful response. The endpoint then becomes unavailable.
+Remove `OWNER_BOOTSTRAP_TOKEN` and restart/redeploy immediately after the successful response. The endpoint then becomes unavailable.
 
 5. Sign out, sign back in as the owner, and open `/admin/role-manager`.
 6. Have additional staff register normally with their own passwords.

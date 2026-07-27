@@ -2,14 +2,14 @@
 
 Date: July 27, 2026
 
-Status: foundation only. This document is authoritative for the next payment implementation phase. The current application does not install a Square SDK, call Square APIs, create payment links, expose guest retry links, process provider webhooks, or issue live refunds.
+Status: sandbox standard-checkout implementation. Eligible standard orders can use Square Sandbox; production payments, payment links, public retry links, expiration automation, and refunds remain disabled.
 
 ## Provider Sequence And Scope
 
 - Square is the first provider. PayPal follows after Square is stable unless the client changes priority.
 - The Square and PayPal business accounts are created and vetted.
 - Standard pickup, delivery, and weekly meal plan orders that do not require approval will charge immediately at checkout.
-- Standard checkout should support cards and wallets in a later Square implementation.
+- Standard sandbox checkout uses Square-hosted card fields and shows supported Apple Pay or Google Pay methods when the browser, device, domain, and Square Sandbox allow them.
 - ACH should be limited to larger approved catering, personal-chef, and final-balance payments in a later phase.
 - Square is the official receipt source.
 
@@ -29,7 +29,7 @@ Status: foundation only. This document is authoritative for the next payment imp
 - Manual invoice, cash, and offline checkout options are hidden and rejected by default.
 - Manual/offline checkout may be enabled only for development or testing by explicitly setting `ALLOW_MANUAL_PAYMENT_IN_CHECKOUT=true`.
 - The development flag is ignored when `NODE_ENV=production`.
-- Until Square checkout is implemented, standard production orders cannot be submitted through checkout. Approval-required orders can still be submitted without collecting payment.
+- Complete Sandbox configuration enables standard checkout. Missing or non-sandbox configuration safely disables the payment UI. Approval-required orders still submit without collecting payment.
 
 ## Taxes, Tips, And Trusted Totals
 
@@ -75,7 +75,7 @@ The owner performs payment reconciliation. The admin payment view must ultimatel
 - refund status; and
 - mismatch warnings.
 
-The admin payment view reads the internal payment ledger and compares it with existing order summary fields. It shows website/provider states, provider payment IDs, receipt references, paid/refund timestamps, amount mismatches, and missing timestamp/status warnings. It cannot reconcile with live Square state until verified API and webhook data populate the ledger.
+The admin payment view reads the internal payment ledger and compares it with existing order summary fields. It shows verified Sandbox provider states, payment IDs, receipt references, paid/refund timestamps, amount mismatches, and missing timestamp/status warnings. Square rows are explicitly labeled as test data.
 
 ## Data Model Review
 
@@ -123,15 +123,32 @@ ALLOW_MANUAL_PAYMENT_IN_CHECKOUT=false
 
 `SQUARE_ACCESS_TOKEN` and `SQUARE_WEBHOOK_SIGNATURE_KEY` are server-side secrets. Never expose them through `NEXT_PUBLIC_*`, client components, logs, email, audit metadata, or API responses. The application and location IDs are identifiers rather than secrets, but should remain server-configured until the selected Square browser integration explicitly needs a public application ID.
 
+## Square Sandbox Standard Checkout
+
+Set `SQUARE_ENVIRONMENT=sandbox`, `SQUARE_APPLICATION_ID`, `SQUARE_LOCATION_ID`, and the server-only `SQUARE_ACCESS_TOKEN`. Webhook processing also requires the server-only `SQUARE_WEBHOOK_SIGNATURE_KEY` and the exact `SQUARE_WEBHOOK_NOTIFICATION_URL` registered in the Square Developer Console.
+
+The browser receives only the application and location identifiers after the server confirms that Sandbox checkout is completely configured. Square Web Payments SDK creates a one-time source token. `/api/orders` independently validates the cart and recalculates subtotal, fees, tip, and total. It creates the pending order and `PaymentAttempt` transactionally before calling Square Payments API with the ledger idempotency key. A completed response marks both records paid; an ambiguous failure retains a pending attempt and key instead of risking a second charge.
+
+`POST /api/webhooks/square` reads the raw request body, verifies `x-square-hmacsha256-signature` with the exact notification URL, hashes and deduplicates verified events, and processes only `payment.created` and `payment.updated`. Amount, currency, and location must match the ledger before the order is marked paid. Unsupported or unmatched verified events are stored and safely ignored.
+
+Sandbox test flow:
+
+1. Configure Sandbox variables and restart the application.
+2. Add a standard pickup/delivery item or standard weekly package that does not require approval.
+3. Choose a tip and confirm there is no separate tax line.
+4. Complete a Square test card or supported sandbox wallet payment.
+5. Confirm the order and ledger row show paid status, payment ID, and receipt data in admin reconciliation.
+6. Remove one required Square variable and confirm standard checkout is disabled.
+
+Deposits, final balances, refunds, invoices, retry links, expiration processing, and public guest order tracking are not included.
+
 ## Follow-Up For Live Square Integration
 
-1. Install the current supported Square SDK only after reviewing its official integration and dependency requirements.
-2. Add a provider boundary, idempotent ledger/payment creation, and trusted amount/currency checks.
-3. Add Square Web Payments SDK card/wallet UI and the required production CSP.
-4. Implement verified raw-body webhooks using the event deduplication table, including out-of-order handling.
-5. Implement the two-hour expiry worker, weekly-capacity release, and non-payment cancellation email.
-6. Implement secure guest retry-token issuance and redemption without adding public guest order tracking.
-7. Implement deposit and final-balance request creation after approval.
-8. Implement full-refund operations, permissions, audit logs, and Square reconciliation.
-9. Define metadata retention/redaction rules and operational cleanup for expired retry tokens and old webhook summaries.
-10. Run sandbox, webhook, retry, expiration, duplicate-charge, capacity, refund, receipt, and production smoke tests before enabling Square.
+1. Review production credentials, hosts, CSP endpoints, wallet domain registration, webhook URL, and operational controls before permitting the production environment.
+2. Add out-of-order webhook replay/recovery.
+3. Implement the two-hour expiry worker, weekly-capacity release, and non-payment cancellation email.
+4. Implement secure guest retry-token issuance and redemption without public guest order tracking.
+5. Implement deposit and final-balance request creation after approval.
+6. Implement refund operations, permissions, audit logs, and provider reconciliation.
+7. Define metadata retention/redaction rules and operational cleanup.
+8. Run ambiguous-failure, retry, expiration, duplicate-charge, capacity, refund, wallet, receipt, and production smoke tests before enabling live Square.

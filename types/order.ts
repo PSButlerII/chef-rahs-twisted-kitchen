@@ -2,7 +2,12 @@ export type OrderType = "delivery" | "pickup";
 
 export type TipType = "none" | "10" | "15" | "20" | "custom";
 
-export type PaymentMethod = "manual" | "cash" | "approval" | "stripe";
+export type PaymentMethod =
+  | "manual"
+  | "cash"
+  | "approval"
+  | "stripe"
+  | "square";
 
 export type CheckoutDetails = {
   orderType: OrderType;

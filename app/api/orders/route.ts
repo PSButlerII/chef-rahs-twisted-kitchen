@@ -33,14 +33,20 @@ import type { Prisma, WeeklyMealPlanOptionType } from "@prisma/client";
 import { rateLimitRequest, rateLimits } from "@/lib/rate-limit";
 import {
   isManualPaymentCheckoutAllowed,
+  PENDING_PAYMENT_EXPIRATION_MS,
   PAYMENT_METHOD_AWAITING_APPROVAL,
   PAYMENT_STATUS_AWAITING_APPROVAL,
   TIP_PRESET_PERCENTAGES,
 } from "@/lib/payment-config";
+import { createSquareClient, getSquareServerConfig } from "@/lib/square";
 
 type CreateOrderRequest = {
   items?: CartItem[];
   checkout?: CheckoutDetails;
+  squarePayment?: {
+    sourceId?: string;
+    idempotencyKey?: string;
+  };
 };
 
 type CreatedOrderWithItems = Prisma.OrderGetPayload<{
@@ -245,8 +251,17 @@ const allowedTipTypes = new Set([
 const allowedPaymentMethods = new Set([
   "manual",
   "cash",
+  "square",
   PAYMENT_METHOD_AWAITING_APPROVAL,
 ]);
+
+function isSquareIdempotencyKey(value: string) {
+  return /^[a-f0-9-]{36}$/i.test(value);
+}
+
+function dollarsToCents(value: number) {
+  return Math.round(value * 100);
+}
 
 export async function POST(request: NextRequest) {
   const rateLimitResponse = rateLimitRequest(request, rateLimits.orderCreate);
@@ -256,10 +271,52 @@ export async function POST(request: NextRequest) {
   }
   try {
     const session = await auth();
-    const { items, checkout } = (await request.json()) as CreateOrderRequest;
+    const { items, checkout, squarePayment } =
+      (await request.json()) as CreateOrderRequest;
     const authenticatedEmail = session?.user?.email?.trim() ?? "";
     const authenticatedUserName = session?.user?.name?.trim() ?? "";
     const isAuthenticated = Boolean(authenticatedEmail);
+
+    const submittedSquareIdempotencyKey = String(
+      squarePayment?.idempotencyKey ?? "",
+    ).trim();
+    const submittedSquareSourceId = String(
+      squarePayment?.sourceId ?? "",
+    ).trim();
+
+    if (submittedSquareIdempotencyKey) {
+      if (!isSquareIdempotencyKey(submittedSquareIdempotencyKey)) {
+        return NextResponse.json(
+          { error: "Invalid Square payment request identifier." },
+          { status: 400 },
+        );
+      }
+
+      const existingAttempt = await prisma.paymentAttempt.findUnique({
+        where: { idempotencyKey: submittedSquareIdempotencyKey },
+        include: { order: true },
+      });
+
+      if (existingAttempt) {
+        if (existingAttempt.websiteStatus === "PAID" && existingAttempt.order) {
+          return NextResponse.json({
+            ...existingAttempt.order,
+            guestCheckout: !isAuthenticated,
+            orderUrl: isAuthenticated
+              ? `/orders/${existingAttempt.order.id}`
+              : null,
+          });
+        }
+
+        return NextResponse.json(
+          {
+            error:
+              "This sandbox payment request is already being processed. No second charge was attempted.",
+          },
+          { status: 409 },
+        );
+      }
+    }
 
     if (!items || !Array.isArray(items) || items.length === 0) {
       return NextResponse.json(
@@ -376,6 +433,7 @@ export async function POST(request: NextRequest) {
 
     if (
       checkout.paymentMethod !== PAYMENT_METHOD_AWAITING_APPROVAL &&
+      checkout.paymentMethod !== "square" &&
       !isManualPaymentCheckoutAllowed()
     ) {
       return NextResponse.json(
@@ -1298,6 +1356,7 @@ export async function POST(request: NextRequest) {
     const requiresApproval = validatedItems.some(
       (item) => item.requiresApproval,
     );
+    const usesSquare = checkout.paymentMethod === "square";
 
     if (
       (requiresApproval &&
@@ -1312,6 +1371,28 @@ export async function POST(request: NextRequest) {
         },
         { status: 400 },
       );
+    }
+
+    if (usesSquare) {
+      try {
+        getSquareServerConfig();
+      } catch {
+        return NextResponse.json(
+          { error: "Square sandbox checkout is not configured." },
+          { status: 503 },
+        );
+      }
+
+      if (
+        !submittedSquareSourceId ||
+        !submittedSquareIdempotencyKey ||
+        !isSquareIdempotencyKey(submittedSquareIdempotencyKey)
+      ) {
+        return NextResponse.json(
+          { error: "Square sandbox payment details are required." },
+          { status: 400 },
+        );
+      }
     }
 
     const allergenAcknowledgedAt =
@@ -1352,7 +1433,7 @@ export async function POST(request: NextRequest) {
           }
         }
 
-        return tx.order.create({
+        const createdOrder = await tx.order.create({
           data: {
             ...(isAuthenticated
               ? {
@@ -1371,7 +1452,7 @@ export async function POST(request: NextRequest) {
             orderType:
               checkout.orderType === "delivery" ? "DELIVERY" : "PICKUP",
 
-            status: requiresApproval ? "PENDING" : "ACCEPTED",
+            status: requiresApproval || usesSquare ? "PENDING" : "ACCEPTED",
             approvalStatus: requiresApproval ? "PENDING" : "APPROVED",
             approvedAt: requiresApproval ? null : new Date(),
 
@@ -1408,9 +1489,11 @@ export async function POST(request: NextRequest) {
             paymentStatus:
               checkout.paymentMethod === PAYMENT_METHOD_AWAITING_APPROVAL
                 ? PAYMENT_STATUS_AWAITING_APPROVAL
-                : checkout.paymentMethod === "cash"
-                  ? "OFFLINE_PAYMENT_DUE"
-                  : "PAY_BY_DATE",
+                : usesSquare
+                  ? "PAYMENT_PENDING"
+                  : checkout.paymentMethod === "cash"
+                    ? "OFFLINE_PAYMENT_DUE"
+                    : "PAY_BY_DATE",
 
             items: {
               create: validatedItems.map((item) => ({
@@ -1493,10 +1576,12 @@ export async function POST(request: NextRequest) {
 
             statusHistory: {
               create: {
-                status: requiresApproval ? "PENDING" : "ACCEPTED",
+                status: requiresApproval || usesSquare ? "PENDING" : "ACCEPTED",
                 note: requiresApproval
                   ? "Order created and waiting for approval."
-                  : "Order created and auto-approved.",
+                  : usesSquare
+                    ? "Order created with a pending Square sandbox payment."
+                    : "Order created and auto-approved.",
               },
             },
           },
@@ -1534,8 +1619,132 @@ export async function POST(request: NextRequest) {
             },
           },
         });
+
+        if (usesSquare) {
+          await tx.paymentAttempt.create({
+            data: {
+              provider: "SQUARE",
+              websiteStatus: "PENDING",
+              providerStatus: "PENDING",
+              paymentPurpose: "ORDER_TOTAL",
+              amountCents: dollarsToCents(total),
+              tipCents: dollarsToCents(tipAmount),
+              currency: "USD",
+              idempotencyKey: submittedSquareIdempotencyKey,
+              orderId: createdOrder.id,
+              expiresAt: new Date(
+                orderSubmissionTime.getTime() + PENDING_PAYMENT_EXPIRATION_MS,
+              ),
+              metadata: {
+                environment: "sandbox",
+                checkout: "standard",
+              },
+            },
+          });
+        }
+
+        return createdOrder;
       },
     );
+
+    if (usesSquare) {
+      const squareConfig = getSquareServerConfig();
+
+      try {
+        const paymentResponse = await createSquareClient().payments.create({
+          sourceId: submittedSquareSourceId,
+          idempotencyKey: submittedSquareIdempotencyKey,
+          amountMoney: {
+            amount: BigInt(dollarsToCents(total - tipAmount)),
+            currency: "USD",
+          },
+          ...(tipAmount > 0
+            ? {
+                tipMoney: {
+                  amount: BigInt(dollarsToCents(tipAmount)),
+                  currency: "USD" as const,
+                },
+              }
+            : {}),
+          autocomplete: true,
+          locationId: squareConfig.locationId,
+          referenceId: order.id.slice(0, 40),
+          note: `Sandbox standard order ${order.id}`,
+        });
+        const payment = paymentResponse.payment;
+        const paidAt =
+          payment?.status === "COMPLETED"
+            ? new Date(payment.updatedAt ?? payment.createdAt ?? Date.now())
+            : null;
+
+        if (!payment?.id || !paidAt) {
+          await prisma.paymentAttempt.update({
+            where: { idempotencyKey: submittedSquareIdempotencyKey },
+            data: {
+              providerPaymentId: payment?.id ?? null,
+              providerStatus: payment?.status ?? "UNKNOWN",
+              websiteStatus: "PENDING",
+            },
+          });
+
+          return NextResponse.json(
+            {
+              error:
+                "Square has not completed this sandbox payment. No second charge will be attempted with this request identifier.",
+            },
+            { status: 409 },
+          );
+        }
+
+        await prisma.$transaction([
+          prisma.paymentAttempt.update({
+            where: { idempotencyKey: submittedSquareIdempotencyKey },
+            data: {
+              providerPaymentId: payment.id,
+              providerStatus: payment.status,
+              providerReceiptUrl: payment.receiptUrl ?? null,
+              receiptReference: payment.receiptNumber ?? null,
+              websiteStatus: "PAID",
+              paidAt,
+            },
+          }),
+          prisma.order.update({
+            where: { id: order.id },
+            data: {
+              status: "ACCEPTED",
+              paymentStatus: "PAID",
+              paidAt,
+              statusHistory: {
+                create: {
+                  status: "ACCEPTED",
+                  note: "Square sandbox payment completed.",
+                },
+              },
+            },
+          }),
+        ]);
+
+        order.status = "ACCEPTED";
+        order.paymentStatus = "PAID";
+        order.paidAt = paidAt;
+      } catch {
+        await prisma.paymentAttempt.update({
+          where: { idempotencyKey: submittedSquareIdempotencyKey },
+          data: {
+            providerStatus: "REQUEST_FAILED",
+            websiteStatus: "PENDING",
+          },
+        });
+
+        return NextResponse.json(
+          {
+            error:
+              "Square sandbox payment could not be confirmed. The payment request is retained to prevent a duplicate charge.",
+          },
+          { status: 502 },
+        );
+      }
+    }
 
     try {
       if (isAuthenticated && checkout.saveContactInfo) {
