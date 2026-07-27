@@ -22,6 +22,7 @@ import {
 import { getBusinessSettings } from "@/lib/business-settings";
 import { getFixedCheckoutScheduleDisplayMessage } from "@/lib/checkout-fulfillment";
 import type { DecimalLike } from "@/types/display";
+import { getNormalRefundEligibility } from "@/lib/payment-config";
 
 type PageProps = {
   params: Promise<{
@@ -61,6 +62,7 @@ type AdminOrderDetail = {
   paymentStatus: string | null;
   payByDate: Date | null;
   paidAt: Date | null;
+  createdAt: Date;
   items: {
     id: string;
     name: string;
@@ -90,22 +92,16 @@ export default async function AdminOrderDetailsPage({ params }: PageProps) {
         include: {
           weeklyMealPlanSelection: {
             include: {
-                  mealSlots: {
-                    orderBy: [
-                      { dayNumber: "asc" },
-                      { mealNumber: "asc" },
-                    ],
-                    include: {
-                      selectedOptions: {
-                        orderBy: [
-                          { optionType: "asc" },
-                          { createdAt: "asc" },
-                        ],
-                      },
-                    },
+              mealSlots: {
+                orderBy: [{ dayNumber: "asc" }, { mealNumber: "asc" }],
+                include: {
+                  selectedOptions: {
+                    orderBy: [{ optionType: "asc" }, { createdAt: "asc" }],
                   },
                 },
               },
+            },
+          },
         },
       },
       statusHistory: {
@@ -129,6 +125,11 @@ export default async function AdminOrderDetailsPage({ params }: PageProps) {
   const businessSettings = await getBusinessSettings();
   const fixedCheckoutScheduleMessage =
     getFixedCheckoutScheduleDisplayMessage(businessSettings);
+  const refundEligibility = getNormalRefundEligibility({
+    createdAt: order.createdAt,
+    status: order.status,
+    statusHistory: order.statusHistory.map((history) => history.status),
+  });
 
   return (
     <main className="admin-page print:bg-white print:px-0 print:py-0">
@@ -155,9 +156,7 @@ export default async function AdminOrderDetailsPage({ params }: PageProps) {
               <div className="flex flex-wrap items-center gap-3">
                 <h2 className="text-2xl font-black">Customer</h2>
                 {!order.userId && (
-                  <span className="admin-badge admin-badge-neutral">
-                    Guest
-                  </span>
+                  <span className="admin-badge admin-badge-neutral">Guest</span>
                 )}
               </div>
               <div className="mt-4 space-y-2 text-sm">
@@ -394,6 +393,7 @@ export default async function AdminOrderDetailsPage({ params }: PageProps) {
                   key={order.status}
                   orderId={order.id}
                   currentStatus={order.status}
+                  normalRefundEligible={refundEligibility.eligible}
                 />
               </div>
             </div>
@@ -456,6 +456,27 @@ export default async function AdminOrderDetailsPage({ params }: PageProps) {
                   <strong>Paid At:</strong>{" "}
                   {order.paidAt ? order.paidAt.toLocaleString() : "Not paid"}
                 </p>
+
+                <div className="mt-5 border-t border-[#ead8c1] pt-5">
+                  <p className="font-bold">Normal Refund Eligibility</p>
+                  <p className="mt-2 text-[#6b5a50]">
+                    {refundEligibility.eligible
+                      ? `Eligible until ${refundEligibility.expiresAt.toLocaleString()}, unless fulfillment or preparation starts first.`
+                      : refundEligibility.reason}
+                  </p>
+
+                  {refundEligibility.eligible ? (
+                    <button
+                      type="button"
+                      disabled
+                      className="mt-4 w-full rounded-lg bg-neutral-300 px-4 py-3 text-sm font-bold text-neutral-600"
+                      title="Square refunds are not implemented yet."
+                    >
+                      Issue Square Refund — Coming Later
+                    </button>
+                  ) : null}
+                </div>
+
                 {paymentDue && (
                   <div className="mt-5">
                     <MarkOrderPaidButton orderId={order.id} />

@@ -18,11 +18,13 @@ const statuses = [
 type UpdateOrderStatusFormProps = {
   orderId: string;
   currentStatus: string;
+  normalRefundEligible: boolean;
 };
 
 export function UpdateOrderStatusForm({
   orderId,
   currentStatus,
+  normalRefundEligible,
 }: UpdateOrderStatusFormProps) {
   const router = useRouter();
   const [status, setStatus] = useState(currentStatus);
@@ -63,11 +65,18 @@ export function UpdateOrderStatusForm({
           onChange={(e) => setStatus(e.target.value)}
           className="mt-2 w-full rounded-lg border border-[#d7bea1] px-4 py-3 outline-none transition focus:border-[#8a2b18] focus:ring-2 focus:ring-[#d99426]/30"
         >
-          {statuses.map((statusOption) => (
-            <option key={statusOption} value={statusOption}>
-              {formatOrderStatus(statusOption)}
-            </option>
-          ))}
+          {statuses
+            .filter(
+              (statusOption) =>
+                statusOption !== "REFUNDED" ||
+                currentStatus === "REFUNDED" ||
+                normalRefundEligible,
+            )
+            .map((statusOption) => (
+              <option key={statusOption} value={statusOption}>
+                {formatOrderStatus(statusOption)}
+              </option>
+            ))}
         </select>
       </div>
 

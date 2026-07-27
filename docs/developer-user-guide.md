@@ -150,13 +150,19 @@ Start from `.env.example`.
 | `EMAIL_DRY_RUN` | `true` logs/renders without sending; `false` permits live Resend delivery. |
 | `EMAIL_PREVIEW_FILES` | Enables local preview file output when supported by the email utility. Keep it `false` in production unless intentionally debugging. |
 | `ALLOW_LOCAL_UPLOADS_IN_PRODUCTION` | Keep `false` or unset for launch; local production uploads are not durable. |
+| `ALLOW_MANUAL_PAYMENT_IN_CHECKOUT` | Development/test-only manual checkout override. It must be explicitly `true` and is ignored in production. |
+| `SQUARE_ENVIRONMENT` | Planned Square environment (`sandbox` before production); no API calls exist yet. |
+| `SQUARE_APPLICATION_ID` | Planned Square application identifier. |
+| `SQUARE_LOCATION_ID` | Planned Square location identifier. |
+| `SQUARE_ACCESS_TOKEN` | Planned server-side Square secret; never expose through `NEXT_PUBLIC_*`. |
+| `SQUARE_WEBHOOK_SIGNATURE_KEY` | Planned server-side webhook verification secret; never expose to browser code. |
 | `OWNER_EMAIL` | Existing registered user's email for the one-time owner bootstrap. It is never a user-creation input. |
 | `OWNER_BOOTSTRAP_TOKEN` | Temporary long random secret for `POST /api/setup/promote-owner` when the host has no console. Remove it and restart/redeploy immediately after success. |
 | `FOUNDATION_SEED_TOKEN` | Temporary long random secret for `POST /api/setup/seed-foundation` when the host has no console. Remove it and restart/redeploy immediately after success. |
 | `ADMIN_EMAIL` | Legacy single-user input for `npm run admin:promote`. Not needed for owner-managed admins. |
 | `ADMIN_ROLE` | Legacy role for `npm run admin:promote`; defaults to `ADMIN`. |
 
-Legacy Stripe placeholders may remain blank while the existing env parser supports them. Stripe is not the selected launch payment integration. Square and PayPal are not integrated in this release.
+Legacy Stripe placeholders may remain blank while the existing env parser supports them. Stripe is not the selected launch payment integration. Square is planned first and PayPal later, but neither provider is integrated in this foundation. See `docs/payment-processing-decisions.md`.
 
 ## 6. Owner And Admin Setup
 

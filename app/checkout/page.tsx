@@ -21,6 +21,10 @@ import {
   getWeeklyOrderingWindowState,
 } from "@/lib/weekly-ordering-window";
 import { resolveCheckoutFixedFulfillment } from "@/lib/checkout-fulfillment";
+import {
+  PAYMENT_METHOD_AWAITING_APPROVAL,
+  TIP_PRESET_PERCENTAGES,
+} from "@/lib/payment-config";
 
 const sectionClass =
   "rounded-lg border border-[#ead8c1] bg-white/95 p-5 shadow-[0_18px_45px_rgba(76,36,18,0.08)] sm:p-6";
@@ -119,8 +123,7 @@ export default function CheckoutPage() {
 
   const [mounted, setMounted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [checkoutMode, setCheckoutMode] =
-    useState<CheckoutMode>("loading");
+  const [checkoutMode, setCheckoutMode] = useState<CheckoutMode>("loading");
   const router = useRouter();
   const checkoutAllergenConflicts = items.flatMap((item) =>
     (item.allergens ?? []).filter((allergen) =>
@@ -278,8 +281,7 @@ export default function CheckoutPage() {
   const hasFixedWeeklyScheduling = Boolean(fixedWeeklySelection);
   const showScheduleSection =
     settings.checkoutCustomerSchedulingEnabled && !hasFixedWeeklyScheduling;
-  const hasMixedFixedWeeklyCart =
-    hasFixedWeeklyScheduling && hasNonWeeklyItems;
+  const hasMixedFixedWeeklyCart = hasFixedWeeklyScheduling && hasNonWeeklyItems;
   const fixedWeeklySchedule =
     fixedWeeklySelection?.orderingOpenAt &&
     fixedWeeklySelection.lateFeeStartsAt &&
@@ -302,9 +304,9 @@ export default function CheckoutPage() {
       })
     : null;
   const fixedFulfillmentMessage = hasFixedWeeklyScheduling
-    ? fixedWeeklySelection?.deliveryWindowLabel ??
+    ? (fixedWeeklySelection?.deliveryWindowLabel ??
       fixedWeeklySelection?.fixedFulfillmentLabel ??
-      DEFAULT_WEEKLY_FIXED_MESSAGE
+      DEFAULT_WEEKLY_FIXED_MESSAGE)
     : fixedCheckoutFulfillment?.message;
   const fixedFulfillmentLabel = hasFixedWeeklyScheduling
     ? fixedWeeklySelection?.fixedFulfillmentLabel
@@ -338,6 +340,14 @@ export default function CheckoutPage() {
 
   const total = subtotal + deliveryFee + lateFee + tipAmount;
   const requiresApproval = items.some((item) => item.requiresApproval);
+  const manualPaymentCheckoutAllowed = settings.manualPaymentCheckoutAllowed;
+  const checkoutPaymentAvailable =
+    requiresApproval || manualPaymentCheckoutAllowed;
+  const developmentPaymentMethod =
+    details.paymentMethod === "cash" ? "cash" : "manual";
+  const effectivePaymentMethod = requiresApproval
+    ? PAYMENT_METHOD_AWAITING_APPROVAL
+    : developmentPaymentMethod;
 
   const cutoffDayNames = [
     "Sunday",
@@ -455,7 +465,7 @@ export default function CheckoutPage() {
         }
       }
 
-      if (details.paymentMethod === "manual" && !details.payByDate) {
+      if (effectivePaymentMethod === "manual" && !details.payByDate) {
         alert("Please choose a pay-by date.");
         return;
       }
@@ -467,7 +477,10 @@ export default function CheckoutPage() {
         },
         body: JSON.stringify({
           items,
-          checkout: details,
+          checkout: {
+            ...details,
+            paymentMethod: effectivePaymentMethod,
+          },
           subtotal,
           deliveryFee,
           lateFee,
@@ -598,9 +611,7 @@ export default function CheckoutPage() {
 
                         {item.weeklyMealPlanSelection && (
                           <div className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-950">
-                            <p className="font-black">
-                              Weekly Plan Selections
-                            </p>
+                            <p className="font-black">Weekly Plan Selections</p>
 
                             <dl className="mt-2 space-y-1">
                               {getWeeklyMealPlanSelectionDetails(
@@ -892,8 +903,7 @@ export default function CheckoutPage() {
                         const nextDate = event.target.value;
                         const nextTime =
                           nextDate === minimumRequestedSchedule.date &&
-                          requestedSchedule.time <
-                            minimumRequestedSchedule.time
+                          requestedSchedule.time < minimumRequestedSchedule.time
                             ? ""
                             : requestedSchedule.time;
 
@@ -1013,9 +1023,11 @@ export default function CheckoutPage() {
                     className={`${inputClass} mt-2`}
                   >
                     <option value="none">No tip</option>
-                    <option value="10">10%</option>
-                    <option value="15">15%</option>
-                    <option value="20">20%</option>
+                    {TIP_PRESET_PERCENTAGES.map((percentage) => (
+                      <option key={percentage} value={String(percentage)}>
+                        {percentage}%
+                      </option>
+                    ))}
                     <option value="custom">Custom amount</option>
                   </select>
                 </label>
@@ -1039,44 +1051,58 @@ export default function CheckoutPage() {
                   </label>
                 )}
 
-                <label className={labelClass}>
-                  Payment Method
-                  <select
-                    value={details.paymentMethod}
-                    onChange={(event) =>
-                      updateField(
-                        "paymentMethod",
-                        event.target.value as CheckoutDetails["paymentMethod"],
-                      )
-                    }
-                    className={`${inputClass} mt-2`}
-                  >
-                    <option value="manual">Pay Later / Manual Invoice</option>
-                    <option value="cash">Cash / Offline Payment</option>
-                    <option value="stripe" disabled>
-                      Online Card Payment - Coming Soon
-                    </option>
-                  </select>
-                </label>
+                {requiresApproval ? (
+                  <p className="rounded-lg border border-blue-300 bg-blue-50 p-4 text-sm text-blue-900">
+                    Payment is not collected now. After approval, the business
+                    will send a payment request.
+                  </p>
+                ) : manualPaymentCheckoutAllowed ? (
+                  <>
+                    <label className={labelClass}>
+                      Development Payment Method
+                      <select
+                        value={developmentPaymentMethod}
+                        onChange={(event) =>
+                          updateField(
+                            "paymentMethod",
+                            event.target
+                              .value as CheckoutDetails["paymentMethod"],
+                          )
+                        }
+                        className={`${inputClass} mt-2`}
+                      >
+                        <option value="manual">
+                          Pay Later / Manual Invoice
+                        </option>
+                        <option value="cash">Cash / Offline Payment</option>
+                      </select>
+                    </label>
 
-                <p className="rounded-lg bg-[#fff8ee] p-3 text-xs leading-5 text-[#6b5a50]">
-                  {details.paymentMethod === "cash"
-                    ? "Cash or offline payment will be confirmed after review. Online card payments remain disabled until a future Square/PayPal checkout integration is available."
-                    : "Manual invoice orders can be submitted now. The business will confirm payment instructions after review."}
-                </p>
+                    <p className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs leading-5 text-amber-900">
+                      Development/testing fallback only. Production customer
+                      checkout will use Square online payment.
+                    </p>
 
-                {details.paymentMethod === "manual" && (
-                  <label className={labelClass}>
-                    Pay By Date
-                    <input
-                      type="date"
-                      value={details.payByDate}
-                      onChange={(event) =>
-                        updateField("payByDate", event.target.value)
-                      }
-                      className={`${inputClass} mt-2`}
-                    />
-                  </label>
+                    {developmentPaymentMethod === "manual" && (
+                      <label className={labelClass}>
+                        Pay By Date
+                        <input
+                          type="date"
+                          value={details.payByDate}
+                          onChange={(event) =>
+                            updateField("payByDate", event.target.value)
+                          }
+                          className={`${inputClass} mt-2`}
+                        />
+                      </label>
+                    )}
+                  </>
+                ) : (
+                  <p className="rounded-lg border border-[#ead8c1] bg-[#fff8ee] p-4 text-sm text-[#6b5a50]">
+                    Secure online payment through Square is being prepared.
+                    Standard orders cannot be submitted until online payment is
+                    enabled.
+                  </p>
                 )}
 
                 {requiresApproval && (
@@ -1129,6 +1155,10 @@ export default function CheckoutPage() {
                     <span>${total.toFixed(2)}</span>
                   </div>
                 </div>
+
+                <p className="text-xs text-[#6b5a50]">
+                  Taxes are included in listed prices; no separate tax is added.
+                </p>
               </div>
 
               {requiresApproval && (
@@ -1202,7 +1232,8 @@ export default function CheckoutPage() {
                   submitting ||
                   isCheckoutModeLoading ||
                   !hasCartItems ||
-                  requiresAllergenAcknowledgement
+                  requiresAllergenAcknowledgement ||
+                  !checkoutPaymentAvailable
                 }
                 className="brand-button-primary mt-6 w-full px-5 py-3 disabled:cursor-not-allowed disabled:bg-neutral-400 disabled:text-neutral-700 disabled:shadow-none"
               >
@@ -1214,7 +1245,11 @@ export default function CheckoutPage() {
                       ? "Cart Is Empty"
                       : requiresAllergenAcknowledgement
                         ? "Acknowledge Allergen Warning"
-                        : "Submit Order"}
+                        : !checkoutPaymentAvailable
+                          ? "Online Payment Coming Soon"
+                          : requiresApproval
+                            ? "Submit for Approval"
+                            : "Submit Order"}
               </button>
             </section>
           </aside>

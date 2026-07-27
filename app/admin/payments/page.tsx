@@ -14,25 +14,64 @@ type PaymentDueOrder = {
   total: DecimalLike;
 };
 
+type ReconciliationOrder = {
+  id: string;
+  customerName: string;
+  status: string;
+  paymentProvider: string | null;
+  paymentStatus: string | null;
+  paidAt: Date | null;
+  total: DecimalLike;
+};
+
+function getWebsiteMismatchWarning(order: ReconciliationOrder) {
+  if (order.paymentStatus === "PAID" && !order.paidAt) {
+    return "Paid status has no paid timestamp.";
+  }
+
+  if (order.paymentStatus !== "PAID" && order.paidAt) {
+    return "Paid timestamp conflicts with website status.";
+  }
+
+  return null;
+}
+
 export default async function AdminPaymentsPage() {
   await requireAdminPage();
 
-  const paymentDueOrders = (await prisma.order.findMany({
-    where: {
-      status: {
-        notIn: ["CANCELLED", "REFUNDED"],
+  const [paymentDueOrders, reconciliationOrders] = await Promise.all([
+    prisma.order.findMany({
+      where: {
+        status: {
+          notIn: ["CANCELLED", "REFUNDED"],
+        },
+        paymentStatus: {
+          in: ["PAY_BY_DATE", "OFFLINE_PAYMENT_DUE"],
+        },
       },
-      paymentStatus: {
-        in: ["PAY_BY_DATE", "OFFLINE_PAYMENT_DUE"],
+      orderBy: {
+        payByDate: "asc",
       },
-    },
-    orderBy: {
-      payByDate: "asc",
-    },
-    include: {
-      items: true,
-    },
-  })) as PaymentDueOrder[];
+      include: {
+        items: true,
+      },
+    }) as Promise<PaymentDueOrder[]>,
+    prisma.order.findMany({
+      orderBy: {
+        createdAt: "desc",
+      },
+      take: 100,
+      select: {
+        id: true,
+        customerName: true,
+        status: true,
+        paymentProvider: true,
+        paymentStatus: true,
+        paidAt: true,
+        total: true,
+      },
+    }) as Promise<ReconciliationOrder[]>,
+  ]);
 
   const totalDue = paymentDueOrders.reduce(
     (sum, order) => sum + Number(order.total),
@@ -76,8 +115,102 @@ export default async function AdminPaymentsPage() {
           </div>
 
           <div className="admin-card p-6">
-            <p className="text-sm font-bold text-[#6b5a50]">Online checkout</p>
-            <p className="mt-3 text-2xl font-black">Coming Soon</p>
+            <p className="text-sm font-bold text-[#6b5a50]">
+              Square Connection
+            </p>
+            <p className="mt-3 text-2xl font-black">Not Connected</p>
+          </div>
+        </section>
+
+        <section className="admin-card mt-10 overflow-hidden">
+          <div className="border-b border-[#ead8c1] p-6">
+            <h2 className="text-2xl font-black">Payment Reconciliation</h2>
+            <p className="mt-2 text-sm text-[#6b5a50]">
+              Website payment summaries are available now. Square status,
+              payment IDs, receipts, refunds, and provider mismatch checks
+              require the future payment ledger and webhook integration.
+            </p>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="admin-table min-w-[1180px]">
+              <thead>
+                <tr>
+                  <th>Order</th>
+                  <th>Customer</th>
+                  <th>Total</th>
+                  <th>Website Status</th>
+                  <th>Square Status</th>
+                  <th>Square Payment ID</th>
+                  <th>Receipt / Reference</th>
+                  <th>Paid At</th>
+                  <th>Refund Status</th>
+                  <th>Mismatch Warning</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {reconciliationOrders.map((order) => {
+                  const mismatchWarning = getWebsiteMismatchWarning(order);
+
+                  return (
+                    <tr key={order.id}>
+                      <td>
+                        <Link
+                          href={`/admin/orders/${order.id}`}
+                          className="admin-action-link"
+                        >
+                          {order.id.slice(-8)}
+                        </Link>
+                      </td>
+                      <td className="font-bold">{order.customerName}</td>
+                      <td>${Number(order.total).toFixed(2)}</td>
+                      <td>
+                        <div>
+                          {formatPaymentStatus(order.paymentStatus) ??
+                            "Not set"}
+                        </div>
+                        <div className="mt-1 text-xs text-[#6b5a50]">
+                          Provider: {order.paymentProvider ?? "Not set"}
+                        </div>
+                      </td>
+                      <td className="text-[#6b5a50]">Not connected</td>
+                      <td className="text-[#6b5a50]">Not stored</td>
+                      <td className="text-[#6b5a50]">Not stored</td>
+                      <td>
+                        {order.paidAt
+                          ? order.paidAt.toLocaleString()
+                          : "Not paid"}
+                      </td>
+                      <td>
+                        {order.status === "REFUNDED"
+                          ? "Website marked refunded"
+                          : "None recorded"}
+                      </td>
+                      <td>
+                        {mismatchWarning ? (
+                          <span className="admin-badge admin-badge-warning">
+                            {mismatchWarning}
+                          </span>
+                        ) : (
+                          <span className="text-[#6b5a50]">
+                            Provider check unavailable
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+
+                {reconciliationOrders.length === 0 && (
+                  <tr>
+                    <td className="text-center text-[#6b5a50]" colSpan={10}>
+                      No orders are available for reconciliation.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
         </section>
 

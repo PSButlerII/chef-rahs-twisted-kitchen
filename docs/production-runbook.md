@@ -41,6 +41,7 @@ Configure these variables in the production host before deploying:
 | `EMAIL_DRY_RUN` | `false` only when ready for live customer email. |
 | `EMAIL_PREVIEW_FILES` | `false` in production. |
 | `ALLOW_LOCAL_UPLOADS_IN_PRODUCTION` | `false` or unset. Keep local production uploads disabled for launch. |
+| `ALLOW_MANUAL_PAYMENT_IN_CHECKOUT` | `false` or unset in production. The development/test override is ignored in production. |
 
 Workflow-specific variables:
 
@@ -52,11 +53,14 @@ Workflow-specific variables:
 | `ADMIN_EMAIL` | Legacy single-account input for `npm run admin:promote`; not required for normal role management. |
 | `ADMIN_ROLE` | Legacy role for `npm run admin:promote`; defaults to `ADMIN`. |
 
-Legacy/optional payment variables:
+Planned payment variables:
 
 - Legacy Stripe environment variables may remain documented or blank while current env parsing exists.
 - Stripe is not the planned launch provider.
-- Square and PayPal are the selected future automated checkout providers, but no Square or PayPal API credentials are required for launch because automated online checkout remains disabled.
+- Square is the first planned provider; PayPal follows later.
+- `SQUARE_ENVIRONMENT`, `SQUARE_APPLICATION_ID`, `SQUARE_LOCATION_ID`, `SQUARE_ACCESS_TOKEN`, and `SQUARE_WEBHOOK_SIGNATURE_KEY` are placeholders until the reviewed Square integration is implemented.
+- Keep Square access tokens and webhook signature keys server-side. Never expose them through `NEXT_PUBLIC_*` variables, browser code, logs, or API responses.
+- This foundation does not make Square API calls. See `docs/payment-processing-decisions.md`.
 
 ## 3. Database Setup
 
@@ -309,14 +313,15 @@ Launch posture:
 
 ## 10. Payment Launch Posture
 
-Automated online checkout is disabled for launch.
+Automated online checkout is not implemented in this foundation.
 
 Launch posture:
 
-- Manual Square or PayPal payment links and invoices are acceptable.
-- Cash/offline payment tracking remains supported.
+- Production customer checkout is online-payment only; manual/offline checkout is hidden and rejected.
+- Manual/offline checkout can be enabled only in development/testing with `ALLOW_MANUAL_PAYMENT_IN_CHECKOUT=true`.
+- Approval-required orders are submitted without payment and receive payment requests only after approval in a future phase.
 - Admins should mark orders or deposits paid only after payment is actually confirmed outside the app.
-- Do not configure Square or PayPal API credentials until a future automated checkout integration phase.
+- Do not configure live Square credentials until the future API/webhook implementation is reviewed and ready for sandbox validation.
 - Do not add Stripe launch wording; Stripe is legacy/optional only while current env parsing still exists.
 
 ## 11. Security Launch Posture

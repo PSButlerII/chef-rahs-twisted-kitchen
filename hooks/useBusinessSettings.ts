@@ -30,6 +30,7 @@ type BusinessSettings = {
   weeklyFixedFulfillmentHour: number | null;
   weeklyFixedFulfillmentMinute: number | null;
   weeklyFixedFulfillmentMessage: string | null;
+  manualPaymentCheckoutAllowed: boolean;
 };
 
 const defaultSettings: BusinessSettings = {
@@ -62,6 +63,7 @@ const defaultSettings: BusinessSettings = {
   weeklyFixedFulfillmentMinute: null,
   weeklyFixedFulfillmentMessage:
     "Weekly meal plan orders are delivered on Sunday. You will be notified when delivery is scheduled.",
+  manualPaymentCheckoutAllowed: false,
 };
 
 export function useBusinessSettings() {

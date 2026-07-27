@@ -31,6 +31,12 @@ import type { CheckoutDetails } from "@/types/order";
 import type { DecimalLike } from "@/types/display";
 import type { Prisma, WeeklyMealPlanOptionType } from "@prisma/client";
 import { rateLimitRequest, rateLimits } from "@/lib/rate-limit";
+import {
+  isManualPaymentCheckoutAllowed,
+  PAYMENT_METHOD_AWAITING_APPROVAL,
+  PAYMENT_STATUS_AWAITING_APPROVAL,
+  TIP_PRESET_PERCENTAGES,
+} from "@/lib/payment-config";
 
 type CreateOrderRequest = {
   items?: CartItem[];
@@ -231,8 +237,16 @@ class OrderSubmissionError extends Error {
   }
 }
 
-const allowedTipTypes = new Set(["none", "10", "15", "20", "custom"]);
-const allowedPaymentMethods = new Set(["manual", "cash"]);
+const allowedTipTypes = new Set([
+  "none",
+  ...TIP_PRESET_PERCENTAGES.map(String),
+  "custom",
+]);
+const allowedPaymentMethods = new Set([
+  "manual",
+  "cash",
+  PAYMENT_METHOD_AWAITING_APPROVAL,
+]);
 
 export async function POST(request: NextRequest) {
   const rateLimitResponse = rateLimitRequest(request, rateLimits.orderCreate);
@@ -360,6 +374,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (
+      checkout.paymentMethod !== PAYMENT_METHOD_AWAITING_APPROVAL &&
+      !isManualPaymentCheckoutAllowed()
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Manual and offline checkout are available only in explicitly enabled development or test environments.",
+        },
+        { status: 400 },
+      );
+    }
+
     let payByDate: Date | null = null;
 
     if (checkout.paymentMethod === "manual") {
@@ -480,7 +507,10 @@ export async function POST(request: NextRequest) {
 
       if (!Number.isInteger(quantity) || quantity < 1) {
         return NextResponse.json(
-          { error: "Order item quantities must be whole numbers greater than zero." },
+          {
+            error:
+              "Order item quantities must be whole numbers greater than zero.",
+          },
           { status: 400 },
         );
       }
@@ -607,7 +637,10 @@ export async function POST(request: NextRequest) {
 
         if (!selectedPackage) {
           return NextResponse.json(
-            { error: "One or more weekly meal plan selections are no longer available." },
+            {
+              error:
+                "One or more weekly meal plan selections are no longer available.",
+            },
             { status: 400 },
           );
         }
@@ -635,7 +668,10 @@ export async function POST(request: NextRequest) {
         const validatedMealSlots: NonNullable<
           ValidatedOrderItem["weeklySelection"]
         >["mealSlots"] = [];
-        const slotAllergensById = new Map<string, { id: string; name: string }>();
+        const slotAllergensById = new Map<
+          string,
+          { id: string; name: string }
+        >();
         let optionPriceDelta = 0;
         let hasRequestOnlyOption = false;
         let hasApprovalRequiredOption = false;
@@ -738,7 +774,10 @@ export async function POST(request: NextRequest) {
             })
           ) {
             return NextResponse.json(
-              { error: "Please choose a spice level for every weekly meal slot." },
+              {
+                error:
+                  "Please choose a spice level for every weekly meal slot.",
+              },
               { status: 400 },
             );
           }
@@ -876,7 +915,9 @@ export async function POST(request: NextRequest) {
 
         if (!item.recoveredOrderItemId) {
           return NextResponse.json(
-            { error: "Reorder items must include a valid previous order item." },
+            {
+              error: "Reorder items must include a valid previous order item.",
+            },
             { status: 400 },
           );
         }
@@ -907,7 +948,9 @@ export async function POST(request: NextRequest) {
 
         if (!name || !Number.isFinite(unitPrice) || unitPrice < 0) {
           return NextResponse.json(
-            { error: "Reorder items must include a valid saved name and price." },
+            {
+              error: "Reorder items must include a valid saved name and price.",
+            },
             { status: 400 },
           );
         }
@@ -1202,7 +1245,7 @@ export async function POST(request: NextRequest) {
 
     for (const item of validatedItems) {
       const menuAllergens = item.menuItemId
-        ? menuAllergensByItemId.get(item.menuItemId) ?? []
+        ? (menuAllergensByItemId.get(item.menuItemId) ?? [])
         : [];
       const itemAllergens = [...item.allergens, ...menuAllergens];
 
@@ -1249,16 +1292,28 @@ export async function POST(request: NextRequest) {
           timeZone: weeklyMenuTimeZone,
         });
 
-    const tipAmount = calculateTip(
-      subtotal,
-      checkout.tipType,
-      customTipAmount,
-    );
+    const tipAmount = calculateTip(subtotal, checkout.tipType, customTipAmount);
 
     const total = subtotal + deliveryFee + lateFee + tipAmount;
     const requiresApproval = validatedItems.some(
       (item) => item.requiresApproval,
     );
+
+    if (
+      (requiresApproval &&
+        checkout.paymentMethod !== PAYMENT_METHOD_AWAITING_APPROVAL) ||
+      (!requiresApproval &&
+        checkout.paymentMethod === PAYMENT_METHOD_AWAITING_APPROVAL)
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "The selected payment workflow does not match this order's approval requirements.",
+        },
+        { status: 400 },
+      );
+    }
+
     const allergenAcknowledgedAt =
       hasAllergenConflict && checkout.allergenAcknowledged ? new Date() : null;
     const weeklyPeriodIds = Array.from(
@@ -1279,9 +1334,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const order: CreatedOrderWithItems = await prisma.$transaction(async (tx) => {
-      for (const weeklyPeriodId of weeklyPeriodIds) {
-        const updatedCount = await tx.$executeRaw`
+    const order: CreatedOrderWithItems = await prisma.$transaction(
+      async (tx) => {
+        for (const weeklyPeriodId of weeklyPeriodIds) {
+          const updatedCount = await tx.$executeRaw`
           UPDATE \`WeeklyMenuPeriod\`
           SET \`ordersPlaced\` = \`ordersPlaced\` + 1
           WHERE \`id\` = ${weeklyPeriodId}
@@ -1289,180 +1345,187 @@ export async function POST(request: NextRequest) {
             AND \`ordersPlaced\` < \`capacity\`
         `;
 
-        if (updatedCount !== 1) {
-          throw new OrderSubmissionError(
-            "This weekly menu has reached capacity or is no longer available.",
-          );
+          if (updatedCount !== 1) {
+            throw new OrderSubmissionError(
+              "This weekly menu has reached capacity or is no longer available.",
+            );
+          }
         }
-      }
 
-      return tx.order.create({
-        data: {
-          ...(isAuthenticated
-            ? {
-                user: {
-                  connect: {
-                    email: customerEmail,
-                  },
-                },
-              }
-            : {}),
-
-          customerName: contact.name || authenticatedUserName || "Customer",
-          customerEmail,
-          customerPhone: contact.phone || null,
-
-          orderType:
-            checkout.orderType === "delivery"
-              ? "DELIVERY"
-              : "PICKUP",
-
-          status: requiresApproval ? "PENDING" : "ACCEPTED",
-          approvalStatus: requiresApproval ? "PENDING" : "APPROVED",
-          approvedAt: requiresApproval ? null : new Date(),
-
-          requestedDateTime: requestedDate,
-
-          allergyNotes: checkout.allergyNotes,
-          substitutionPreference: checkout.substitutionPreference,
-
-          allergenAcknowledged: hasAllergenConflict
-            ? Boolean(checkout.allergenAcknowledged)
-            : false,
-          allergenAcknowledgedAt,
-
-          subtotal,
-          deliveryFee,
-          lateFee,
-          tipAmount,
-          total,
-
-          deliveryName: contact.name || authenticatedUserName || null,
-          deliveryPhone: contact.phone || null,
-          deliveryAddressLine1: contact.addressLine1 || null,
-          deliveryAddressLine2: contact.addressLine2 || null,
-          deliveryCity: contact.city || null,
-          deliveryState: contact.state || null,
-          deliveryPostalCode: contact.postalCode || null,
-          deliveryNotes: contact.deliveryNotes || null,
-
-          payByDate,
-          paymentProvider: checkout.paymentMethod,
-          paymentStatus:
-            checkout.paymentMethod === "cash"
-              ? "OFFLINE_PAYMENT_DUE"
-              : "PAY_BY_DATE",
-
-          items: {
-            create: validatedItems.map((item) => ({
-              menuItemId: item.menuItemId,
-              name: item.name,
-              quantity: item.quantity,
-              unitPrice: item.unitPrice,
-              lineTotal: item.lineTotal,
-              notes: item.notes,
-              allergenAcknowledged:
-                item.allergenConflicts.length > 0
-                  ? Boolean(checkout.allergenAcknowledged)
-                  : false,
-              allergenAcknowledgedAt:
-                item.allergenConflicts.length > 0
-                  ? allergenAcknowledgedAt
-                  : null,
-              allergenConflictSnapshot:
-                item.allergenConflicts.length > 0
-                  ? item.allergenConflicts
-                  : undefined,
-              weeklyMealPlanSelection: item.weeklySelection
-                ? {
-                    create: {
-                      weeklyMenuPeriodId:
-                        item.weeklySelection.weeklyMenuPeriodId,
-                      weeklyMealPlanPackageId:
-                        item.weeklySelection.weeklyMealPlanPackageId,
-                      weeklyMealPlanOfferingId:
-                        item.weeklySelection.weeklyMealPlanOfferingId,
-                      periodLabel: item.weeklySelection.periodLabel,
-                      packageName: item.weeklySelection.packageName,
-                      packageDays: item.weeklySelection.packageDays,
-                      packageMealsPerDay:
-                        item.weeklySelection.packageMealsPerDay,
-                      packagePrice: item.weeklySelection.packagePrice,
-                      packageRequiresChefApproval:
-                        item.weeklySelection.packageRequiresChefApproval,
-                      packageIsSeasonal: item.weeklySelection.packageIsSeasonal,
-                      offeringName: item.weeklySelection.offeringName,
-                      spiceLevel: item.weeklySelection.spiceLevel,
-                      proteinSubstitution:
-                        item.weeklySelection.proteinSubstitution,
-                      requestOnly: item.weeklySelection.requestOnly,
-                      requiresApproval: item.weeklySelection.requiresApproval,
-                      priceDelta: item.weeklySelection.priceDelta,
-                      mealSlots: {
-                        create: item.weeklySelection.mealSlots.map((slot) => ({
-                          dayNumber: slot.dayNumber,
-                          mealNumber: slot.mealNumber,
-                          mealLabel: slot.mealLabel,
-                          weeklyMealPlanOfferingId:
-                            slot.weeklyMealPlanOfferingId,
-                          offeringName: slot.offeringName,
-                          offeringDescription: slot.offeringDescription,
-                          dietaryInfo: slot.dietaryInfo,
-                          selectedOptions: {
-                            create: slot.selectedOptions.map((option) => ({
-                              weeklyMealPlanAllowedOptionId:
-                                option.weeklyMealPlanAllowedOptionId,
-                              optionType: option.optionType,
-                              optionName: option.optionName,
-                              optionDescription: option.optionDescription,
-                              dietaryInfo: option.dietaryInfo,
-                              priceDelta: option.priceDelta,
-                              requestOnly: option.requestOnly,
-                              requiresApproval: option.requiresApproval,
-                            })),
-                          },
-                        })),
-                      },
+        return tx.order.create({
+          data: {
+            ...(isAuthenticated
+              ? {
+                  user: {
+                    connect: {
+                      email: customerEmail,
                     },
-                  }
-                : undefined,
-            })),
-          },
+                  },
+                }
+              : {}),
 
-          statusHistory: {
-            create: {
-              status: requiresApproval ? "PENDING" : "ACCEPTED",
-              note: requiresApproval
-                ? "Order created and waiting for approval."
-                : "Order created and auto-approved.",
+            customerName: contact.name || authenticatedUserName || "Customer",
+            customerEmail,
+            customerPhone: contact.phone || null,
+
+            orderType:
+              checkout.orderType === "delivery" ? "DELIVERY" : "PICKUP",
+
+            status: requiresApproval ? "PENDING" : "ACCEPTED",
+            approvalStatus: requiresApproval ? "PENDING" : "APPROVED",
+            approvedAt: requiresApproval ? null : new Date(),
+
+            requestedDateTime: requestedDate,
+
+            allergyNotes: checkout.allergyNotes,
+            substitutionPreference: checkout.substitutionPreference,
+
+            allergenAcknowledged: hasAllergenConflict
+              ? Boolean(checkout.allergenAcknowledged)
+              : false,
+            allergenAcknowledgedAt,
+
+            subtotal,
+            deliveryFee,
+            lateFee,
+            tipAmount,
+            total,
+
+            deliveryName: contact.name || authenticatedUserName || null,
+            deliveryPhone: contact.phone || null,
+            deliveryAddressLine1: contact.addressLine1 || null,
+            deliveryAddressLine2: contact.addressLine2 || null,
+            deliveryCity: contact.city || null,
+            deliveryState: contact.state || null,
+            deliveryPostalCode: contact.postalCode || null,
+            deliveryNotes: contact.deliveryNotes || null,
+
+            payByDate,
+            paymentProvider:
+              checkout.paymentMethod === PAYMENT_METHOD_AWAITING_APPROVAL
+                ? null
+                : checkout.paymentMethod,
+            paymentStatus:
+              checkout.paymentMethod === PAYMENT_METHOD_AWAITING_APPROVAL
+                ? PAYMENT_STATUS_AWAITING_APPROVAL
+                : checkout.paymentMethod === "cash"
+                  ? "OFFLINE_PAYMENT_DUE"
+                  : "PAY_BY_DATE",
+
+            items: {
+              create: validatedItems.map((item) => ({
+                menuItemId: item.menuItemId,
+                name: item.name,
+                quantity: item.quantity,
+                unitPrice: item.unitPrice,
+                lineTotal: item.lineTotal,
+                notes: item.notes,
+                allergenAcknowledged:
+                  item.allergenConflicts.length > 0
+                    ? Boolean(checkout.allergenAcknowledged)
+                    : false,
+                allergenAcknowledgedAt:
+                  item.allergenConflicts.length > 0
+                    ? allergenAcknowledgedAt
+                    : null,
+                allergenConflictSnapshot:
+                  item.allergenConflicts.length > 0
+                    ? item.allergenConflicts
+                    : undefined,
+                weeklyMealPlanSelection: item.weeklySelection
+                  ? {
+                      create: {
+                        weeklyMenuPeriodId:
+                          item.weeklySelection.weeklyMenuPeriodId,
+                        weeklyMealPlanPackageId:
+                          item.weeklySelection.weeklyMealPlanPackageId,
+                        weeklyMealPlanOfferingId:
+                          item.weeklySelection.weeklyMealPlanOfferingId,
+                        periodLabel: item.weeklySelection.periodLabel,
+                        packageName: item.weeklySelection.packageName,
+                        packageDays: item.weeklySelection.packageDays,
+                        packageMealsPerDay:
+                          item.weeklySelection.packageMealsPerDay,
+                        packagePrice: item.weeklySelection.packagePrice,
+                        packageRequiresChefApproval:
+                          item.weeklySelection.packageRequiresChefApproval,
+                        packageIsSeasonal:
+                          item.weeklySelection.packageIsSeasonal,
+                        offeringName: item.weeklySelection.offeringName,
+                        spiceLevel: item.weeklySelection.spiceLevel,
+                        proteinSubstitution:
+                          item.weeklySelection.proteinSubstitution,
+                        requestOnly: item.weeklySelection.requestOnly,
+                        requiresApproval: item.weeklySelection.requiresApproval,
+                        priceDelta: item.weeklySelection.priceDelta,
+                        mealSlots: {
+                          create: item.weeklySelection.mealSlots.map(
+                            (slot) => ({
+                              dayNumber: slot.dayNumber,
+                              mealNumber: slot.mealNumber,
+                              mealLabel: slot.mealLabel,
+                              weeklyMealPlanOfferingId:
+                                slot.weeklyMealPlanOfferingId,
+                              offeringName: slot.offeringName,
+                              offeringDescription: slot.offeringDescription,
+                              dietaryInfo: slot.dietaryInfo,
+                              selectedOptions: {
+                                create: slot.selectedOptions.map((option) => ({
+                                  weeklyMealPlanAllowedOptionId:
+                                    option.weeklyMealPlanAllowedOptionId,
+                                  optionType: option.optionType,
+                                  optionName: option.optionName,
+                                  optionDescription: option.optionDescription,
+                                  dietaryInfo: option.dietaryInfo,
+                                  priceDelta: option.priceDelta,
+                                  requestOnly: option.requestOnly,
+                                  requiresApproval: option.requiresApproval,
+                                })),
+                              },
+                            }),
+                          ),
+                        },
+                      },
+                    }
+                  : undefined,
+              })),
+            },
+
+            statusHistory: {
+              create: {
+                status: requiresApproval ? "PENDING" : "ACCEPTED",
+                note: requiresApproval
+                  ? "Order created and waiting for approval."
+                  : "Order created and auto-approved.",
+              },
             },
           },
-        },
 
-        include: {
-          items: {
-            include: {
-              weeklyMealPlanSelection: {
-                include: {
-                  mealSlots: {
-                    orderBy: [
-                      {
-                        dayNumber: "asc",
-                      },
-                      {
-                        mealNumber: "asc",
-                      },
-                    ],
-                    include: {
-                      selectedOptions: {
-                        orderBy: [
-                          {
-                            optionType: "asc",
-                          },
-                          {
-                            createdAt: "asc",
-                          },
-                        ],
+          include: {
+            items: {
+              include: {
+                weeklyMealPlanSelection: {
+                  include: {
+                    mealSlots: {
+                      orderBy: [
+                        {
+                          dayNumber: "asc",
+                        },
+                        {
+                          mealNumber: "asc",
+                        },
+                      ],
+                      include: {
+                        selectedOptions: {
+                          orderBy: [
+                            {
+                              optionType: "asc",
+                            },
+                            {
+                              createdAt: "asc",
+                            },
+                          ],
+                        },
                       },
                     },
                   },
@@ -1470,9 +1533,9 @@ export async function POST(request: NextRequest) {
               },
             },
           },
-        },
-      });
-    });
+        });
+      },
+    );
 
     try {
       if (isAuthenticated && checkout.saveContactInfo) {
@@ -1493,7 +1556,10 @@ export async function POST(request: NextRequest) {
         });
       }
     } catch (profileError) {
-      console.error("Failed to save checkout contact info to profile", profileError);
+      console.error(
+        "Failed to save checkout contact info to profile",
+        profileError,
+      );
     }
 
     await sendAppEmail({
@@ -1545,7 +1611,8 @@ export async function POST(request: NextRequest) {
                 packagePrice: Number(item.weeklyMealPlanSelection.packagePrice),
                 packageRequiresChefApproval:
                   item.weeklyMealPlanSelection.packageRequiresChefApproval,
-                packageIsSeasonal: item.weeklyMealPlanSelection.packageIsSeasonal,
+                packageIsSeasonal:
+                  item.weeklyMealPlanSelection.packageIsSeasonal,
                 offeringName: item.weeklyMealPlanSelection.offeringName,
                 spiceLevel: item.weeklyMealPlanSelection.spiceLevel,
                 proteinSubstitution:

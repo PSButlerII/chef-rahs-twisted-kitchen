@@ -79,8 +79,7 @@ function offeringIsAvailableForSlot(
   slot: MealSlotDefinition,
 ) {
   return (
-    !offering.breakfastOnly ||
-    isBreakfastWeeklyMealSlotLabel(slot.mealLabel)
+    !offering.breakfastOnly || isBreakfastWeeklyMealSlotLabel(slot.mealLabel)
   );
 }
 
@@ -314,8 +313,8 @@ export function WeeklyMenuOrderForm({ weeklyMenu }: Props) {
           <h3 className="text-2xl font-black">Build Your Weekly Plan</h3>
 
           <p className="mt-2 text-sm leading-6 text-[#6b5a50]">
-            Choose a package size, then fill every day and meal slot with one
-            of this week&apos;s published meal offerings.
+            Choose a package size, then fill every day and meal slot with one of
+            this week&apos;s published meal offerings.
           </p>
         </div>
 
@@ -427,7 +426,9 @@ export function WeeklyMenuOrderForm({ weeklyMenu }: Props) {
                       return (
                         <div key={slot.key} className="grid min-w-0 gap-3">
                           <label className="grid min-w-0 gap-2 text-sm font-bold">
-                            {slot.mealLabel}
+                            <span className="sr-only">
+                              Day {dayNumber} meal selection
+                            </span>
                             <select
                               value={slotSelections[slot.key] ?? ""}
                               onChange={(event) =>
@@ -442,10 +443,7 @@ export function WeeklyMenuOrderForm({ weeklyMenu }: Props) {
                                   offeringIsAvailableForSlot(offering, slot),
                                 )
                                 .map((offering) => (
-                                  <option
-                                    key={offering.id}
-                                    value={offering.id}
-                                  >
+                                  <option key={offering.id} value={offering.id}>
                                     {offering.name}
                                     {offering.dietaryInfo
                                       ? ` - ${offering.dietaryInfo}`
@@ -470,7 +468,7 @@ export function WeeklyMenuOrderForm({ weeklyMenu }: Props) {
                                       slotOptionSelections[slot.key] ?? {};
                                     const selectedValue =
                                       selectedByType[optionType] ??
-                                      (required ? options[0]?.id ?? "" : "");
+                                      (required ? (options[0]?.id ?? "") : "");
 
                                     return (
                                       <label

@@ -1,5 +1,7 @@
 # Payment Integration Roadmap
 
+> The client decisions that were previously open in this roadmap are now resolved. Use `docs/payment-processing-decisions.md` as the authoritative policy for implementation; retain this document for architecture and risk context.
+
 Date: July 15, 2026
 
 Status: planning only. This document does not enable online payments or change checkout, database, or deployment behavior.

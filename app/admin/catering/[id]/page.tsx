@@ -244,6 +244,33 @@ export default async function AdminCateringDetailsPage({ params }: PageProps) {
                       Deposit has already been marked paid.
                     </p>
                   ) : null}
+
+                  <div className="mt-5 space-y-3 border-t border-[#ead8c1] pt-5">
+                    <p className="text-sm font-bold">
+                      Future Square Payment Requests
+                    </p>
+                    <button
+                      type="button"
+                      disabled
+                      className="w-full rounded-lg bg-neutral-300 px-4 py-3 text-sm font-bold text-neutral-600"
+                      title="Square payment requests are not implemented yet."
+                    >
+                      Send Deposit Payment Request — Coming Later
+                    </button>
+                    <button
+                      type="button"
+                      disabled
+                      className="w-full rounded-lg bg-neutral-300 px-4 py-3 text-sm font-bold text-neutral-600"
+                      title="Square payment requests are not implemented yet."
+                    >
+                      Send Final Payment Request — Coming Later
+                    </button>
+                    <p className="text-xs leading-5 text-[#6b5a50]">
+                      These placeholders make the approved-service workflow
+                      visible but do not create links, send email, or call
+                      Square.
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
