@@ -31,6 +31,22 @@ type SquareWebhookPayload = {
 
 const supportedEvents = new Set(["payment.created", "payment.updated"]);
 
+function isPrismaUniqueConstraintError(error: unknown) {
+  if (
+    error instanceof Prisma.PrismaClientKnownRequestError &&
+    error.code === "P2002"
+  ) {
+    return true;
+  }
+
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    error.code === "P2002"
+  );
+}
+
 export async function POST(request: Request) {
   const webhookConfig = getSquareWebhookConfig();
   const signature = request.headers.get("x-square-hmacsha256-signature") ?? "";
@@ -73,6 +89,20 @@ export async function POST(request: Request) {
   }
 
   const payment = payload.data?.object?.payment;
+  const existingEvent = await prisma.paymentWebhookEvent.findUnique({
+    where: {
+      provider_eventId: {
+        provider: "SQUARE",
+        eventId,
+      },
+    },
+    select: { id: true },
+  });
+
+  if (existingEvent) {
+    return NextResponse.json({ received: true, duplicate: true });
+  }
+
   let storedEvent;
 
   try {
@@ -90,10 +120,7 @@ export async function POST(request: Request) {
       },
     });
   } catch (error) {
-    if (
-      error instanceof Prisma.PrismaClientKnownRequestError &&
-      error.code === "P2002"
-    ) {
+    if (isPrismaUniqueConstraintError(error)) {
       return NextResponse.json({ received: true, duplicate: true });
     }
 
