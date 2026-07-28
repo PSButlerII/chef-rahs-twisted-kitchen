@@ -203,9 +203,10 @@ export default async function AdminPaymentsPage() {
               Square rows shown here are sandbox/test payment data only.
             </p>
             <p className="mt-2 text-sm text-[#6b5a50]">
-              Website payment summaries are available now. Square status,
-              payment IDs, receipts, refunds, and provider mismatch checks
-              require the future payment ledger and webhook integration.
+              This page reads Square sandbox status, payment IDs, receipts, and
+              reconciliation state from the payment ledger and verified webhook
+              records. Refunds, production Square payments, deposits, final
+              balances, invoices, and retry-link handling remain future work.
             </p>
           </div>
 

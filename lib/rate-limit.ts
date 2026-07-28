@@ -117,4 +117,9 @@ export const rateLimits = {
     limit: 10,
     windowMs: 15 * 60 * 1000,
   },
+  paymentExpirationJob: {
+    keyPrefix: "jobs:payment-expiration",
+    limit: 12,
+    windowMs: 15 * 60 * 1000,
+  },
 };

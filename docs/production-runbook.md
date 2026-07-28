@@ -42,6 +42,7 @@ Configure these variables in the production host before deploying:
 | `EMAIL_PREVIEW_FILES`               | `false` in production.                                                                                                                 |
 | `ALLOW_LOCAL_UPLOADS_IN_PRODUCTION` | `false` or unset. Keep local production uploads disabled for launch.                                                                   |
 | `ALLOW_MANUAL_PAYMENT_IN_CHECKOUT`  | `false` or unset in production. The development/test override is ignored in production.                                                |
+| `PAYMENT_JOBS_TOKEN`                | Permanent random secret of at least 32 characters for the pending-payment expiration scheduler.                                        |
 
 Workflow-specific variables:
 
@@ -61,6 +62,19 @@ Square sandbox payment variables:
 - Standard checkout sandbox testing uses `SQUARE_ENVIRONMENT=sandbox`, `SQUARE_APPLICATION_ID`, `SQUARE_LOCATION_ID`, `SQUARE_ACCESS_TOKEN`, `SQUARE_WEBHOOK_SIGNATURE_KEY`, and the exact `SQUARE_WEBHOOK_NOTIFICATION_URL`.
 - Keep Square access tokens and webhook signature keys server-side. Never expose them through `NEXT_PUBLIC_*` variables, browser code, logs, or API responses.
 - Only Sandbox Payments API calls are allowed in this phase. Live production payments remain disabled. See `docs/payment-processing-decisions.md`.
+
+Pending-payment expiration scheduling:
+
+- Configure a scheduler to `POST /api/jobs/expire-pending-payments` regularly
+  (recommended every 5–15 minutes).
+- Send `PAYMENT_JOBS_TOKEN` only in the `x-payment-jobs-token` header.
+- The endpoint is disabled with a 404 when the token is absent or shorter than
+  32 characters, returns 401 for a wrong token, uses no-store headers, and is
+  rate limited.
+- Monitor the returned counts for attempts checked/expired, orders cancelled,
+  emails sent or previewed, and errors.
+- Scheduling is a deployment/hosting task. Do not add the worker to the
+  Hostinger build lifecycle.
 
 ## 3. Database Setup
 

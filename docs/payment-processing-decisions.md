@@ -2,7 +2,9 @@
 
 Date: July 27, 2026
 
-Status: sandbox standard-checkout implementation. Eligible standard orders can use Square Sandbox; production payments, payment links, public retry links, expiration automation, and refunds remain disabled.
+Status: sandbox standard-checkout implementation with protected pending-payment
+expiration processing. Production payments, payment links, public retry links,
+and refunds remain disabled.
 
 ## Provider Sequence And Scope
 
@@ -42,12 +44,18 @@ Status: sandbox standard-checkout implementation. Eligible standard orders can u
 
 - A pending standard payment holds its order and weekly capacity for two hours (120 minutes).
 - A secure guest interrupted-payment retry link also expires after two hours.
-- If the order remains unpaid after two hours, a future expiration job must:
+- If the order remains unpaid after two hours, the protected expiration job:
   1. expire or cancel the order exactly once;
   2. release reserved weekly capacity exactly once;
   3. invalidate further payment attempts and retry links; and
   4. send one cancellation-for-non-payment email.
-- Retry links are not part of this foundation pass. Do not expose one until signed/hashed token storage, single-order scoping, expiry, single-use/revocation behavior, and end-to-end tests are complete.
+- The worker marks the ledger attempt `EXPIRED`, records
+  `non_payment_timeout` metadata, revokes unused hashed retry-token scaffolding,
+  cancels only an approved `PENDING` order whose summary remains
+  `PAYMENT_PENDING`, and decrements each distinct weekly-period reservation once
+  in the same transaction.
+- Retry links are not active in this pass. Do not expose one until
+  single-order scoping and redemption behavior are implemented and tested.
 
 ## Refund Policy And Eligibility
 
@@ -91,7 +99,11 @@ The additive `20260727150000_add_payment_ledger_foundation` migration adds:
 
 Application payment creation must enforce that each attempt targets exactly one order or service request. This cross-column rule is not expressed as a database check because it must remain portable across the deployed MySQL/MariaDB versions. Refund and retry ledger rows should reference their original attempt through `parentPaymentId`.
 
-`PaymentWebhookEvent` stores the provider, event ID/type, optional matched attempt, processing state, payload hash, minimal non-sensitive summary, sanitized processing error, and receive/process timestamps. `@@unique([provider, eventId])` is the durable duplicate-delivery boundary. No webhook route or payload processing is implemented yet.
+`PaymentWebhookEvent` stores the provider, event ID/type, optional matched
+attempt, processing state, payload hash, minimal non-sensitive summary,
+sanitized processing error, and receive/process timestamps.
+`@@unique([provider, eventId])` is the durable duplicate-delivery boundary used
+by the signature-verified Square webhook route.
 
 `PaymentRetryToken` stores `tokenHash`, attempt scope, expiration, consumption, and revocation. Plaintext tokens must never be persisted. There is no public retry route in this pass; future issuance should generate a cryptographically random token, store only its SHA-256 hash, deliver the plaintext once, and enforce attempt ownership, two-hour expiry, revocation, and single-use behavior transactionally.
 
@@ -106,7 +118,11 @@ The ledger supports this planned normalized flow:
 5. `FAILED`, `CANCELLED`, or `EXPIRED` — the attempt is terminal without payment.
 6. `PARTIALLY_REFUNDED` or `REFUNDED` — verified refund ledger rows update the original payment summary.
 
-The current pass creates no attempts automatically and performs none of these transitions. Future services must update ledger records, legacy summaries, order/capacity state, audit data, and one-time email decisions transactionally or idempotently.
+Standard Square sandbox checkout creates pending attempts and transitions
+completed payments to `PAID`. The expiration worker performs the `PENDING` to
+`EXPIRED` transition together with safe order cancellation, retry-token
+revocation, weekly-capacity release, history, metadata, and one-time email
+handling.
 
 ## Environment Plan
 
@@ -118,6 +134,7 @@ SQUARE_APPLICATION_ID=
 SQUARE_LOCATION_ID=
 SQUARE_ACCESS_TOKEN=
 SQUARE_WEBHOOK_SIGNATURE_KEY=
+PAYMENT_JOBS_TOKEN=
 ALLOW_MANUAL_PAYMENT_IN_CHECKOUT=false
 ```
 
@@ -140,7 +157,14 @@ Sandbox test flow:
 5. Confirm the order and ledger row show paid status, payment ID, and receipt data in admin reconciliation.
 6. Remove one required Square variable and confirm standard checkout is disabled.
 
-Deposits, final balances, refunds, invoices, retry links, expiration processing, and public guest order tracking are not included.
+The protected `POST /api/jobs/expire-pending-payments` endpoint runs expiration
+processing. It is disabled unless `PAYMENT_JOBS_TOKEN` contains at least 32
+characters and requires the same value in `x-payment-jobs-token`. A scheduler
+must invoke it regularly. Paid, completed, accepted, preparing, fulfilled, and
+approval-required orders are not cancelled.
+
+Deposits, final balances, refunds, invoices, active retry links, and public
+guest order tracking are not included.
 
 The current CSP permits the Sandbox Web Payments SDK, Google Pay sandbox scripts, and Square wallet font assets. React/Turbopack `unsafe-eval` support is enabled only while `NODE_ENV=development`; production responses omit it. Production Square hosts and a final production CSP review remain a later pass.
 
@@ -148,9 +172,9 @@ The current CSP permits the Sandbox Web Payments SDK, Google Pay sandbox scripts
 
 1. Review production credentials, hosts, CSP endpoints, wallet domain registration, webhook URL, and operational controls before permitting the production environment.
 2. Add out-of-order webhook replay/recovery.
-3. Implement the two-hour expiry worker, weekly-capacity release, and non-payment cancellation email.
+3. Configure and monitor the payment-expiration scheduled job in each deployed environment.
 4. Implement secure guest retry-token issuance and redemption without public guest order tracking.
 5. Implement deposit and final-balance request creation after approval.
 6. Implement refund operations, permissions, audit logs, and provider reconciliation.
 7. Define metadata retention/redaction rules and operational cleanup.
-8. Run ambiguous-failure, retry, expiration, duplicate-charge, capacity, refund, wallet, receipt, and production smoke tests before enabling live Square.
+8. Run ambiguous-failure, retry, duplicate-charge, refund, wallet, receipt, and production smoke tests before enabling live Square.

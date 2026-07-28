@@ -74,24 +74,24 @@ The manual mark-paid behavior should remain available. Online provider updates m
 
 ### Square phase
 
-| Variable | Exposure | Purpose |
-| --- | --- | --- |
-| `SQUARE_ENVIRONMENT` | Server and safe public configuration | Explicit `sandbox` or `production`; never infer it from a token. |
-| `SQUARE_APPLICATION_ID` | Public identifier | Initializes the browser payment component. Expose only through a narrowly scoped public config value or endpoint. |
-| `SQUARE_ACCESS_TOKEN` | Server secret | Authorizes server-to-server Square API calls. Never send it to the browser or logs. |
-| `SQUARE_LOCATION_ID` | Public identifier/server configuration | Identifies the Square location receiving the payment. Validate that it belongs to the configured environment/account. |
-| `SQUARE_WEBHOOK_SIGNATURE_KEY` | Server secret | Verifies Square webhook signatures if webhooks are enabled. |
+| Variable                       | Exposure                               | Purpose                                                                                                               |
+| ------------------------------ | -------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `SQUARE_ENVIRONMENT`           | Server and safe public configuration   | Explicit `sandbox` or `production`; never infer it from a token.                                                      |
+| `SQUARE_APPLICATION_ID`        | Public identifier                      | Initializes the browser payment component. Expose only through a narrowly scoped public config value or endpoint.     |
+| `SQUARE_ACCESS_TOKEN`          | Server secret                          | Authorizes server-to-server Square API calls. Never send it to the browser or logs.                                   |
+| `SQUARE_LOCATION_ID`           | Public identifier/server configuration | Identifies the Square location receiving the payment. Validate that it belongs to the configured environment/account. |
+| `SQUARE_WEBHOOK_SIGNATURE_KEY` | Server secret                          | Verifies Square webhook signatures if webhooks are enabled.                                                           |
 
 The production environment should fail closed when online Square payment is enabled but required credentials are missing. Sandbox and production credentials must never be mixed.
 
 ### Later PayPal phase
 
-| Variable | Exposure | Purpose |
-| --- | --- | --- |
-| `PAYPAL_ENVIRONMENT` | Server and safe public configuration | Explicit `sandbox` or `production`. |
-| `PAYPAL_CLIENT_ID` | Public identifier | Initializes PayPal's browser SDK. |
-| `PAYPAL_CLIENT_SECRET` | Server secret | Obtains server API access; never expose it to the browser or logs. |
-| `PAYPAL_WEBHOOK_ID` | Server configuration | Identifies the subscribed webhook endpoint and participates in webhook verification. |
+| Variable               | Exposure                             | Purpose                                                                              |
+| ---------------------- | ------------------------------------ | ------------------------------------------------------------------------------------ |
+| `PAYPAL_ENVIRONMENT`   | Server and safe public configuration | Explicit `sandbox` or `production`.                                                  |
+| `PAYPAL_CLIENT_ID`     | Public identifier                    | Initializes PayPal's browser SDK.                                                    |
+| `PAYPAL_CLIENT_SECRET` | Server secret                        | Obtains server API access; never expose it to the browser or logs.                   |
+| `PAYPAL_WEBHOOK_ID`    | Server configuration                 | Identifies the subscribed webhook endpoint and participates in webhook verification. |
 
 Credentials should be added to environment validation only in the provider implementation branch. They are not required while automated checkout remains disabled.
 
@@ -142,7 +142,9 @@ Recommended sequence:
 Before implementation, resolve these current-order side effects:
 
 - Order submission currently reserves weekly capacity and sends a confirmation. The online path must perform each side effect once, even if payment is retried.
-- Decide whether `PAYMENT_PENDING` orders reserve regular or weekly capacity and when an abandoned reservation expires.
+- `PAYMENT_PENDING` weekly orders reserve capacity for two hours. The protected
+  expiration job releases the stored reservation transactionally when it
+  cancels a still-unpaid pending order.
 - Use distinct copy for "order received, payment pending" and "payment received." Do not send duplicate order or payment emails.
 
 ## 6. Weekly Meal Plan Payment Flow
@@ -362,7 +364,8 @@ No card number, security code, raw payment token, access token, or full webhook 
 1. Confirm Square is the first provider. Is PayPal required at initial online-payment launch or only later?
 2. Should regular and weekly orders be charged immediately, authorized for later capture, or charged only after chef approval?
 3. How should packages marked "By request" behave: online capture, authorization, or manual invoice after approval?
-4. Do unpaid `PAYMENT_PENDING` orders reserve weekly capacity? If yes, for how long before expiration?
+4. Confirmed: unpaid `PAYMENT_PENDING` orders reserve weekly capacity for two
+   hours; the scheduled expiration worker releases it exactly once.
 5. Which methods are in phase 1: cards only, or also Apple Pay, Google Pay, Cash App Pay, Afterpay, or gift cards?
 6. Confirm currency, Square business account, production location, and which owner controls provider credentials/dashboard access.
 7. Are sales tax rules needed? The current order total has no separate tax field. Who will confirm taxable items, fees, and reporting rules?

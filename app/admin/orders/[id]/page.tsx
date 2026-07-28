@@ -458,6 +458,13 @@ export default async function AdminOrderDetailsPage({ params }: PageProps) {
             <div className="admin-card p-6">
               <h2 className="text-2xl font-black">Payment</h2>
 
+              {order.paymentStatus === "EXPIRED_NON_PAYMENT" ? (
+                <div className="mt-4 rounded-lg border border-red-300 bg-red-50 p-4 text-sm font-bold text-red-950">
+                  Cancelled for non-payment after the two-hour Square payment
+                  window expired. Any reserved weekly capacity was released.
+                </div>
+              ) : null}
+
               <div className="mt-5 space-y-3 text-sm">
                 <p>
                   <strong>Provider:</strong>{" "}
