@@ -172,8 +172,16 @@ and location, then mark both the ledger and service-request deposit paid.
 Expired unpaid deposit attempts do not cancel the service request and may be
 replaced by a new admin request.
 
-Final balances, refunds, invoices, active retry links, production payment links,
-and public guest order tracking are not included.
+Refunds, invoices, active retry links, production payment links, and public
+guest order tracking are not included.
+
+Approved catering and personal-chef requests with a paid deposit may also use a
+Square Sandbox hosted final-balance link. The server calculates the trusted
+remaining cents as quoted total minus the recorded deposit amount, creates a
+`SERVICE_FINAL_BALANCE` attempt with no tip and a two-hour expiration, and
+emails the Square-hosted URL. The payment ledger remains authoritative for the
+final-balance paid timestamp because payment does not mean the service itself
+has been fulfilled. Square invoices remain an optional future enhancement.
 
 The current CSP permits the Sandbox Web Payments SDK, Google Pay sandbox scripts, and Square wallet font assets. React/Turbopack `unsafe-eval` support is enabled only while `NODE_ENV=development`; production responses omit it. Production Square hosts and a final production CSP review remain a later pass.
 

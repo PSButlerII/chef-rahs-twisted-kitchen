@@ -8,17 +8,18 @@ type Input = {
   idempotencyKey: string;
   requestId: string;
   serviceTypeLabel: string;
+  purposeLabel: "deposit" | "final balance";
 };
 
-export async function createSquareDepositPaymentLink(input: Input) {
+export async function createSquareServicePaymentLink(input: Input) {
   const config = getSquareServerConfig();
   const client = createSquareClient();
-  const description = `${input.serviceTypeLabel} deposit for request ${input.requestId}`;
+  const description = `${input.serviceTypeLabel} ${input.purposeLabel} for request ${input.requestId}`;
   const response = await client.checkout.paymentLinks.create({
     idempotencyKey: input.idempotencyKey,
     description,
     quickPay: {
-      name: `${input.serviceTypeLabel} deposit`,
+      name: `${input.serviceTypeLabel} ${input.purposeLabel}`,
       priceMoney: { amount: BigInt(input.amountCents), currency: "USD" },
       locationId: config.locationId,
     },
@@ -39,4 +40,10 @@ export async function createSquareDepositPaymentLink(input: Input) {
     url: link.url,
     longUrl: link.longUrl ?? null,
   };
+}
+
+export function createSquareDepositPaymentLink(
+  input: Omit<Input, "purposeLabel">,
+) {
+  return createSquareServicePaymentLink({ ...input, purposeLabel: "deposit" });
 }

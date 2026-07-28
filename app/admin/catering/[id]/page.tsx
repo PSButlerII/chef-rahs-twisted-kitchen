@@ -7,6 +7,7 @@ import Link from "next/link";
 import { CateringQuoteForm } from "@/components/admin/CateringQuoteForm";
 import { MarkDepositPaidButton } from "@/components/admin/MarkDepositPaidButton";
 import { SendDepositPaymentRequestButton } from "@/components/admin/SendDepositPaymentRequestButton";
+import { SendFinalBalancePaymentRequestButton } from "@/components/admin/SendFinalBalancePaymentRequestButton";
 import {
   formatServiceRequestStatus,
   formatServiceRequestType,
@@ -36,7 +37,11 @@ export default async function AdminCateringDetailsPage({ params }: PageProps) {
     where: { id },
     include: {
       paymentAttempts: {
-        where: { paymentPurpose: "SERVICE_DEPOSIT" },
+        where: {
+          paymentPurpose: {
+            in: ["SERVICE_DEPOSIT", "SERVICE_FINAL_BALANCE"],
+          },
+        },
         orderBy: { createdAt: "desc" },
         take: 10,
       },
@@ -73,14 +78,32 @@ export default async function AdminCateringDetailsPage({ params }: PageProps) {
     depositPaid,
     status: request.status,
   });
-  const latestDepositAttempt = request.paymentAttempts[0] ?? null;
-  const activeDepositAttempt = request.paymentAttempts.find(
+  const depositAttempts = request.paymentAttempts.filter(
+    (attempt) => attempt.paymentPurpose === "SERVICE_DEPOSIT",
+  );
+  const finalBalanceAttempts = request.paymentAttempts.filter(
+    (attempt) => attempt.paymentPurpose === "SERVICE_FINAL_BALANCE",
+  );
+  const latestDepositAttempt = depositAttempts[0] ?? null;
+  const latestFinalBalanceAttempt = finalBalanceAttempts[0] ?? null;
+  const activeDepositAttempt = depositAttempts.find(
     (attempt) =>
       ["CREATED", "PENDING", "REQUIRES_ACTION"].includes(
         attempt.websiteStatus,
       ) &&
       !attempt.paidAt &&
       Boolean(attempt.expiresAt && attempt.expiresAt > new Date()),
+  );
+  const activeFinalBalanceAttempt = finalBalanceAttempts.find(
+    (attempt) =>
+      ["CREATED", "PENDING", "REQUIRES_ACTION"].includes(
+        attempt.websiteStatus,
+      ) &&
+      !attempt.paidAt &&
+      Boolean(attempt.expiresAt && attempt.expiresAt > new Date()),
+  );
+  const finalBalancePaidAttempt = finalBalanceAttempts.find(
+    (attempt) => attempt.websiteStatus === "PAID" && Boolean(attempt.paidAt),
   );
   const attemptMetadata =
     latestDepositAttempt?.metadata &&
@@ -92,6 +115,22 @@ export default async function AdminCateringDetailsPage({ params }: PageProps) {
     typeof attemptMetadata.squarePaymentLinkUrl === "string"
       ? attemptMetadata.squarePaymentLinkUrl
       : null;
+  const finalBalanceMetadata =
+    latestFinalBalanceAttempt?.metadata &&
+    typeof latestFinalBalanceAttempt.metadata === "object" &&
+    !Array.isArray(latestFinalBalanceAttempt.metadata)
+      ? latestFinalBalanceAttempt.metadata
+      : {};
+  const finalBalancePaymentLink =
+    typeof finalBalanceMetadata.squarePaymentLinkUrl === "string"
+      ? finalBalanceMetadata.squarePaymentLinkUrl
+      : null;
+  const quoteTotalCents =
+    estimatedTotal === null ? null : Math.round(estimatedTotal * 100);
+  const depositCents =
+    depositAmount === null ? 0 : Math.round(depositAmount * 100);
+  const finalBalanceCents =
+    quoteTotalCents === null ? null : quoteTotalCents - depositCents;
   const depositRequestDisabledReason =
     request.approvalStatus !== "APPROVED"
       ? "Approve the service request before requesting its deposit."
@@ -104,6 +143,22 @@ export default async function AdminCateringDetailsPage({ params }: PageProps) {
             : activeDepositAttempt
               ? "An active unpaid deposit request already exists."
               : null;
+  const finalBalanceDisabledReason =
+    request.approvalStatus !== "APPROVED"
+      ? "Approve the service request before requesting final payment."
+      : !depositPaid
+        ? "The deposit must be paid before requesting final payment."
+        : quoteTotalCents === null
+          ? "Set a quoted total first."
+          : finalBalanceCents === null || finalBalanceCents <= 0
+            ? "There is no positive remaining balance."
+            : terminalStatus
+              ? "Final service requests cannot accept another payment."
+              : finalBalancePaidAttempt
+                ? "The final balance has already been paid."
+                : activeFinalBalanceAttempt
+                  ? "An active unpaid final-balance request already exists."
+                  : null;
 
   return (
     <main className="admin-page">
@@ -293,17 +348,10 @@ export default async function AdminCateringDetailsPage({ params }: PageProps) {
                       requestId={request.id}
                       disabledReason={depositRequestDisabledReason}
                     />
-                    <button
-                      type="button"
-                      disabled
-                      className="w-full rounded-lg bg-neutral-300 px-4 py-3 text-sm font-bold text-neutral-600"
-                      title="Square payment requests are not implemented yet."
-                    >
-                      Send Final Payment Request — Coming Later
-                    </button>
-                    <p className="text-xs leading-5 text-[#6b5a50]">
-                      Final-balance payment requests remain unimplemented.
-                    </p>
+                    <SendFinalBalancePaymentRequestButton
+                      requestId={request.id}
+                      disabledReason={finalBalanceDisabledReason}
+                    />
                   </div>
                   {latestDepositAttempt ? (
                     <div className="mt-5 space-y-2 rounded-lg border border-[#ead8c1] p-4 text-xs">
@@ -347,6 +395,51 @@ export default async function AdminCateringDetailsPage({ params }: PageProps) {
                       ) : null}
                     </div>
                   ) : null}
+                  <div className="mt-5 rounded-lg border border-[#ead8c1] p-4 text-xs">
+                    <p className="font-bold">Final balance</p>
+                    <p className="mt-2">
+                      Amount:{" "}
+                      {finalBalanceCents === null
+                        ? "Not available"
+                        : `$${(finalBalanceCents / 100).toFixed(2)}`}
+                    </p>
+                    <p>
+                      Status:{" "}
+                      {latestFinalBalanceAttempt?.websiteStatus ??
+                        "Not requested"}
+                    </p>
+                    <p>
+                      Expires:{" "}
+                      {latestFinalBalanceAttempt?.expiresAt?.toLocaleString() ??
+                        "Not set"}
+                    </p>
+                    <p>
+                      Paid:{" "}
+                      {latestFinalBalanceAttempt?.paidAt?.toLocaleString() ??
+                        "Not paid"}
+                    </p>
+                    {finalBalancePaymentLink &&
+                    latestFinalBalanceAttempt?.websiteStatus !== "PAID" ? (
+                      <a
+                        className="admin-action-link mt-2 block"
+                        href={finalBalancePaymentLink}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        Open Square final-balance link
+                      </a>
+                    ) : null}
+                    {latestFinalBalanceAttempt?.providerReceiptUrl ? (
+                      <a
+                        className="admin-action-link mt-2 block"
+                        href={latestFinalBalanceAttempt.providerReceiptUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        Open Square final-balance receipt
+                      </a>
+                    ) : null}
+                  </div>
                 </div>
               </div>
             </div>

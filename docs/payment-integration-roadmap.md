@@ -353,8 +353,14 @@ No card number, security code, raw payment token, access token, or full webhook 
   personal-chef requests. They use the existing trusted quote/deposit amount,
   ledger idempotency, two-hour expiration, branded email, and verified webhook
   reconciliation.
+- Square Sandbox hosted final-balance links are implemented after deposit
+  payment. The remaining amount is calculated from trusted quote and deposit
+  cents, recorded as a separate `SERVICE_FINAL_BALANCE` ledger attempt, and
+  reconciled through the same verified webhook route. This uses Checkout API
+  payment links, not Square invoices.
 - Add embedded deposit payment only after access and token-expiry design is approved.
-- Add final-balance support only if the client defines it.
+- Consider Square invoices only if later operations require invoice-specific
+  delivery, reminders, or reporting.
 
 ### Phase 4: PayPal
 

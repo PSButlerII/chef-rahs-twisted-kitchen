@@ -147,7 +147,11 @@ export default async function AdminPaymentsPage() {
         },
       }) as Promise<ReconciliationOrder[]>,
       prisma.paymentAttempt.findMany({
-        where: { paymentPurpose: "SERVICE_DEPOSIT" },
+        where: {
+          paymentPurpose: {
+            in: ["SERVICE_DEPOSIT", "SERVICE_FINAL_BALANCE"],
+          },
+        },
         orderBy: { createdAt: "desc" },
         take: 100,
         include: {
@@ -209,10 +213,10 @@ export default async function AdminPaymentsPage() {
 
         <section className="admin-card mt-10 overflow-hidden">
           <div className="border-b border-[#ead8c1] p-6">
-            <h2 className="text-2xl font-black">Service Deposit Ledger</h2>
+            <h2 className="text-2xl font-black">Service Payment Ledger</h2>
             <p className="mt-2 text-sm text-[#6b5a50]">
-              Square Sandbox deposit attempts for catering and personal-chef
-              requests.
+              Square Sandbox deposit and final-balance attempts for catering and
+              personal-chef requests.
             </p>
           </div>
           <div className="overflow-x-auto">
@@ -244,7 +248,11 @@ export default async function AdminPaymentsPage() {
                       )}
                     </td>
                     <td>{attempt.serviceRequest?.name ?? "Unknown"}</td>
-                    <td>SERVICE DEPOSIT</td>
+                    <td>
+                      {attempt.paymentPurpose === "SERVICE_FINAL_BALANCE"
+                        ? "FINAL BALANCE"
+                        : "DEPOSIT"}
+                    </td>
                     <td>
                       ${(attempt.amountCents / 100).toFixed(2)}{" "}
                       {attempt.currency}
@@ -297,8 +305,8 @@ export default async function AdminPaymentsPage() {
             <p className="mt-2 text-sm text-[#6b5a50]">
               This page reads Square sandbox status, payment IDs, receipts, and
               reconciliation state from the payment ledger and verified webhook
-              records. Refunds, production Square payments, deposits, final
-              balances, invoices, and retry-link handling remain future work.
+              records. Refunds, production Square payments, invoices, and
+              retry-link handling remain future work.
             </p>
           </div>
 
