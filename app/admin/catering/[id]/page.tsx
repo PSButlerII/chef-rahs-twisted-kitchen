@@ -17,6 +17,7 @@ import {
   canMarkServiceRequestDepositPaid,
   isTerminalServiceRequestStatus,
 } from "@/lib/service-request-workflow";
+import { checkActiveServicePaymentLink } from "@/lib/square-payment-link-status";
 
 type PageProps = {
   params: Promise<{
@@ -33,7 +34,7 @@ export default async function AdminCateringDetailsPage({ params }: PageProps) {
 
   const { id } = await params;
 
-  const request = await prisma.cateringRequest.findUnique({
+  let request = await prisma.cateringRequest.findUnique({
     where: { id },
     include: {
       paymentAttempts: {
@@ -47,6 +48,42 @@ export default async function AdminCateringDetailsPage({ params }: PageProps) {
       },
     },
   });
+
+  if (!request) {
+    notFound();
+  }
+
+  const activePendingAttempts = request.paymentAttempts.filter(
+    (attempt) =>
+      attempt.websiteStatus === "PENDING" &&
+      !attempt.paidAt &&
+      Boolean(attempt.expiresAt && attempt.expiresAt > new Date()),
+  );
+  const linkChecks = await Promise.all(
+    activePendingAttempts.map((attempt) =>
+      checkActiveServicePaymentLink(attempt),
+    ),
+  );
+  const staleLinkInvalidated = linkChecks.some(
+    (result) => result.status === "stale" && result.invalidated,
+  );
+
+  if (staleLinkInvalidated) {
+    request = await prisma.cateringRequest.findUnique({
+      where: { id },
+      include: {
+        paymentAttempts: {
+          where: {
+            paymentPurpose: {
+              in: ["SERVICE_DEPOSIT", "SERVICE_FINAL_BALANCE"],
+            },
+          },
+          orderBy: { createdAt: "desc" },
+          take: 10,
+        },
+      },
+    });
+  }
 
   if (!request) {
     notFound();
@@ -115,6 +152,8 @@ export default async function AdminCateringDetailsPage({ params }: PageProps) {
     typeof attemptMetadata.squarePaymentLinkUrl === "string"
       ? attemptMetadata.squarePaymentLinkUrl
       : null;
+  const depositLinkWasStale =
+    attemptMetadata.staleReason === "square_payment_link_not_found";
   const finalBalanceMetadata =
     latestFinalBalanceAttempt?.metadata &&
     typeof latestFinalBalanceAttempt.metadata === "object" &&
@@ -125,6 +164,8 @@ export default async function AdminCateringDetailsPage({ params }: PageProps) {
     typeof finalBalanceMetadata.squarePaymentLinkUrl === "string"
       ? finalBalanceMetadata.squarePaymentLinkUrl
       : null;
+  const finalBalanceLinkWasStale =
+    finalBalanceMetadata.staleReason === "square_payment_link_not_found";
   const quoteTotalCents =
     estimatedTotal === null ? null : Math.round(estimatedTotal * 100);
   const depositCents =
@@ -352,6 +393,12 @@ export default async function AdminCateringDetailsPage({ params }: PageProps) {
                       requestId={request.id}
                       disabledReason={finalBalanceDisabledReason}
                     />
+                    {staleLinkInvalidated ? (
+                      <p className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs font-bold text-amber-950">
+                        The previous Square payment link is no longer available.
+                        A new payment request can be sent.
+                      </p>
+                    ) : null}
                   </div>
                   {latestDepositAttempt ? (
                     <div className="mt-5 space-y-2 rounded-lg border border-[#ead8c1] p-4 text-xs">
@@ -373,7 +420,10 @@ export default async function AdminCateringDetailsPage({ params }: PageProps) {
                           "Not paid"}
                       </p>
                       {paymentLink &&
-                      latestDepositAttempt.websiteStatus !== "PAID" ? (
+                      ["CREATED", "PENDING", "REQUIRES_ACTION"].includes(
+                        latestDepositAttempt.websiteStatus,
+                      ) &&
+                      !depositLinkWasStale ? (
                         <a
                           className="admin-action-link"
                           href={paymentLink}
@@ -382,6 +432,12 @@ export default async function AdminCateringDetailsPage({ params }: PageProps) {
                         >
                           Open Square payment link
                         </a>
+                      ) : null}
+                      {depositLinkWasStale ? (
+                        <p className="rounded-md bg-amber-50 p-2 text-amber-950">
+                          The previous Square payment link is no longer
+                          available. A new deposit request can be sent.
+                        </p>
                       ) : null}
                       {latestDepositAttempt.providerReceiptUrl ? (
                         <a
@@ -419,7 +475,11 @@ export default async function AdminCateringDetailsPage({ params }: PageProps) {
                         "Not paid"}
                     </p>
                     {finalBalancePaymentLink &&
-                    latestFinalBalanceAttempt?.websiteStatus !== "PAID" ? (
+                    latestFinalBalanceAttempt &&
+                    ["CREATED", "PENDING", "REQUIRES_ACTION"].includes(
+                      latestFinalBalanceAttempt.websiteStatus,
+                    ) &&
+                    !finalBalanceLinkWasStale ? (
                       <a
                         className="admin-action-link mt-2 block"
                         href={finalBalancePaymentLink}
@@ -428,6 +488,12 @@ export default async function AdminCateringDetailsPage({ params }: PageProps) {
                       >
                         Open Square final-balance link
                       </a>
+                    ) : null}
+                    {finalBalanceLinkWasStale ? (
+                      <p className="mt-2 rounded-md bg-amber-50 p-2 text-amber-950">
+                        The previous Square payment link is no longer available.
+                        A new final-balance request can be sent.
+                      </p>
                     ) : null}
                     {latestFinalBalanceAttempt?.providerReceiptUrl ? (
                       <a

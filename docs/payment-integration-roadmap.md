@@ -361,6 +361,10 @@ No card number, security code, raw payment token, access token, or full webhook 
 - Add embedded deposit payment only after access and token-expiry design is approved.
 - Consider Square invoices only if later operations require invoice-specific
   delivery, reminders, or reporting.
+- Sandbox cleanup can delete a hosted link before its local ledger row expires.
+  The admin service detail validates active service-payment link IDs, expires
+  confirmed Square `NOT_FOUND` attempts without deleting history, and enables a
+  replacement deposit or final-balance request.
 
 ### Phase 4: PayPal
 

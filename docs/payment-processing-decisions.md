@@ -183,6 +183,14 @@ emails the Square-hosted URL. The payment ledger remains authoritative for the
 final-balance paid timestamp because payment does not mean the service itself
 has been fulfilled. Square invoices remain an optional future enhancement.
 
+During Sandbox QA, hosted payment links may be deleted during cleanup while a
+local attempt still appears pending. Opening the admin service detail checks
+active deposit and final-balance link IDs with Square. A confirmed `NOT_FOUND`
+marks the attempt `EXPIRED`, records
+`staleReason: square_payment_link_not_found`, and hides the unusable URL. The
+admin can then send a replacement request. Paid attempts and standard-order
+attempts are never changed by this check.
+
 The current CSP permits the Sandbox Web Payments SDK, Google Pay sandbox scripts, and Square wallet font assets. React/Turbopack `unsafe-eval` support is enabled only while `NODE_ENV=development`; production responses omit it. Production Square hosts and a final production CSP review remain a later pass.
 
 ## Follow-Up For Live Square Integration
