@@ -26,6 +26,7 @@ async function main() {
         paidAt: true,
         createdAt: true,
         updatedAt: true,
+        serviceRequestId: true,
       },
     });
 
