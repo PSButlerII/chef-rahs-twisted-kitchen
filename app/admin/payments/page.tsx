@@ -88,64 +88,75 @@ function getWebsiteMismatchWarning(
 export default async function AdminPaymentsPage() {
   await requireAdminPage();
 
-  const [paymentDueOrders, reconciliationOrders] = await Promise.all([
-    prisma.order.findMany({
-      where: {
-        status: {
-          notIn: ["CANCELLED", "REFUNDED"],
-        },
-        paymentStatus: {
-          in: ["PAY_BY_DATE", "OFFLINE_PAYMENT_DUE"],
-        },
-      },
-      orderBy: {
-        payByDate: "asc",
-      },
-      include: {
-        items: true,
-      },
-    }) as Promise<PaymentDueOrder[]>,
-    prisma.order.findMany({
-      orderBy: {
-        createdAt: "desc",
-      },
-      take: 100,
-      select: {
-        id: true,
-        customerName: true,
-        status: true,
-        paymentProvider: true,
-        paymentStatus: true,
-        paidAt: true,
-        total: true,
-        paymentAttempts: {
-          orderBy: {
-            createdAt: "desc",
+  const [paymentDueOrders, reconciliationOrders, serviceDeposits] =
+    await Promise.all([
+      prisma.order.findMany({
+        where: {
+          status: {
+            notIn: ["CANCELLED", "REFUNDED"],
           },
-          take: 20,
-          select: {
-            id: true,
-            provider: true,
-            providerPaymentId: true,
-            providerReceiptUrl: true,
-            receiptReference: true,
-            providerStatus: true,
-            websiteStatus: true,
-            paymentPurpose: true,
-            amountCents: true,
-            tipCents: true,
-            currency: true,
-            expiresAt: true,
-            paidAt: true,
-            failedAt: true,
-            cancelledAt: true,
-            refundedAt: true,
-            createdAt: true,
+          paymentStatus: {
+            in: ["PAY_BY_DATE", "OFFLINE_PAYMENT_DUE"],
           },
         },
-      },
-    }) as Promise<ReconciliationOrder[]>,
-  ]);
+        orderBy: {
+          payByDate: "asc",
+        },
+        include: {
+          items: true,
+        },
+      }) as Promise<PaymentDueOrder[]>,
+      prisma.order.findMany({
+        orderBy: {
+          createdAt: "desc",
+        },
+        take: 100,
+        select: {
+          id: true,
+          customerName: true,
+          status: true,
+          paymentProvider: true,
+          paymentStatus: true,
+          paidAt: true,
+          total: true,
+          paymentAttempts: {
+            orderBy: {
+              createdAt: "desc",
+            },
+            take: 20,
+            select: {
+              id: true,
+              provider: true,
+              providerPaymentId: true,
+              providerReceiptUrl: true,
+              receiptReference: true,
+              providerStatus: true,
+              websiteStatus: true,
+              paymentPurpose: true,
+              amountCents: true,
+              tipCents: true,
+              currency: true,
+              expiresAt: true,
+              paidAt: true,
+              failedAt: true,
+              cancelledAt: true,
+              refundedAt: true,
+              createdAt: true,
+            },
+          },
+        },
+      }) as Promise<ReconciliationOrder[]>,
+      prisma.paymentAttempt.findMany({
+        where: { paymentPurpose: "SERVICE_DEPOSIT" },
+        orderBy: { createdAt: "desc" },
+        take: 100,
+        include: {
+          serviceRequest: {
+            select: { id: true, name: true, requestType: true },
+          },
+        },
+      }),
+    ]);
 
   const totalDue = paymentDueOrders.reduce(
     (sum, order) => sum + Number(order.total),
@@ -193,6 +204,87 @@ export default async function AdminPaymentsPage() {
               Square Connection
             </p>
             <p className="mt-3 text-2xl font-black">Not Connected</p>
+          </div>
+        </section>
+
+        <section className="admin-card mt-10 overflow-hidden">
+          <div className="border-b border-[#ead8c1] p-6">
+            <h2 className="text-2xl font-black">Service Deposit Ledger</h2>
+            <p className="mt-2 text-sm text-[#6b5a50]">
+              Square Sandbox deposit attempts for catering and personal-chef
+              requests.
+            </p>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="admin-table min-w-[900px]">
+              <thead>
+                <tr>
+                  <th>Request</th>
+                  <th>Customer</th>
+                  <th>Purpose</th>
+                  <th>Amount</th>
+                  <th>Website / Square</th>
+                  <th>Expires / Paid</th>
+                  <th>Receipt</th>
+                </tr>
+              </thead>
+              <tbody>
+                {serviceDeposits.map((attempt) => (
+                  <tr key={attempt.id}>
+                    <td>
+                      {attempt.serviceRequest ? (
+                        <Link
+                          className="admin-action-link"
+                          href={`/admin/catering/${attempt.serviceRequest.id}`}
+                        >
+                          {attempt.serviceRequest.id.slice(-8)}
+                        </Link>
+                      ) : (
+                        "Detached"
+                      )}
+                    </td>
+                    <td>{attempt.serviceRequest?.name ?? "Unknown"}</td>
+                    <td>SERVICE DEPOSIT</td>
+                    <td>
+                      ${(attempt.amountCents / 100).toFixed(2)}{" "}
+                      {attempt.currency}
+                    </td>
+                    <td>
+                      {attempt.websiteStatus} /{" "}
+                      {attempt.providerStatus ?? "Not set"}
+                    </td>
+                    <td>
+                      {attempt.paidAt
+                        ? `Paid ${attempt.paidAt.toLocaleString()}`
+                        : attempt.expiresAt
+                          ? `Expires ${attempt.expiresAt.toLocaleString()}`
+                          : "Not set"}
+                    </td>
+                    <td>
+                      {attempt.providerReceiptUrl ? (
+                        <a
+                          className="admin-action-link"
+                          href={attempt.providerReceiptUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          Square receipt
+                        </a>
+                      ) : (
+                        (attempt.receiptReference ?? "Not set")
+                      )}
+                    </td>
+                  </tr>
+                ))}
+                {serviceDeposits.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="text-center text-[#6b5a50]">
+                      No service deposit attempts.
+                    </td>
+                  </tr>
+                ) : null}
+              </tbody>
+            </table>
           </div>
         </section>
 

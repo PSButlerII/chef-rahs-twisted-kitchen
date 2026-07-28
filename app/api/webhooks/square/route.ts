@@ -14,6 +14,7 @@ type SquareWebhookPayload = {
     object?: {
       payment?: {
         id?: string;
+        order_id?: string;
         status?: string;
         location_id?: string;
         receipt_url?: string;
@@ -145,7 +146,7 @@ export async function POST(request: Request) {
       throw new Error("Payment event does not include a payment ID.");
     }
 
-    const attempt = await prisma.paymentAttempt.findUnique({
+    let attempt = await prisma.paymentAttempt.findUnique({
       where: {
         provider_providerPaymentId: {
           provider: "SQUARE",
@@ -153,6 +154,12 @@ export async function POST(request: Request) {
         },
       },
     });
+    if (!attempt && payment.order_id) {
+      attempt = await prisma.paymentAttempt.findFirst({
+        where: { provider: "SQUARE", providerOrderId: payment.order_id },
+        orderBy: { createdAt: "desc" },
+      });
+    }
 
     if (!attempt) {
       await prisma.paymentWebhookEvent.update({
@@ -199,6 +206,7 @@ export async function POST(request: Request) {
         where: { id: attempt.id },
         data: {
           providerStatus: payment.status ?? "UNKNOWN",
+          providerPaymentId: payment.id,
           providerReceiptUrl: payment.receipt_url ?? null,
           receiptReference: payment.receipt_number ?? null,
           websiteStatus,
@@ -217,6 +225,20 @@ export async function POST(request: Request) {
             paymentStatus: "PAID",
             paidAt,
           },
+        });
+      }
+      if (
+        isPaid &&
+        attempt.serviceRequestId &&
+        attempt.paymentPurpose === "SERVICE_DEPOSIT"
+      ) {
+        await tx.cateringRequest.updateMany({
+          where: {
+            id: attempt.serviceRequestId,
+            depositPaidAt: null,
+            status: { notIn: ["COMPLETED", "CANCELLED"] },
+          },
+          data: { status: "DEPOSIT_PAID", depositPaidAt: paidAt },
         });
       }
 

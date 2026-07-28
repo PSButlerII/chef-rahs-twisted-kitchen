@@ -163,8 +163,17 @@ characters and requires the same value in `x-payment-jobs-token`. A scheduler
 must invoke it regularly. Paid, completed, accepted, preparing, fulfilled, and
 approval-required orders are not cancelled.
 
-Deposits, final balances, refunds, invoices, active retry links, and public
-guest order tracking are not included.
+Approved catering and personal-chef deposits use Square Sandbox hosted payment
+links. Admin creates one active `SERVICE_DEPOSIT` ledger attempt for the trusted
+quoted deposit, with no tip and a two-hour expiration. The branded email links
+directly to Square; no public website tracking page is created. Verified Square
+payment webhooks match the link's Square order ID, validate amount, currency,
+and location, then mark both the ledger and service-request deposit paid.
+Expired unpaid deposit attempts do not cancel the service request and may be
+replaced by a new admin request.
+
+Final balances, refunds, invoices, active retry links, production payment links,
+and public guest order tracking are not included.
 
 The current CSP permits the Sandbox Web Payments SDK, Google Pay sandbox scripts, and Square wallet font assets. React/Turbopack `unsafe-eval` support is enabled only while `NODE_ENV=development`; production responses omit it. Production Square hosts and a final production CSP review remain a later pass.
 

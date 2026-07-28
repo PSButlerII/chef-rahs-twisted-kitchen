@@ -349,7 +349,10 @@ No card number, security code, raw payment token, access token, or full webhook 
 
 ### Phase 3: catering and personal chef deposits
 
-- Start with hosted links if guest payment access is required.
+- Square Sandbox hosted deposit links are implemented for approved catering and
+  personal-chef requests. They use the existing trusted quote/deposit amount,
+  ledger idempotency, two-hour expiration, branded email, and verified webhook
+  reconciliation.
 - Add embedded deposit payment only after access and token-expiry design is approved.
 - Add final-balance support only if the client defines it.
 

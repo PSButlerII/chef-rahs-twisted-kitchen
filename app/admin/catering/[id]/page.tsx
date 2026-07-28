@@ -6,6 +6,7 @@ import { CateringApprovalForm } from "@/components/admin/CateringApprovalForm";
 import Link from "next/link";
 import { CateringQuoteForm } from "@/components/admin/CateringQuoteForm";
 import { MarkDepositPaidButton } from "@/components/admin/MarkDepositPaidButton";
+import { SendDepositPaymentRequestButton } from "@/components/admin/SendDepositPaymentRequestButton";
 import {
   formatServiceRequestStatus,
   formatServiceRequestType,
@@ -33,6 +34,13 @@ export default async function AdminCateringDetailsPage({ params }: PageProps) {
 
   const request = await prisma.cateringRequest.findUnique({
     where: { id },
+    include: {
+      paymentAttempts: {
+        where: { paymentPurpose: "SERVICE_DEPOSIT" },
+        orderBy: { createdAt: "desc" },
+        take: 10,
+      },
+    },
   });
 
   if (!request) {
@@ -65,6 +73,37 @@ export default async function AdminCateringDetailsPage({ params }: PageProps) {
     depositPaid,
     status: request.status,
   });
+  const latestDepositAttempt = request.paymentAttempts[0] ?? null;
+  const activeDepositAttempt = request.paymentAttempts.find(
+    (attempt) =>
+      ["CREATED", "PENDING", "REQUIRES_ACTION"].includes(
+        attempt.websiteStatus,
+      ) &&
+      !attempt.paidAt &&
+      Boolean(attempt.expiresAt && attempt.expiresAt > new Date()),
+  );
+  const attemptMetadata =
+    latestDepositAttempt?.metadata &&
+    typeof latestDepositAttempt.metadata === "object" &&
+    !Array.isArray(latestDepositAttempt.metadata)
+      ? latestDepositAttempt.metadata
+      : {};
+  const paymentLink =
+    typeof attemptMetadata.squarePaymentLinkUrl === "string"
+      ? attemptMetadata.squarePaymentLinkUrl
+      : null;
+  const depositRequestDisabledReason =
+    request.approvalStatus !== "APPROVED"
+      ? "Approve the service request before requesting its deposit."
+      : depositPaid
+        ? "The deposit has already been paid."
+        : !depositAmount || depositAmount <= 0
+          ? "Set a positive deposit amount first."
+          : terminalStatus
+            ? "Final service requests cannot accept a deposit."
+            : activeDepositAttempt
+              ? "An active unpaid deposit request already exists."
+              : null;
 
   return (
     <main className="admin-page">
@@ -246,17 +285,14 @@ export default async function AdminCateringDetailsPage({ params }: PageProps) {
                   ) : null}
 
                   <div className="mt-5 space-y-3 border-t border-[#ead8c1] pt-5">
-                    <p className="text-sm font-bold">
-                      Future Square Payment Requests
+                    <p className="text-sm font-bold">Square Payment Requests</p>
+                    <p className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs font-bold text-amber-950">
+                      Sandbox/test only
                     </p>
-                    <button
-                      type="button"
-                      disabled
-                      className="w-full rounded-lg bg-neutral-300 px-4 py-3 text-sm font-bold text-neutral-600"
-                      title="Square payment requests are not implemented yet."
-                    >
-                      Send Deposit Payment Request — Coming Later
-                    </button>
+                    <SendDepositPaymentRequestButton
+                      requestId={request.id}
+                      disabledReason={depositRequestDisabledReason}
+                    />
                     <button
                       type="button"
                       disabled
@@ -266,11 +302,51 @@ export default async function AdminCateringDetailsPage({ params }: PageProps) {
                       Send Final Payment Request — Coming Later
                     </button>
                     <p className="text-xs leading-5 text-[#6b5a50]">
-                      These placeholders make the approved-service workflow
-                      visible but do not create links, send email, or call
-                      Square.
+                      Final-balance payment requests remain unimplemented.
                     </p>
                   </div>
+                  {latestDepositAttempt ? (
+                    <div className="mt-5 space-y-2 rounded-lg border border-[#ead8c1] p-4 text-xs">
+                      <p className="font-bold">
+                        Latest deposit: {latestDepositAttempt.websiteStatus}
+                      </p>
+                      <p>
+                        Amount: $
+                        {(latestDepositAttempt.amountCents / 100).toFixed(2)}
+                      </p>
+                      <p>
+                        Expires:{" "}
+                        {latestDepositAttempt.expiresAt?.toLocaleString() ??
+                          "Not set"}
+                      </p>
+                      <p>
+                        Paid:{" "}
+                        {latestDepositAttempt.paidAt?.toLocaleString() ??
+                          "Not paid"}
+                      </p>
+                      {paymentLink &&
+                      latestDepositAttempt.websiteStatus !== "PAID" ? (
+                        <a
+                          className="admin-action-link"
+                          href={paymentLink}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          Open Square payment link
+                        </a>
+                      ) : null}
+                      {latestDepositAttempt.providerReceiptUrl ? (
+                        <a
+                          className="admin-action-link block"
+                          href={latestDepositAttempt.providerReceiptUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          Open Square receipt
+                        </a>
+                      ) : null}
+                    </div>
+                  ) : null}
                 </div>
               </div>
             </div>
