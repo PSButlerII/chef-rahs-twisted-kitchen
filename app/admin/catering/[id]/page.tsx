@@ -18,6 +18,11 @@ import {
   isTerminalServiceRequestStatus,
 } from "@/lib/service-request-workflow";
 import { checkActiveServicePaymentLink } from "@/lib/square-payment-link-status";
+import {
+  deriveServiceRequestPaymentPhase,
+  formatServiceRequestPaymentPhase,
+  serviceRequestPaymentPhaseBadgeClass,
+} from "@/lib/service-request-payment-phase";
 
 type PageProps = {
   params: Promise<{
@@ -142,6 +147,13 @@ export default async function AdminCateringDetailsPage({ params }: PageProps) {
   const finalBalancePaidAttempt = finalBalanceAttempts.find(
     (attempt) => attempt.websiteStatus === "PAID" && Boolean(attempt.paidAt),
   );
+  const paymentPhase = deriveServiceRequestPaymentPhase({
+    approvalStatus: request.approvalStatus,
+    estimatedTotal,
+    depositAmount,
+    depositPaidAt: request.depositPaidAt,
+    paymentAttempts: request.paymentAttempts,
+  });
   const attemptMetadata =
     latestDepositAttempt?.metadata &&
     typeof latestDepositAttempt.metadata === "object" &&
@@ -322,6 +334,27 @@ export default async function AdminCateringDetailsPage({ params }: PageProps) {
               <p className="admin-badge admin-badge-neutral mt-3 justify-center px-3 py-2">
                 {formatServiceRequestStatus(request.status)}
               </p>
+              <div className="mt-4 rounded-lg border border-[#ead8c1] bg-[#fff8ee] p-4">
+                <p className="text-xs font-bold uppercase tracking-wide text-[#6b5a50]">
+                  Payment Status
+                </p>
+                <span
+                  className={`${serviceRequestPaymentPhaseBadgeClass(paymentPhase)} mt-2`}
+                >
+                  {formatServiceRequestPaymentPhase(paymentPhase)}
+                </span>
+                <div className="mt-3 space-y-1 text-xs text-[#6b5a50]">
+                  <p>Deposit: {depositPaid ? "Paid" : "Not paid"}</p>
+                  <p>
+                    Final balance:{" "}
+                    {finalBalancePaidAttempt ? "Paid" : "Not paid"}
+                  </p>
+                  <p>
+                    Completed remains a separate operational status selected by
+                    an admin after the service is finished.
+                  </p>
+                </div>
+              </div>
 
               <div className="mt-6">
                 <UpdateCateringStatusForm

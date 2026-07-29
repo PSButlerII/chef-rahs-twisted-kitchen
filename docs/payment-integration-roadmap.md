@@ -365,6 +365,9 @@ No card number, security code, raw payment token, access token, or full webhook 
   The admin service detail validates active service-payment link IDs, expires
   confirmed Square `NOT_FOUND` attempts without deleting history, and enables a
   replacement deposit or final-balance request.
+- Admin service-request lists and details derive a separate payment phase from
+  existing deposit and ledger state. `Paid in Full` never auto-transitions the
+  operational request status to `COMPLETED`.
 
 ### Phase 4: PayPal
 

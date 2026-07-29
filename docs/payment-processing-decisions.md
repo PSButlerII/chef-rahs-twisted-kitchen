@@ -191,6 +191,18 @@ marks the attempt `EXPIRED`, records
 admin can then send a replacement request. Paid attempts and standard-order
 attempts are never changed by this check.
 
+## Service Payment Phase Versus Completion
+
+Admin service-request payment phase is derived from the quote, deposit fields,
+and payment ledger. It can show Deposit Due, Deposit Paid, Final Balance Due,
+Final Balance Pending, or Paid in Full. `Paid in Full` requires both a recorded
+deposit payment and a paid `SERVICE_FINAL_BALANCE` attempt.
+
+This payment phase is separate from the persisted operational workflow.
+Receiving final payment must not mark catering or personal-chef work
+`COMPLETED`; an admin selects Completed only after the event or service has
+actually finished.
+
 The current CSP permits the Sandbox Web Payments SDK, Google Pay sandbox scripts, and Square wallet font assets. React/Turbopack `unsafe-eval` support is enabled only while `NODE_ENV=development`; production responses omit it. Production Square hosts and a final production CSP review remain a later pass.
 
 ## Follow-Up For Live Square Integration

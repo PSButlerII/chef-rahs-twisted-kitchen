@@ -12,12 +12,20 @@ import {
   cateringStatuses,
   serviceRequestTypes,
 } from "@/lib/prisma-enums";
+import {
+  deriveServiceRequestPaymentPhase,
+  formatServiceRequestPaymentPhase,
+  serviceRequestPaymentPhaseBadgeClass,
+  serviceRequestPaymentPhases,
+  type ServiceRequestPaymentPhase,
+} from "@/lib/service-request-payment-phase";
 
 type PageProps = {
   searchParams: Promise<{
     status?: string;
     approval?: string;
     type?: string;
+    payment?: string;
   }>;
 };
 
@@ -32,6 +40,16 @@ type AdminServiceRequestRow = {
   status: string;
   approvalStatus: string;
   createdAt: Date;
+  estimatedTotal: { toString(): string } | number | null;
+  depositAmount: { toString(): string } | number | null;
+  depositPaidAt: Date | null;
+  paymentAttempts: {
+    paymentPurpose: string;
+    websiteStatus: string;
+    paidAt: Date | null;
+    expiresAt: Date | null;
+  }[];
+  paymentPhase: ServiceRequestPaymentPhase;
 };
 
 function serviceStatusBadgeClass(status: string) {
@@ -62,10 +80,14 @@ export default async function AdminCateringPage({ searchParams }: PageProps) {
   const statusFilter = params.status;
   const approvalFilter = params.approval;
   const typeFilter = params.type;
+  const paymentFilter = serviceRequestPaymentPhases.find(
+    (phase) => phase === params.payment,
+  );
   const status = parseEnumValue(cateringStatuses, statusFilter);
   const approvalStatus = parseEnumValue(approvalStatuses, approvalFilter);
   const requestType = parseEnumValue(serviceRequestTypes, typeFilter);
-  const noActiveFilters = !statusFilter && !approvalFilter && !typeFilter;
+  const noActiveFilters =
+    !statusFilter && !approvalFilter && !typeFilter && !params.payment;
 
   function filterIsActive(href: string) {
     const [, query = ""] = href.split("?");
@@ -77,6 +99,7 @@ export default async function AdminCateringPage({ searchParams }: PageProps) {
       if (key === "status") return statusFilter === value;
       if (key === "approval") return approvalFilter === value;
       if (key === "type") return typeFilter === value;
+      if (key === "payment") return params.payment === value;
       return false;
     });
   }
@@ -87,10 +110,39 @@ export default async function AdminCateringPage({ searchParams }: PageProps) {
     ...(requestType ? { requestType } : {}),
   };
 
-  const requests = (await prisma.cateringRequest.findMany({
+  const requestRows = await prisma.cateringRequest.findMany({
     where,
     orderBy: { createdAt: "desc" },
-  })) as AdminServiceRequestRow[];
+    include: {
+      paymentAttempts: {
+        where: { paymentPurpose: "SERVICE_FINAL_BALANCE" },
+        select: {
+          paymentPurpose: true,
+          websiteStatus: true,
+          paidAt: true,
+          expiresAt: true,
+        },
+      },
+    },
+  });
+  const requests = requestRows
+    .map((request) => ({
+      ...request,
+      paymentPhase: deriveServiceRequestPaymentPhase({
+        approvalStatus: request.approvalStatus,
+        estimatedTotal:
+          request.estimatedTotal === null
+            ? null
+            : Number(request.estimatedTotal),
+        depositAmount:
+          request.depositAmount === null ? null : Number(request.depositAmount),
+        depositPaidAt: request.depositPaidAt,
+        paymentAttempts: request.paymentAttempts,
+      }),
+    }))
+    .filter(
+      (request) => !paymentFilter || request.paymentPhase === paymentFilter,
+    ) as AdminServiceRequestRow[];
 
   const typeFilters = [
     { label: "All", href: "/admin/catering" },
@@ -114,6 +166,29 @@ export default async function AdminCateringPage({ searchParams }: PageProps) {
     { label: "Approval Pending", href: "/admin/catering?approval=PENDING" },
     { label: "Approval Approved", href: "/admin/catering?approval=APPROVED" },
     { label: "Approval Denied", href: "/admin/catering?approval=DENIED" },
+  ];
+  const paymentFilters = [
+    { label: "All Payment Phases", href: "/admin/catering" },
+    {
+      label: "Deposit Due",
+      href: "/admin/catering?payment=DEPOSIT_DUE",
+    },
+    {
+      label: "Deposit Paid",
+      href: "/admin/catering?payment=DEPOSIT_PAID",
+    },
+    {
+      label: "Final Balance Due",
+      href: "/admin/catering?payment=FINAL_BALANCE_DUE",
+    },
+    {
+      label: "Final Balance Pending",
+      href: "/admin/catering?payment=FINAL_BALANCE_PENDING",
+    },
+    {
+      label: "Paid in Full",
+      href: "/admin/catering?payment=PAID_IN_FULL",
+    },
   ];
 
   return (
@@ -166,6 +241,27 @@ export default async function AdminCateringPage({ searchParams }: PageProps) {
         </div>
 
         <div className="admin-card mb-6 p-5">
+          <p className="mb-1 font-black">Payment Filters</p>
+          <p className="mb-4 text-sm text-[#6b5a50]">
+            Payment phase is derived separately from operational workflow
+            status.
+          </p>
+          <div className="flex flex-wrap gap-3">
+            {paymentFilters.map((filter) => (
+              <Link
+                key={filter.href}
+                href={filter.href}
+                className={`admin-filter-chip ${
+                  filterIsActive(filter.href) ? "admin-filter-chip-active" : ""
+                }`}
+              >
+                {filter.label}
+              </Link>
+            ))}
+          </div>
+        </div>
+
+        <div className="admin-card mb-6 p-5">
           <p className="mb-1 font-black">Workflow Filters</p>
           <p className="mb-4 text-sm text-[#6b5a50]">
             Focus the queue by request status or approval decision.
@@ -195,6 +291,7 @@ export default async function AdminCateringPage({ searchParams }: PageProps) {
                 <th>Event</th>
                 <th>Guests</th>
                 <th>Status</th>
+                <th>Payment</th>
                 <th>Approval</th>
                 <th>Submitted</th>
                 <th></th>
@@ -236,6 +333,16 @@ export default async function AdminCateringPage({ searchParams }: PageProps) {
 
                   <td>
                     <span
+                      className={serviceRequestPaymentPhaseBadgeClass(
+                        request.paymentPhase,
+                      )}
+                    >
+                      {formatServiceRequestPaymentPhase(request.paymentPhase)}
+                    </span>
+                  </td>
+
+                  <td>
+                    <span
                       className={approvalStatusBadgeClass(
                         request.approvalStatus,
                       )}
@@ -261,7 +368,7 @@ export default async function AdminCateringPage({ searchParams }: PageProps) {
 
               {requests.length === 0 && (
                 <tr>
-                  <td className="text-center text-[#6b5a50]" colSpan={8}>
+                  <td className="text-center text-[#6b5a50]" colSpan={9}>
                     No service requests yet.
                   </td>
                 </tr>
