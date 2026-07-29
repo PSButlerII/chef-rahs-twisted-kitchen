@@ -157,7 +157,7 @@ Start from `.env.example`.
 | `SQUARE_ACCESS_TOKEN`               | Server-side Sandbox secret; never expose through `NEXT_PUBLIC_*`.                                                                                          |
 | `SQUARE_WEBHOOK_SIGNATURE_KEY`      | Server-only signature key used with the raw webhook body.                                                                                                  |
 | `SQUARE_WEBHOOK_NOTIFICATION_URL`   | Exact Square webhook subscription URL used during signature verification.                                                                                  |
-| `SQUARE_WEBHOOK_SIGNATURE_KEY`      | Planned server-side webhook verification secret; never expose to browser code.                                                                             |
+| `PAYMENT_JOBS_TOKEN`                | Server-only secret of at least 32 characters for the protected pending-payment expiration job.                                                             |
 | `OWNER_EMAIL`                       | Existing registered user's email for the one-time owner bootstrap. It is never a user-creation input.                                                      |
 | `OWNER_BOOTSTRAP_TOKEN`             | Temporary long random secret for `POST /api/setup/promote-owner` when the host has no console. Remove it and restart/redeploy immediately after success.   |
 | `FOUNDATION_SEED_TOKEN`             | Temporary long random secret for `POST /api/setup/seed-foundation` when the host has no console. Remove it and restart/redeploy immediately after success. |

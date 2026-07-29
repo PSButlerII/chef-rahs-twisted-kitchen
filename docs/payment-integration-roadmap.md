@@ -380,29 +380,45 @@ No card number, security code, raw payment token, access token, or full webhook 
 - Implement a PayPal adapter against the same app payment service and ledger.
 - Repeat provider-specific CSP, webhook, sandbox, production, and rollback validation.
 
-## 16. Client Decisions Required Before Implementation
+## 16. Confirmed Decisions And Remaining Production Questions
 
-1. Confirm Square is the first provider. Is PayPal required at initial online-payment launch or only later?
-2. Should regular and weekly orders be charged immediately, authorized for later capture, or charged only after chef approval?
-3. How should packages marked "By request" behave: online capture, authorization, or manual invoice after approval?
-4. Confirmed: unpaid `PAYMENT_PENDING` orders reserve weekly capacity for two
-   hours; the scheduled expiration worker releases it exactly once.
-5. Which methods are in phase 1: cards only, or also Apple Pay, Google Pay, Cash App Pay, Afterpay, or gift cards?
-6. Confirm currency, Square business account, production location, and which owner controls provider credentials/dashboard access.
-7. Are sales tax rules needed? The current order total has no separate tax field. Who will confirm taxable items, fees, and reporting rules?
-8. Are tips charged online? How should tips be handled in partial/full refunds?
-9. What are the cancellation, void, full-refund, partial-refund, and no-show policies? Which roles may perform each action?
-10. Should receipts come from the app/Resend, Square, or both? What customer-facing wording is approved for pending, paid, failed, and refunded states?
-11. How should a guest recover an interrupted payment? The app intentionally has no public guest order tracking link today.
-12. For catering and personal chef work, what deposit percentage/amount, due date, refund policy, and final-balance timing apply?
-13. Should service deposits use provider-hosted links first, or does the client require an embedded checkout?
-14. Should manual Square/PayPal links, invoices, cash, and admin mark-paid remain available after online checkout launches? The recommendation is yes.
-15. What should customers see during a provider outage: manual checkout, request submission without payment, or temporary closure?
-16. Who will own daily reconciliation, failed webhook review, disputes, refunds, and provider dashboard alerts?
+Confirmed:
 
-## 17. Recommended Next Branch
+- Square first; PayPal later.
+- Standard pickup, delivery, and non-approval weekly orders charge immediately.
+- Approval-required weekly packages and all catering/personal-chef requests are
+  approval-first.
+- Taxes are included in listed prices; tips are charged as part of the final
+  standard-order total.
+- Pending standard-payment holds and guest retry-token scaffolding expire after
+  two hours.
+- Catering/personal-chef deposits are 50%; final balance is requested
+  separately after deposit payment.
+- Square is the official receipt source.
+- Full standard-order refunds are admin-only within 24 hours and are blocked
+  once preparation/service work starts.
+- The owner owns reconciliation, supported by the admin ledger view.
 
-After the client answers Section 16, create `feature/square-payment-foundation` for the additive payment ledger, feature flag, Square environment validation, provider boundary, and sandbox-only server integration. Keep the customer-visible Square payment option disabled until webhook, CSP, email, admin, retry, refund, and reconciliation QA all pass.
+Remaining production questions:
+
+1. Which production wallets/methods will be enabled at launch after domain and
+   CSP verification?
+2. Who monitors failed webhooks, disputes, job runs, and provider alerts day to
+   day?
+3. What customer fallback is approved during a provider outage?
+4. Is secure guest retry redemption required for launch?
+5. What exact state defines “service work started” for service-payment refund
+   eligibility?
+
+## 17. Recommended Next Pass
+
+Keep production Square disabled. The next payment pass should resolve only the
+remaining production launch gates: production credentials and locations,
+production CSP and wallet-domain registration, exact production webhook URL,
+scheduled expiration-job monitoring, operational reconciliation ownership, and
+a controlled low-value live payment/refund rehearsal with an approved rollback
+window. PayPal, ACH, partial refunds, public retry redemption, and service
+refunds remain separate later scopes.
 ## Implemented: admin Square Sandbox full-refund foundation
 
 The admin order detail now supports full refunds of eligible paid standard

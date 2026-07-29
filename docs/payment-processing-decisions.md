@@ -71,7 +71,11 @@ Normal refund eligibility requires all of the following:
 - the order is not fulfilled or final; and
 - the order has not reached `PREPARING`, `READY`, `OUT_FOR_DELIVERY`, or any later/final status.
 
-The shared refund helper hides the future normal-refund action after preparation starts or the window expires. No Square refund call exists in this pass. Partial refunds, exceptional refunds, disputes, and service-request refund rules need explicit workflows and audit requirements during the live integration.
+The shared refund helper disables the admin action after preparation starts or
+the window expires. Eligible paid standard-order payments can be fully refunded
+through Square Sandbox by an admin. Partial refunds, exceptional refunds,
+disputes, and service-request refund rules still require explicit workflows and
+audit requirements before live integration.
 
 ## Admin Reconciliation Requirements
 
@@ -148,7 +152,12 @@ Set `SQUARE_ENVIRONMENT=sandbox`, `SQUARE_APPLICATION_ID`, `SQUARE_LOCATION_ID`,
 
 The browser receives only the application and location identifiers after the server confirms that Sandbox checkout is completely configured. Square Web Payments SDK creates a one-time source token. `/api/orders` independently validates the cart and recalculates subtotal, fees, tip, and total. It creates the pending order and `PaymentAttempt` transactionally before calling Square Payments API with the ledger idempotency key. A completed response marks both records paid; an ambiguous failure retains a pending attempt and key instead of risking a second charge.
 
-`POST /api/webhooks/square` reads the raw request body, verifies `x-square-hmacsha256-signature` with the exact notification URL, hashes and deduplicates verified events, and processes only `payment.created` and `payment.updated`. Amount, currency, and location must match the ledger before the order is marked paid. Unsupported or unmatched verified events are stored and safely ignored.
+`POST /api/webhooks/square` reads the raw request body, verifies
+`x-square-hmacsha256-signature` with the exact notification URL, hashes and
+deduplicates verified events, and processes `payment.created`,
+`payment.updated`, `refund.created`, and `refund.updated`. Amount, currency, and
+location must match the ledger before payment/refund state changes. Unsupported
+or unmatched verified events are stored and safely ignored.
 
 Sandbox test flow:
 
@@ -174,8 +183,8 @@ and location, then mark both the ledger and service-request deposit paid.
 Expired unpaid deposit attempts do not cancel the service request and may be
 replaced by a new admin request.
 
-Refunds, invoices, active retry links, production payment links, and public
-guest order tracking are not included.
+Service-payment refunds, partial refunds, invoices, active retry links,
+production payment links, and public guest order tracking are not included.
 
 Approved catering and personal-chef requests with a paid deposit may also use a
 Square Sandbox hosted final-balance link. The server calculates the trusted
@@ -213,10 +222,12 @@ The current CSP permits the Sandbox Web Payments SDK, Google Pay sandbox scripts
 2. Add out-of-order webhook replay/recovery.
 3. Configure and monitor the payment-expiration scheduled job in each deployed environment.
 4. Implement secure guest retry-token issuance and redemption without public guest order tracking.
-5. Implement deposit and final-balance request creation after approval.
-6. Implement refund operations, permissions, audit logs, and provider reconciliation.
-7. Define metadata retention/redaction rules and operational cleanup.
-8. Run ambiguous-failure, retry, duplicate-charge, refund, wallet, receipt, and production smoke tests before enabling live Square.
+5. Define the service-work-start signal before enabling deposit/final-balance
+   refunds.
+6. Define metadata retention/redaction rules and operational cleanup.
+7. Run ambiguous-failure, retry, duplicate-charge, wallet, receipt, and
+   controlled production payment/refund smoke tests before enabling live
+   Square.
 ## Square Sandbox refund workflow
 
 - Refunds are admin-only. Customers cannot request or initiate them in the

@@ -1,10 +1,14 @@
 # Production Deployment Runbook
 
-Last updated: July 14, 2026
+Last updated: July 29, 2026
 
 Use this runbook to prepare, deploy, verify, and recover the production Chef Rah's Twisted Kitchen app at `https://rahstwistedkitchen.com`.
 
-This is a documentation-only launch guide. It does not enable automated online checkout, change email sending behavior, or change the production upload posture.
+This runbook does not itself enable payments. Square checkout, hosted service
+payment links, and refunds remain guarded to Sandbox in application code.
+Production credentials, CSP, wallet registration, webhook configuration,
+controlled live smoke tests, and owner approval are still required before
+production payment launch.
 
 ## 1. Node.js Runtime
 
