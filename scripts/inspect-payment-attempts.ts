@@ -27,6 +27,8 @@ async function main() {
         createdAt: true,
         updatedAt: true,
         serviceRequestId: true,
+        metadata: true,
+        expiresAt: true,
       },
     });
 
