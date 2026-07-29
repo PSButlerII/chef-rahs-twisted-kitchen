@@ -23,6 +23,9 @@ import { getBusinessSettings } from "@/lib/business-settings";
 import { getFixedCheckoutScheduleDisplayMessage } from "@/lib/checkout-fulfillment";
 import type { DecimalLike } from "@/types/display";
 import { getNormalRefundEligibility } from "@/lib/payment-config";
+import { getPaymentRefundEligibility } from "@/lib/refund-eligibility";
+import { RefundPaymentButton } from "@/components/admin/RefundPaymentButton";
+import type { PaymentPurpose, PaymentWebsiteStatus } from "@prisma/client";
 
 type PageProps = {
   params: Promise<{
@@ -85,8 +88,8 @@ type AdminOrderDetail = {
     providerReceiptUrl: string | null;
     receiptReference: string | null;
     providerStatus: string | null;
-    websiteStatus: string;
-    paymentPurpose: string;
+    websiteStatus: PaymentWebsiteStatus;
+    paymentPurpose: PaymentPurpose;
     amountCents: number;
     tipCents: number;
     currency: string;
@@ -95,6 +98,12 @@ type AdminOrderDetail = {
     failedAt: Date | null;
     cancelledAt: Date | null;
     refundedAt: Date | null;
+    parentPaymentId: string | null;
+    metadata: unknown;
+    childPayments: {
+      paymentPurpose: PaymentPurpose;
+      websiteStatus: PaymentWebsiteStatus;
+    }[];
     createdAt: Date;
   }[];
 };
@@ -131,6 +140,14 @@ export default async function AdminOrderDetailsPage({ params }: PageProps) {
       paymentAttempts: {
         orderBy: {
           createdAt: "desc",
+        },
+        include: {
+          childPayments: {
+            select: {
+              paymentPurpose: true,
+              websiteStatus: true,
+            },
+          },
         },
       },
     },
@@ -496,16 +513,10 @@ export default async function AdminOrderDetailsPage({ params }: PageProps) {
                       : refundEligibility.reason}
                   </p>
 
-                  {refundEligibility.eligible ? (
-                    <button
-                      type="button"
-                      disabled
-                      className="mt-4 w-full rounded-lg bg-neutral-300 px-4 py-3 text-sm font-bold text-neutral-600"
-                      title="Square refunds are not implemented yet."
-                    >
-                      Issue Square Refund — Coming Later
-                    </button>
-                  ) : null}
+                  <p className="mt-3 text-xs text-[#6b5a50]">
+                    Refund an eligible paid Square transaction from its ledger
+                    row below. Refunds are full-amount and sandbox-only.
+                  </p>
                 </div>
 
                 {paymentDue && (
@@ -669,7 +680,43 @@ export default async function AdminOrderDetailsPage({ params }: PageProps) {
                           </dd>
                         </div>
                       ) : null}
+                      {attempt.parentPaymentId ? (
+                        <div>
+                          <dt className="inline font-bold text-[#24130f]">
+                            Parent payment:
+                          </dt>{" "}
+                          <dd className="inline break-all">
+                            {attempt.parentPaymentId}
+                          </dd>
+                        </div>
+                      ) : null}
                     </dl>
+                    {attempt.paymentPurpose === "ORDER_TOTAL" ? (
+                      <RefundPaymentButton
+                        paymentAttemptId={attempt.id}
+                        disabledReason={
+                          getPaymentRefundEligibility({
+                            ...attempt,
+                            order: {
+                              createdAt: order.createdAt,
+                              status: order.status,
+                              statusHistory: order.statusHistory,
+                            },
+                            serviceRequestId: null,
+                          }).reason
+                        }
+                      />
+                    ) : null}
+                    {attempt.paymentPurpose === "REFUND" &&
+                    attempt.metadata &&
+                    typeof attempt.metadata === "object" &&
+                    !Array.isArray(attempt.metadata) &&
+                    "refundReason" in attempt.metadata ? (
+                      <p className="mt-3 text-xs text-[#6b5a50]">
+                        <strong>Reason:</strong>{" "}
+                        {String(attempt.metadata.refundReason)}
+                      </p>
+                    ) : null}
                   </div>
                 ))}
 

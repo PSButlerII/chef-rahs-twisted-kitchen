@@ -2,9 +2,10 @@
 
 Date: July 27, 2026
 
-Status: sandbox standard-checkout implementation with protected pending-payment
-expiration processing. Production payments, payment links, public retry links,
-and refunds remain disabled.
+Status: Square Sandbox standard checkout, service payment links, protected
+pending-payment expiration, and admin full refunds for eligible standard orders
+are implemented. Production payments/refunds and public retry links remain
+disabled.
 
 ## Provider Sequence And Scope
 
@@ -23,7 +24,8 @@ and refunds remain disabled.
 - Approved catering and personal-chef requests require a 50% deposit.
 - Admin sends a separate final-balance payment link by email.
 - Menu items and options can require approval according to owner/admin configuration.
-- This foundation pass only displays disabled deposit and final-payment request placeholders. It does not create links, send payment-request emails, or change approval behavior.
+- Admins can issue sandbox deposit and final-balance payment links after the
+  required approval/payment phase. This does not change approval behavior.
 
 ## Checkout And Manual Payment Policy
 
@@ -215,3 +217,24 @@ The current CSP permits the Sandbox Web Payments SDK, Google Pay sandbox scripts
 6. Implement refund operations, permissions, audit logs, and provider reconciliation.
 7. Define metadata retention/redaction rules and operational cleanup.
 8. Run ambiguous-failure, retry, duplicate-charge, refund, wallet, receipt, and production smoke tests before enabling live Square.
+## Square Sandbox refund workflow
+
+- Refunds are admin-only. Customers cannot request or initiate them in the
+  application.
+- The normal policy is: “Full refund within 24 hours after placing the order,
+  unless the order has already been fulfilled or service work has already
+  started.”
+- This implementation supports full refunds for eligible paid standard-order
+  Square Sandbox payments. It does not accept a client-provided amount; the
+  trusted ledger amount, including any charged tip, is refunded.
+- Preparing-or-later, fulfilled, cancelled, already-refunded, unpaid, non-Square,
+  and provider-ID-less payments are blocked.
+- Service deposit and final-balance refund actions remain disabled until the
+  business defines an unambiguous service-work-start signal. This prevents the
+  payment-completion state from being mistaken for service completion.
+- A refund is recorded as a child `PaymentAttempt` with purpose `REFUND` before
+  Square is called. Square refund webhooks reconcile that row and retain the
+  existing verified-event deduplication.
+- Production, partial, automatic, customer-initiated, PayPal, ACH, and invoice
+  refunds remain disabled. Production Square CSP and production refund
+  activation are later passes.

@@ -4,6 +4,7 @@ import { getSquareServerConfig, getSquareWebhookConfig } from "@/lib/square";
 import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { WebhooksHelper } from "square";
+import { completeRefundAttempt } from "@/lib/refund-completion";
 
 export const dynamic = "force-dynamic";
 
@@ -26,11 +27,29 @@ type SquareWebhookPayload = {
           currency?: string;
         };
       };
+      refund?: {
+        id?: string;
+        payment_id?: string;
+        status?: string;
+        location_id?: string;
+        reason?: string;
+        updated_at?: string;
+        created_at?: string;
+        amount_money?: {
+          amount?: number;
+          currency?: string;
+        };
+      };
     };
   };
 };
 
-const supportedEvents = new Set(["payment.created", "payment.updated"]);
+const supportedEvents = new Set([
+  "payment.created",
+  "payment.updated",
+  "refund.created",
+  "refund.updated",
+]);
 
 function isPrismaUniqueConstraintError(error: unknown) {
   if (
@@ -90,6 +109,7 @@ export async function POST(request: Request) {
   }
 
   const payment = payload.data?.object?.payment;
+  const refund = payload.data?.object?.refund;
   const existingEvent = await prisma.paymentWebhookEvent.findUnique({
     where: {
       provider_eventId: {
@@ -115,7 +135,9 @@ export async function POST(request: Request) {
         payloadHash: createHash("sha256").update(rawBody).digest("hex"),
         rawSummary: {
           paymentId: payment?.id ?? null,
+          refundId: refund?.id ?? null,
           providerStatus: payment?.status ?? null,
+          refundStatus: refund?.status ?? null,
           environment: "sandbox",
         },
       },
@@ -141,6 +163,76 @@ export async function POST(request: Request) {
 
   try {
     const squareConfig = getSquareServerConfig();
+
+    if (eventType.startsWith("refund.")) {
+      if (!refund?.id) {
+        throw new Error("Refund event does not include a refund ID.");
+      }
+
+      const attempt = await prisma.paymentAttempt.findUnique({
+        where: {
+          provider_providerPaymentId: {
+            provider: "SQUARE",
+            providerPaymentId: refund.id,
+          },
+        },
+      });
+      if (!attempt || attempt.paymentPurpose !== "REFUND") {
+        await prisma.paymentWebhookEvent.update({
+          where: { id: storedEvent.id },
+          data: {
+            processingStatus: "IGNORED",
+            processedAt: new Date(),
+            sanitizedProcessingError:
+              "No matching website refund attempt was found.",
+          },
+        });
+        return NextResponse.json({ received: true, ignored: true });
+      }
+
+      const amountCents = Number(refund.amount_money?.amount);
+      if (
+        !Number.isSafeInteger(amountCents) ||
+        amountCents !== attempt.amountCents ||
+        refund.amount_money?.currency !== attempt.currency ||
+        refund.location_id !== squareConfig.locationId
+      ) {
+        throw new Error(
+          "Square refund amount, currency, or location does not match the ledger.",
+        );
+      }
+
+      const status = refund.status ?? "UNKNOWN";
+      const eventAt = new Date(refund.updated_at ?? refund.created_at ?? Date.now());
+
+      if (status === "COMPLETED") {
+        await completeRefundAttempt({
+          refundAttemptId: attempt.id,
+          providerStatus: status,
+          completedAt: eventAt,
+        });
+      } else {
+        const failed = status === "FAILED" || status === "REJECTED";
+        await prisma.paymentAttempt.update({
+          where: { id: attempt.id },
+          data: {
+            providerStatus: status,
+            websiteStatus: failed ? "FAILED" : "PENDING",
+            ...(failed ? { failedAt: eventAt } : {}),
+          },
+        });
+      }
+
+      await prisma.paymentWebhookEvent.update({
+        where: { id: storedEvent.id },
+        data: {
+          paymentAttemptId: attempt.id,
+          processingStatus: "PROCESSED",
+          processedAt: new Date(),
+        },
+      });
+      return NextResponse.json({ received: true });
+    }
 
     if (!payment?.id) {
       throw new Error("Payment event does not include a payment ID.");
@@ -189,11 +281,14 @@ export async function POST(request: Request) {
     }
 
     const isPaid = payment.status === "COMPLETED";
+    const isAlreadyRefunded =
+      attempt.websiteStatus === "REFUNDED" || Boolean(attempt.refundedAt);
     const paidAt = isPaid
       ? new Date(payment.updated_at ?? payment.created_at ?? Date.now())
       : null;
-    const websiteStatus =
-      payment.status === "FAILED"
+    const websiteStatus = isAlreadyRefunded
+      ? "REFUNDED"
+      : payment.status === "FAILED"
         ? "FAILED"
         : payment.status === "CANCELED"
           ? "CANCELLED"
@@ -216,7 +311,7 @@ export async function POST(request: Request) {
         },
       });
 
-      if (isPaid && attempt.orderId) {
+      if (isPaid && attempt.orderId && !isAlreadyRefunded) {
         await tx.order.update({
           where: { id: attempt.orderId },
           data: {

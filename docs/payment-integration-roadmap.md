@@ -2,11 +2,16 @@
 
 > The client decisions that were previously open in this roadmap are now resolved. Use `docs/payment-processing-decisions.md` as the authoritative policy for implementation; retain this document for architecture and risk context.
 >
-> The additive internal ledger, webhook deduplication table, and hashed retry-token foundation were added in migration `20260727150000_add_payment_ledger_foundation`. No Square API, webhook route, or public retry flow is active.
+> The additive internal ledger, webhook deduplication table, and hashed
+> retry-token foundation were added in migration
+> `20260727150000_add_payment_ledger_foundation`. Sandbox Square APIs and the
+> verified webhook route are active; production payments/refunds and public
+> retry flows are not.
 
 Date: July 15, 2026
 
-Status: planning only. This document does not enable online payments or change checkout, database, or deployment behavior.
+Status: implementation roadmap. Sandbox payment phases are recorded below;
+production activation remains future work.
 
 ## 1. Executive Recommendation
 
@@ -398,3 +403,17 @@ No card number, security code, raw payment token, access token, or full webhook 
 ## 17. Recommended Next Branch
 
 After the client answers Section 16, create `feature/square-payment-foundation` for the additive payment ledger, feature flag, Square environment validation, provider boundary, and sandbox-only server integration. Keep the customer-visible Square payment option disabled until webhook, CSP, email, admin, retry, refund, and reconciliation QA all pass.
+## Implemented: admin Square Sandbox full-refund foundation
+
+The admin order detail now supports full refunds of eligible paid standard
+Square Sandbox payments. The workflow validates the 24-hour/preparation policy
+on the server, creates a durable child refund ledger row, calls the Square
+Refunds API with a durable idempotency key, reconciles `refund.created` and
+`refund.updated` webhooks, and sends the branded confirmation once when the
+refund first transitions to completed.
+
+Service deposit/final-balance controls intentionally remain disabled pending an
+explicit definition of when service work has started. Remaining roadmap work
+includes production activation, production CSP review, partial-refund business
+rules, customer request intake (not customer execution), and operational
+recovery tooling for ambiguous provider timeouts.

@@ -42,6 +42,8 @@ type LedgerPaymentAttempt = {
   failedAt: Date | null;
   cancelledAt: Date | null;
   refundedAt: Date | null;
+  parentPaymentId: string | null;
+  metadata: unknown;
   createdAt: Date;
 };
 
@@ -53,7 +55,10 @@ function getWebsiteMismatchWarning(
     return "Paid status has no paid timestamp.";
   }
 
-  if (order.paymentStatus !== "PAID" && order.paidAt) {
+  if (
+    !["PAID", "REFUNDED"].includes(order.paymentStatus ?? "") &&
+    order.paidAt
+  ) {
     return "Paid timestamp conflicts with website status.";
   }
 
@@ -141,6 +146,8 @@ export default async function AdminPaymentsPage() {
               failedAt: true,
               cancelledAt: true,
               refundedAt: true,
+              parentPaymentId: true,
+              metadata: true,
               createdAt: true,
             },
           },
@@ -148,9 +155,17 @@ export default async function AdminPaymentsPage() {
       }) as Promise<ReconciliationOrder[]>,
       prisma.paymentAttempt.findMany({
         where: {
-          paymentPurpose: {
-            in: ["SERVICE_DEPOSIT", "SERVICE_FINAL_BALANCE"],
-          },
+          OR: [
+            {
+              paymentPurpose: {
+                in: ["SERVICE_DEPOSIT", "SERVICE_FINAL_BALANCE"],
+              },
+            },
+            {
+              paymentPurpose: "REFUND",
+              serviceRequestId: { not: null },
+            },
+          ],
         },
         orderBy: { createdAt: "desc" },
         take: 100,
@@ -305,8 +320,9 @@ export default async function AdminPaymentsPage() {
             <p className="mt-2 text-sm text-[#6b5a50]">
               This page reads Square sandbox status, payment IDs, receipts, and
               reconciliation state from the payment ledger and verified webhook
-              records. Refunds, production Square payments, invoices, and
-              retry-link handling remain future work.
+              records. Admin full refunds are sandbox-only; production Square
+              payments, partial refunds, customer refund requests, and invoices
+              remain future work.
             </p>
           </div>
 
@@ -399,7 +415,11 @@ export default async function AdminPaymentsPage() {
                       </td>
                       <td>
                         {latestRefundAttempt
-                          ? latestRefundAttempt.websiteStatus
+                          ? `${latestRefundAttempt.websiteStatus}${
+                              latestRefundAttempt.refundedAt
+                                ? ` · ${latestRefundAttempt.refundedAt.toLocaleString()}`
+                                : ""
+                            }`
                           : latestPaymentAttempt?.websiteStatus ===
                                 "PARTIALLY_REFUNDED" ||
                               latestPaymentAttempt?.websiteStatus === "REFUNDED"
@@ -407,6 +427,20 @@ export default async function AdminPaymentsPage() {
                             : order.status === "REFUNDED"
                               ? "Website marked refunded"
                               : "None recorded"}
+                        {latestRefundAttempt?.parentPaymentId ? (
+                          <div className="mt-1 break-all text-xs text-[#6b5a50]">
+                            Parent: {latestRefundAttempt.parentPaymentId}
+                          </div>
+                        ) : null}
+                        {latestRefundAttempt?.metadata &&
+                        typeof latestRefundAttempt.metadata === "object" &&
+                        !Array.isArray(latestRefundAttempt.metadata) &&
+                        "refundReason" in latestRefundAttempt.metadata ? (
+                          <div className="mt-1 text-xs text-[#6b5a50]">
+                            Reason:{" "}
+                            {String(latestRefundAttempt.metadata.refundReason)}
+                          </div>
+                        ) : null}
                       </td>
                       <td>
                         {mismatchWarning ? (

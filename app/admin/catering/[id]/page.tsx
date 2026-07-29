@@ -418,6 +418,10 @@ export default async function AdminCateringDetailsPage({ params }: PageProps) {
                     <p className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs font-bold text-amber-950">
                       Sandbox/test only
                     </p>
+                    <p className="rounded-md bg-neutral-100 px-3 py-2 text-xs text-neutral-700">
+                      Service payment refunds are disabled until the
+                      service-work-start policy is explicitly defined.
+                    </p>
                     <SendDepositPaymentRequestButton
                       requestId={request.id}
                       disabledReason={depositRequestDisabledReason}
