@@ -10,6 +10,11 @@ Production credentials, CSP, wallet registration, webhook configuration,
 controlled live smoke tests, and owner approval are still required before
 production payment launch.
 
+Use [Square Production Activation Plan](square-production-activation-plan.md)
+as the required payment-specific go/no-go checklist. Do not set
+`SQUARE_ENVIRONMENT=production` until its implementation, security, operations,
+rehearsal, and rollback gates are complete.
+
 ## 1. Node.js Runtime
 
 Use Node.js 24 LTS for local release builds and production builds.
@@ -66,6 +71,9 @@ Square sandbox payment variables:
 - Standard checkout sandbox testing uses `SQUARE_ENVIRONMENT=sandbox`, `SQUARE_APPLICATION_ID`, `SQUARE_LOCATION_ID`, `SQUARE_ACCESS_TOKEN`, `SQUARE_WEBHOOK_SIGNATURE_KEY`, and the exact `SQUARE_WEBHOOK_NOTIFICATION_URL`.
 - Keep Square access tokens and webhook signature keys server-side. Never expose them through `NEXT_PUBLIC_*` variables, browser code, logs, or API responses.
 - Only Sandbox Payments API calls are allowed in this phase. Live production payments remain disabled. See `docs/payment-processing-decisions.md`.
+- Production values, CSP changes, wallets, webhooks, scheduled jobs, rehearsal,
+  and rollback are planned in
+  [Square Production Activation Plan](square-production-activation-plan.md).
 
 Pending-payment expiration scheduling:
 

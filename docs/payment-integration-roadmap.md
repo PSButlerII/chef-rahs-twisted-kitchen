@@ -13,6 +13,14 @@ Date: July 15, 2026
 Status: implementation roadmap. Sandbox payment phases are recorded below;
 production activation remains future work.
 
+## Current Milestone
+
+Square Sandbox implementation and consolidated lifecycle QA are complete with
+documented caveats. Production Square remains disabled. The next milestone is
+the separately gated work in
+[Square Production Activation Plan](square-production-activation-plan.md);
+that plan must be completed before any live payment environment switch.
+
 ## 1. Executive Recommendation
 
 Implement Square first. Add PayPal later only if the client confirms that customers need it after Square has completed sandbox and production verification.
