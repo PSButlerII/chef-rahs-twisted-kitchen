@@ -1,5 +1,31 @@
 # Production Deployment Runbook
 
+## Controlled Square rehearsal runbook
+
+1. Deploy the latest approved `main` and confirm migrations and dependency
+   audits are current.
+2. Configure production Square variables only in the hosting environment
+   manager. Start with `SQUARE_PRODUCTION_PAYMENTS_ENABLED=false`.
+3. Sign in as an admin and confirm `/admin/payments` reports production
+   environment/CSP readiness with only the gate blocking payment actions.
+4. Confirm the production webhook subscription has the exact URL and only the
+   four supported payment/refund events.
+5. After explicit owner approval for the amount, card owner, operator, and
+   window, set `SQUARE_PRODUCTION_PAYMENTS_ENABLED=true`; restart/redeploy if the
+   host requires it.
+6. Confirm readiness is unblocked, create one low-value standard pickup order,
+   pay once, and verify the thank-you page, ledger, receipt/reference, webhook,
+   and admin reconciliation.
+7. From the authenticated order detail, issue one full refund with reason
+   `Production rehearsal refund`. Verify the refund webhook, child ledger row,
+   parent/order state, email behavior, duplicate protection, and reconciliation.
+8. Unless the owner separately approves immediate launch, return
+   `SQUARE_PRODUCTION_PAYMENTS_ENABLED=false`, restart/redeploy, confirm checkout
+   is safely unavailable, and confirm webhooks remain reachable.
+9. Complete
+   [Square Controlled Production Rehearsal Report](square-production-rehearsal-report.md)
+   with sanitized evidence and the final gate state.
+
 ## Square configuration dry-run completed
 
 The application-side, no-provider dry-run is recorded in

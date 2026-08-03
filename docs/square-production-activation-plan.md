@@ -1,5 +1,28 @@
 # Square Production Activation Plan
 
+## Controlled production rehearsal
+
+Use the execution record in
+[Square Controlled Production Rehearsal Report](square-production-rehearsal-report.md).
+This documentation does not authorize a charge. Before the approved window,
+install production credentials only in the hosting environment manager and keep
+`SQUARE_PRODUCTION_PAYMENTS_ENABLED=false`. Verify in the authenticated admin
+payments panel that environment, CSP mode, URLs, and required variable names are
+ready and that the production gate is the only blocker.
+
+During the explicitly approved window, set the gate to true, restart or redeploy
+if needed, and run exactly one low-value standard pickup order with the approved
+real card. Confirm the payment, verified webhook, ledger, receipt/reference, and
+admin reconciliation before submitting one full refund with reason
+`Production rehearsal refund`. Confirm the refund webhook, refund child ledger
+row, order state, email behavior, duplicate-refund protection, and reconciliation.
+Do not test service deposits or final balances during this first rehearsal.
+
+After evidence is captured, return the gate to false and confirm checkout fails
+closed while webhooks remain available. Leave the gate enabled only if the owner
+issues separate, explicit written approval to go live; rehearsal approval alone
+is not launch approval.
+
 ## August 2026 configuration dry-run result
 
 The no-provider production configuration dry-run is complete; see
