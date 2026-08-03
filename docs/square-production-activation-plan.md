@@ -1,5 +1,23 @@
 # Square Production Activation Plan
 
+## August 2026 readiness-gate implementation update
+
+The centralized runtime readiness gate is now implemented, while production
+payments remain disabled. The committed defaults remain
+`SQUARE_ENVIRONMENT=sandbox`, `SQUARE_PRODUCTION_PAYMENTS_ENABLED=false`, and
+`SQUARE_CSP_MODE=sandbox`.
+
+Production payment creation and refunds require the explicit gate to be `true`,
+all Square identifiers and secrets, the exact
+`https://rahstwistedkitchen.com/api/webhooks/square` notification URL, an HTTPS
+`NEXT_PUBLIC_APP_URL`, and explicitly approved `SQUARE_CSP_MODE=production`.
+Standard checkout and both hosted-link flows fail before creating payment state
+when readiness is blocked. Customers receive generic unavailable copy; the
+authenticated admin payments page shows sanitized blockers and missing variable
+names without values. Verified webhook ingestion and reconciliation intentionally
+remain available when the creation gate is off so rollback can process in-flight
+events.
+
 Date: July 29, 2026
 
 Status: planning only — production Square remains disabled.
@@ -85,15 +103,15 @@ must not be reused unchanged.
 
 Baseline production substitutions currently documented by Square:
 
-| Directive/control | Production requirement |
-| --- | --- |
-| SDK script | Load `https://web.squarecdn.com/v1/square.js`, not the Sandbox SDK. |
-| `script-src` | Allow `https://web.squarecdn.com`; retain `https://pay.google.com` only if Google Pay is enabled and verified. |
-| `frame-src` | Allow `https://web.squarecdn.com` plus only method-specific production frames confirmed during rehearsal. |
-| `connect-src` | Allow `https://web.squarecdn.com`, `https://pci-connect.squareup.com`, and Square’s documented telemetry endpoint if still required. Remove `squareupsandbox.com` endpoints. |
-| `style-src` | Allow `https://web.squarecdn.com` if required by the selected SDK elements. |
-| `font-src` | Retain only observed/documented production assets such as `https://square-fonts-production-f.squarecdn.com`, `https://d1g145x70srn7h.cloudfront.net`, and `https://cash-f.squarecdn.com` when Cash App Pay is enabled. |
-| Permissions Policy | Replace the Sandbox payment origin with `https://web.squarecdn.com` and verify wallet behavior. |
+| Directive/control  | Production requirement                                                                                                                                                                                                 |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| SDK script         | Load `https://web.squarecdn.com/v1/square.js`, not the Sandbox SDK.                                                                                                                                                    |
+| `script-src`       | Allow `https://web.squarecdn.com`; retain `https://pay.google.com` only if Google Pay is enabled and verified.                                                                                                         |
+| `frame-src`        | Allow `https://web.squarecdn.com` plus only method-specific production frames confirmed during rehearsal.                                                                                                              |
+| `connect-src`      | Allow `https://web.squarecdn.com`, `https://pci-connect.squareup.com`, and Square’s documented telemetry endpoint if still required. Remove `squareupsandbox.com` endpoints.                                           |
+| `style-src`        | Allow `https://web.squarecdn.com` if required by the selected SDK elements.                                                                                                                                            |
+| `font-src`         | Retain only observed/documented production assets such as `https://square-fonts-production-f.squarecdn.com`, `https://d1g145x70srn7h.cloudfront.net`, and `https://cash-f.squarecdn.com` when Cash App Pay is enabled. |
+| Permissions Policy | Replace the Sandbox payment origin with `https://web.squarecdn.com` and verify wallet behavior.                                                                                                                        |
 
 Security rules:
 

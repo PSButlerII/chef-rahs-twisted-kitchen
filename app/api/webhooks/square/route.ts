@@ -1,6 +1,9 @@
 import { createHash } from "node:crypto";
 import { prisma } from "@/lib/prisma";
-import { getSquareServerConfig, getSquareWebhookConfig } from "@/lib/square";
+import {
+  getSquareReconciliationConfig,
+  getSquareWebhookConfig,
+} from "@/lib/square";
 import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { WebhooksHelper } from "square";
@@ -162,7 +165,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const squareConfig = getSquareServerConfig();
+    const squareConfig = getSquareReconciliationConfig();
 
     if (eventType.startsWith("refund.")) {
       if (!refund?.id) {
@@ -203,7 +206,9 @@ export async function POST(request: Request) {
       }
 
       const status = refund.status ?? "UNKNOWN";
-      const eventAt = new Date(refund.updated_at ?? refund.created_at ?? Date.now());
+      const eventAt = new Date(
+        refund.updated_at ?? refund.created_at ?? Date.now(),
+      );
 
       if (status === "COMPLETED") {
         await completeRefundAttempt({

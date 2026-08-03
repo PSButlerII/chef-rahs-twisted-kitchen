@@ -7,6 +7,7 @@ import { completeRefundAttempt } from "@/lib/refund-completion";
 import { getPaymentRefundEligibility } from "@/lib/refund-eligibility";
 import { prisma } from "@/lib/prisma";
 import { refundSquareSandboxPayment } from "@/lib/square-refund";
+import { getSquareReadiness } from "@/lib/square-readiness";
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +23,13 @@ function isP2002(error: unknown) {
 export async function POST(request: Request, { params }: RouteContext) {
   const auth = await requireAdminApi();
   if (auth.response) return auth.response;
+  const squareReadiness = getSquareReadiness();
+  if (!squareReadiness.enabled) {
+    return NextResponse.json(
+      { error: squareReadiness.adminMessage, readiness: squareReadiness },
+      { status: 503 },
+    );
+  }
 
   const { id } = await params;
   const body = (await request.json().catch(() => null)) as {
@@ -51,7 +59,10 @@ export async function POST(request: Request, { params }: RouteContext) {
   });
 
   if (!original) {
-    return NextResponse.json({ error: "Payment was not found." }, { status: 404 });
+    return NextResponse.json(
+      { error: "Payment was not found." },
+      { status: 404 },
+    );
   }
 
   const eligibility = getPaymentRefundEligibility(original);
@@ -86,7 +97,7 @@ export async function POST(request: Request, { params }: RouteContext) {
           refundReason: reason,
           originalPaymentAttemptId: original.id,
           originalProviderPaymentId: original.providerPaymentId,
-          environment: "sandbox",
+          environment: squareReadiness.environment,
           requestedByAdminUserId: auth.session?.user?.id ?? null,
           requestedAt: new Date().toISOString(),
         },
@@ -147,7 +158,7 @@ export async function POST(request: Request, { params }: RouteContext) {
         originalPaymentAttemptId: original.id,
         amountCents: original.amountCents,
         providerStatus: status,
-        environment: "sandbox",
+        environment: squareReadiness.environment,
       },
     });
 
@@ -165,7 +176,7 @@ export async function POST(request: Request, { params }: RouteContext) {
           refundReason: reason,
           originalPaymentAttemptId: original.id,
           originalProviderPaymentId: original.providerPaymentId,
-          environment: "sandbox",
+          environment: squareReadiness.environment,
           requestedByAdminUserId: auth.session?.user?.id ?? null,
           requestedAt: refundAttempt.createdAt.toISOString(),
           requestErrorAt: new Date().toISOString(),

@@ -39,6 +39,10 @@ import {
   TIP_PRESET_PERCENTAGES,
 } from "@/lib/payment-config";
 import { createSquareClient, getSquareServerConfig } from "@/lib/square";
+import {
+  getSquareReadiness,
+  SQUARE_CUSTOMER_UNAVAILABLE_MESSAGE,
+} from "@/lib/square-readiness";
 
 type CreateOrderRequest = {
   items?: CartItem[];
@@ -1357,6 +1361,7 @@ export async function POST(request: NextRequest) {
       (item) => item.requiresApproval,
     );
     const usesSquare = checkout.paymentMethod === "square";
+    const squareReadiness = usesSquare ? getSquareReadiness() : null;
 
     if (
       (requiresApproval &&
@@ -1378,7 +1383,7 @@ export async function POST(request: NextRequest) {
         getSquareServerConfig();
       } catch {
         return NextResponse.json(
-          { error: "Square sandbox checkout is not configured." },
+          { error: SQUARE_CUSTOMER_UNAVAILABLE_MESSAGE },
           { status: 503 },
         );
       }
@@ -1389,7 +1394,7 @@ export async function POST(request: NextRequest) {
         !isSquareIdempotencyKey(submittedSquareIdempotencyKey)
       ) {
         return NextResponse.json(
-          { error: "Square sandbox payment details are required." },
+          { error: "Payment details are required." },
           { status: 400 },
         );
       }
@@ -1636,7 +1641,7 @@ export async function POST(request: NextRequest) {
                 orderSubmissionTime.getTime() + PENDING_PAYMENT_EXPIRATION_MS,
               ),
               metadata: {
-                environment: "sandbox",
+                environment: squareReadiness?.environment ?? "invalid",
                 checkout: "standard",
               },
             },
@@ -1669,7 +1674,7 @@ export async function POST(request: NextRequest) {
           autocomplete: true,
           locationId: squareConfig.locationId,
           referenceId: order.id.slice(0, 40),
-          note: `Sandbox standard order ${order.id}`,
+          note: `Website standard order ${order.id}`,
         });
         const payment = paymentResponse.payment;
         const paidAt =
@@ -1717,7 +1722,7 @@ export async function POST(request: NextRequest) {
               statusHistory: {
                 create: {
                   status: "ACCEPTED",
-                  note: "Square sandbox payment completed.",
+                  note: "Square payment completed.",
                 },
               },
             },

@@ -4,6 +4,7 @@ import { requireAdminPage } from "@/lib/auth-guards";
 import { MarkOrderPaidButton } from "@/components/admin/MarkOrderPaidButton";
 import { formatPaymentStatus } from "@/lib/format-labels";
 import type { DecimalLike } from "@/types/display";
+import { getSquareReadiness } from "@/lib/square-readiness";
 
 type PaymentDueOrder = {
   id: string;
@@ -92,6 +93,7 @@ function getWebsiteMismatchWarning(
 
 export default async function AdminPaymentsPage() {
   await requireAdminPage();
+  const squareReadiness = getSquareReadiness();
 
   const [paymentDueOrders, reconciliationOrders, serviceDeposits] =
     await Promise.all([
@@ -222,8 +224,41 @@ export default async function AdminPaymentsPage() {
             <p className="text-sm font-bold text-[#6b5a50]">
               Square Connection
             </p>
-            <p className="mt-3 text-2xl font-black">Not Connected</p>
+            <p className="mt-3 text-2xl font-black">
+              {squareReadiness.enabled ? "Available" : "Blocked"}
+            </p>
           </div>
+        </section>
+
+        <section className="admin-card mt-5 p-6">
+          <h2 className="text-xl font-black">Square Readiness</h2>
+          <dl className="mt-4 grid gap-3 text-sm md:grid-cols-3">
+            <div>
+              <dt className="font-bold text-[#6b5a50]">Environment</dt>
+              <dd>{squareReadiness.environment}</dd>
+            </div>
+            <div>
+              <dt className="font-bold text-[#6b5a50]">Production gate</dt>
+              <dd>
+                {squareReadiness.productionGateEnabled ? "Enabled" : "Disabled"}
+              </dd>
+            </div>
+            <div>
+              <dt className="font-bold text-[#6b5a50]">Payment actions</dt>
+              <dd>{squareReadiness.enabled ? "Unblocked" : "Blocked"}</dd>
+            </div>
+          </dl>
+          <p className="mt-4 text-sm">{squareReadiness.adminMessage}</p>
+          {squareReadiness.missingVariables.length > 0 ? (
+            <p className="mt-2 text-sm text-[#6b5a50]">
+              Missing variable names:{" "}
+              {squareReadiness.missingVariables.join(", ")}
+            </p>
+          ) : null}
+          <p className="mt-2 text-xs text-[#6b5a50]">
+            Secret values are never displayed. Disabling payment actions does
+            not disable verified webhook reconciliation.
+          </p>
         </section>
 
         <section className="admin-card mt-10 overflow-hidden">

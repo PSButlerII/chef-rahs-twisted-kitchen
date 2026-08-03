@@ -1,11 +1,24 @@
 import type { NextConfig } from "next";
 
 const isDevelopment = process.env.NODE_ENV === "development";
+const squareCspMode =
+  process.env.SQUARE_ENVIRONMENT === "production" &&
+  process.env.SQUARE_CSP_MODE === "production"
+    ? "production"
+    : "sandbox";
+const squareSdkOrigin =
+  squareCspMode === "production"
+    ? "https://web.squarecdn.com"
+    : "https://sandbox.web.squarecdn.com";
+const squarePciOrigin =
+  squareCspMode === "production"
+    ? "https://pci-connect.squareup.com"
+    : "https://pci-connect.squareupsandbox.com";
 const scriptSources = [
   "'self'",
   "'unsafe-inline'",
   ...(isDevelopment ? ["'unsafe-eval'"] : []),
-  "https://sandbox.web.squarecdn.com",
+  squareSdkOrigin,
   "https://pay.google.com",
 ].join(" ");
 
@@ -28,8 +41,7 @@ const securityHeaders = [
   },
   {
     key: "Permissions-Policy",
-    value:
-      'camera=(), microphone=(), geolocation=(), payment=(self "https://sandbox.web.squarecdn.com"), usb=(), interest-cohort=()',
+    value: `camera=(), microphone=(), geolocation=(), payment=(self "${squareSdkOrigin}"), usb=(), interest-cohort=()`,
   },
   {
     key: "X-Frame-Options",
@@ -37,7 +49,7 @@ const securityHeaders = [
   },
   {
     key: "Content-Security-Policy",
-    value: `default-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'; object-src 'none'; script-src ${scriptSources}; frame-src https://sandbox.web.squarecdn.com; connect-src 'self' https://sandbox.web.squarecdn.com https://pci-connect.squareupsandbox.com https://o160250.ingest.sentry.io; style-src 'self' 'unsafe-inline' https://sandbox.web.squarecdn.com; font-src 'self' https://square-fonts-production-f.squarecdn.com https://d1g145x70srn7h.cloudfront.net https://cash-f.squarecdn.com; img-src 'self' data: https:`,
+    value: `default-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'; object-src 'none'; script-src ${scriptSources}; frame-src ${squareSdkOrigin}; connect-src 'self' ${squareSdkOrigin} ${squarePciOrigin} https://o160250.ingest.sentry.io; style-src 'self' 'unsafe-inline' ${squareSdkOrigin}; font-src 'self' https://square-fonts-production-f.squarecdn.com https://d1g145x70srn7h.cloudfront.net https://cash-f.squarecdn.com; img-src 'self' data: https:`,
   },
 ];
 

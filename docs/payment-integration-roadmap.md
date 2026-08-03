@@ -1,5 +1,14 @@
 # Payment Integration Roadmap
 
+## August 2026 gate milestone
+
+The default-off production readiness gate is implemented across standard
+checkout, deposit links, final-balance links, and refunds. Production payments
+remain disabled pending credentials, CSP and webhook rehearsal, owner approval,
+and a controlled live test. Webhook ingestion remains independent of the
+creation gate for safe rollback reconciliation. PayPal, ACH, invoices, partial
+refunds, and customer refund requests remain out of scope.
+
 > The client decisions that were previously open in this roadmap are now resolved. Use `docs/payment-processing-decisions.md` as the authoritative policy for implementation; retain this document for architecture and risk context.
 >
 > The additive internal ledger, webhook deduplication table, and hashed
@@ -427,6 +436,7 @@ scheduled expiration-job monitoring, operational reconciliation ownership, and
 a controlled low-value live payment/refund rehearsal with an approved rollback
 window. PayPal, ACH, partial refunds, public retry redemption, and service
 refunds remain separate later scopes.
+
 ## Implemented: admin Square Sandbox full-refund foundation
 
 The admin order detail now supports full refunds of eligible paid standard

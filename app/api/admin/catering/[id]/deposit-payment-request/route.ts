@@ -9,6 +9,7 @@ import { formatServiceRequestType } from "@/lib/format-labels";
 import { PENDING_PAYMENT_EXPIRATION_MS } from "@/lib/payment-config";
 import { prisma } from "@/lib/prisma";
 import { createSquareDepositPaymentLink } from "@/lib/square-deposit-payment-link";
+import { getSquareReadiness } from "@/lib/square-readiness";
 
 type Context = { params: Promise<{ id: string }> };
 const activeStatuses = ["CREATED", "PENDING", "REQUIRES_ACTION"] as const;
@@ -22,6 +23,13 @@ function metadata(value: Prisma.JsonValue | null): Prisma.JsonObject {
 export async function POST(_request: Request, context: Context) {
   const { session, response } = await requireAdminApi();
   if (response) return response;
+  const squareReadiness = getSquareReadiness();
+  if (!squareReadiness.enabled) {
+    return NextResponse.json(
+      { error: squareReadiness.adminMessage, readiness: squareReadiness },
+      { status: 503 },
+    );
+  }
   const { id } = await context.params;
   const now = new Date();
   const serviceRequest = await prisma.cateringRequest.findUnique({
@@ -91,7 +99,7 @@ export async function POST(_request: Request, context: Context) {
           serviceRequestId: id,
           expiresAt: new Date(now.getTime() + PENDING_PAYMENT_EXPIRATION_MS),
           metadata: {
-            environment: "sandbox",
+            environment: squareReadiness.environment,
             serviceRequestId: id,
             serviceType: serviceRequest.requestType,
           },
@@ -177,7 +185,10 @@ export async function POST(_request: Request, context: Context) {
       action: "SERVICE_DEPOSIT_PAYMENT_REQUEST_SENT",
       entityType: "CateringRequest",
       entityId: id,
-      metadata: { paymentAttemptId: attempt.id, environment: "sandbox" },
+      metadata: {
+        paymentAttemptId: attempt.id,
+        environment: squareReadiness.environment,
+      },
     });
   }
   return NextResponse.json({

@@ -1,5 +1,21 @@
 # Chef Rah's Twisted Kitchen Developer User Guide
 
+## Square readiness controls
+
+Local and Sandbox work uses `SQUARE_ENVIRONMENT=sandbox`,
+`SQUARE_PRODUCTION_PAYMENTS_ENABLED=false`, and `SQUARE_CSP_MODE=sandbox`.
+Sandbox payment actions continue to depend on the application ID, location ID,
+and access token; webhook verification separately requires its signature key and
+exact notification URL.
+
+Production actions additionally require the production gate set to `true`, all
+Square credentials, the canonical HTTPS app URL, exact production webhook URL,
+and explicitly approved production CSP mode. Customer endpoints expose only a
+generic unavailable message. The authenticated admin payments page may show the
+environment, gate state, missing variable names, and sanitized URL/CSP blockers,
+never secret values. Turning the gate off leaves verified webhook reconciliation
+available.
+
 Last updated: July 14, 2026
 
 This guide covers local setup, database maintenance, validation, launch rules, and production deployment for the current application. Use `docs/production-runbook.md` as the final production checklist and `docs/fresh-db-deployment-rehearsal.md` for a full rehearsal record.

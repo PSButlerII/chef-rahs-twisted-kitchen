@@ -1,5 +1,19 @@
 # Production Deployment Runbook
 
+## Square production gate and rollback
+
+Production payment creation is fail-closed. Keep
+`SQUARE_PRODUCTION_PAYMENTS_ENABLED=false` until the complete Square activation
+checklist and owner approval are recorded. Production also requires
+`SQUARE_ENVIRONMENT=production`, all Square credentials, the exact production
+webhook URL, HTTPS `NEXT_PUBLIC_APP_URL`, and `SQUARE_CSP_MODE=production` after
+CSP rehearsal. Credentials must stay in the host secret store.
+
+For rollback, set the production gate to `false` and restart or redeploy. Confirm
+checkout and authenticated hosted-link/refund APIs are blocked and the admin
+payments page reports the blocker. Do not disable the webhook route: verified
+in-flight events must remain able to reconcile.
+
 Last updated: July 29, 2026
 
 Use this runbook to prepare, deploy, verify, and recover the production Chef Rah's Twisted Kitchen app at `https://rahstwistedkitchen.com`.

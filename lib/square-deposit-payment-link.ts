@@ -31,7 +31,7 @@ export async function createSquareServicePaymentLink(input: Input) {
   const link = response.paymentLink;
 
   if (!link?.id || !link.orderId || !link.url) {
-    throw new Error("Square did not return a complete sandbox payment link.");
+    throw new Error("Square did not return a complete payment link.");
   }
 
   return {

@@ -19,7 +19,7 @@ export async function refundSquareSandboxPayment({
 }: RefundSquarePaymentInput) {
   getSquareServerConfig();
   if (currency !== "USD") {
-    throw new Error("Square sandbox refunds currently support USD only.");
+    throw new Error("Square refunds currently support USD only.");
   }
 
   const response = await createSquareClient().refunds.refundPayment({

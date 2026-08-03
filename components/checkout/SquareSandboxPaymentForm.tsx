@@ -46,6 +46,7 @@ type PublicConfig = {
   applicationId: string | null;
   locationId: string | null;
   disabledReason: string | null;
+  environment: "sandbox" | "production" | "invalid";
 };
 
 export type SquareSandboxPaymentHandle = {
@@ -59,10 +60,12 @@ type Props = {
   onAvailabilityChange: (available: boolean) => void;
 };
 
-const scriptId = "square-sandbox-web-payments-sdk";
-const scriptUrl = "https://sandbox.web.squarecdn.com/v1/square.js";
-
-function loadSquareScript() {
+function loadSquareScript(environment: "sandbox" | "production") {
+  const scriptId = `square-${environment}-web-payments-sdk`;
+  const scriptUrl =
+    environment === "production"
+      ? "https://web.squarecdn.com/v1/square.js"
+      : "https://sandbox.web.squarecdn.com/v1/square.js";
   return new Promise<void>((resolve, reject) => {
     if (window.Square) {
       resolve();
@@ -111,8 +114,11 @@ export const SquareSandboxPaymentForm = forwardRef<
   const cardRef = useRef<SquarePaymentMethod | null>(null);
   const applePayRef = useRef<SquarePaymentMethod | null>(null);
   const googlePayRef = useRef<SquarePaymentMethod | null>(null);
-  const [message, setMessage] = useState("Loading Square sandbox checkout...");
+  const [message, setMessage] = useState("Loading secure online checkout...");
   const [ready, setReady] = useState(false);
+  const [paymentEnvironment, setPaymentEnvironment] = useState<
+    "sandbox" | "production"
+  >("sandbox");
   const [wallets, setWallets] = useState({ applePay: false, googlePay: false });
 
   useImperativeHandle(ref, () => ({
@@ -138,11 +144,18 @@ export const SquareSandboxPaymentForm = forwardRef<
 
         if (!config.enabled || !config.applicationId || !config.locationId) {
           throw new Error(
-            config.disabledReason ?? "Square sandbox checkout is disabled.",
+            config.disabledReason ??
+              "Online payment is temporarily unavailable.",
           );
         }
 
-        await loadSquareScript();
+        if (config.environment === "invalid") {
+          throw new Error(
+            "Online payment is temporarily unavailable. Please try again later.",
+          );
+        }
+        setPaymentEnvironment(config.environment);
+        await loadSquareScript(config.environment);
 
         if (!window.Square || cancelled) return;
 
@@ -157,7 +170,11 @@ export const SquareSandboxPaymentForm = forwardRef<
 
         if (cancelled) return;
         setReady(true);
-        setMessage("Sandbox card fields are ready.");
+        setMessage(
+          config.environment === "sandbox"
+            ? "Sandbox card fields are ready."
+            : "Secure card fields are ready.",
+        );
         onAvailabilityChange(true);
 
         try {
@@ -191,7 +208,9 @@ export const SquareSandboxPaymentForm = forwardRef<
 
         if (cancelled) return;
         setMessage(
-          "Sandbox card fields are ready. Wallets appear when supported.",
+          config.environment === "sandbox"
+            ? "Sandbox card fields are ready. Wallets appear when supported."
+            : "Secure card fields are ready. Wallets appear when supported.",
         );
       } catch (error) {
         if (cancelled) return;
@@ -199,7 +218,7 @@ export const SquareSandboxPaymentForm = forwardRef<
         setMessage(
           error instanceof Error
             ? error.message
-            : "Square sandbox checkout is unavailable.",
+            : "Online payment is temporarily unavailable.",
         );
         onAvailabilityChange(false);
       }
@@ -223,7 +242,7 @@ export const SquareSandboxPaymentForm = forwardRef<
     if (!method || disabled) return;
 
     try {
-      setMessage("Tokenizing sandbox payment...");
+      setMessage("Securing payment details...");
       await onWalletToken(getToken(await method.tokenize()));
     } catch (error) {
       setMessage(
@@ -235,7 +254,9 @@ export const SquareSandboxPaymentForm = forwardRef<
   return (
     <div className="rounded-lg border border-amber-300 bg-amber-50 p-4">
       <p className="text-sm font-black text-amber-950">
-        Square Sandbox — test payments only
+        {paymentEnvironment === "sandbox"
+          ? "Square Sandbox — test payments only"
+          : "Secure online payment"}
       </p>
       <p className="mt-1 text-xs leading-5 text-amber-900">{message}</p>
 
@@ -261,7 +282,7 @@ export const SquareSandboxPaymentForm = forwardRef<
 
       {!wallets.applePay && !wallets.googlePay && ready && (
         <p className="mt-3 text-xs text-amber-900">
-          Wallet buttons appear only on supported sandbox browsers and devices.
+          Wallet buttons appear only on supported browsers and devices.
         </p>
       )}
     </div>

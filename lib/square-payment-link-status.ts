@@ -3,7 +3,7 @@ import "server-only";
 import { Prisma, type PaymentAttempt } from "@prisma/client";
 import { SquareError } from "square";
 import { prisma } from "@/lib/prisma";
-import { createSquareClient } from "@/lib/square";
+import { createSquareReconciliationClient } from "@/lib/square";
 
 const STALE_REASON = "square_payment_link_not_found";
 
@@ -50,9 +50,10 @@ export async function checkActiveServicePaymentLink(
   }
 
   try {
-    const response = await createSquareClient().checkout.paymentLinks.get({
-      id: paymentLinkId,
-    });
+    const response =
+      await createSquareReconciliationClient().checkout.paymentLinks.get({
+        id: paymentLinkId,
+      });
 
     return response.paymentLink ? { status: "valid" } : { status: "unchecked" };
   } catch (error) {
