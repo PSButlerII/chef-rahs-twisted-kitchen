@@ -1,5 +1,16 @@
 # Square Production Activation Plan
 
+## August 2026 configuration dry-run result
+
+The no-provider production configuration dry-run is complete; see
+[Square Production Configuration Dry-Run](square-production-config-dry-run.md).
+Production payments remain disabled. The dry-run verified sanitized readiness
+diagnostics, fail-closed customer and admin payment actions, production CSP-mode
+reporting, and webhook reachability independent of the creation gate. No Square
+API call or real credential was used. The next step is a controlled low-value
+production rehearsal only after explicit owner approval and every remaining
+activation checklist item passes.
+
 ## August 2026 readiness-gate implementation update
 
 The centralized runtime readiness gate is now implemented, while production

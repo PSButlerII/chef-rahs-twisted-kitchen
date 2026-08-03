@@ -1,5 +1,15 @@
 # Production Deployment Runbook
 
+## Square configuration dry-run completed
+
+The application-side, no-provider dry-run is recorded in
+[Square Production Configuration Dry-Run](square-production-config-dry-run.md).
+Production payments remain disabled. Repeat its gate-off checks after any
+payment configuration change. A real-money rehearsal is permitted only after
+explicit owner approval, verified production secrets, approved CSP/wallet
+configuration, confirmed webhook subscription, and rollback monitoring. The
+dry-run itself must never call Square payment, refund, or payment-link APIs.
+
 ## Square production gate and rollback
 
 Production payment creation is fail-closed. Keep

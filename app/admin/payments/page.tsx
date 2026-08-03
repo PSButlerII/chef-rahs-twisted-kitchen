@@ -232,10 +232,14 @@ export default async function AdminPaymentsPage() {
 
         <section className="admin-card mt-5 p-6">
           <h2 className="text-xl font-black">Square Readiness</h2>
-          <dl className="mt-4 grid gap-3 text-sm md:grid-cols-3">
+          <dl className="mt-4 grid gap-3 text-sm md:grid-cols-4">
             <div>
               <dt className="font-bold text-[#6b5a50]">Environment</dt>
               <dd>{squareReadiness.environment}</dd>
+            </div>
+            <div>
+              <dt className="font-bold text-[#6b5a50]">CSP mode</dt>
+              <dd>{squareReadiness.cspMode}</dd>
             </div>
             <div>
               <dt className="font-bold text-[#6b5a50]">Production gate</dt>

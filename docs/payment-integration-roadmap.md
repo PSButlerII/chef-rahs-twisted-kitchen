@@ -1,5 +1,15 @@
 # Payment Integration Roadmap
 
+## August 2026 production configuration dry-run
+
+The non-provider production configuration dry-run is complete and documented in
+[Square Production Configuration Dry-Run](square-production-config-dry-run.md).
+It verified the default-off gate, sanitized admin/customer diagnostics, CSP-mode
+reporting, guarded payment actions, and webhook reachability without a Square API
+call. Production payments remain disabled. The next milestone is a controlled
+low-value production rehearsal only after explicit owner approval and completion
+of all activation prerequisites.
+
 ## August 2026 gate milestone
 
 The default-off production readiness gate is implemented across standard

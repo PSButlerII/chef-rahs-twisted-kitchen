@@ -5,6 +5,7 @@ export type SquareEnvironment = "sandbox" | "production" | "invalid";
 
 export type SquareReadiness = {
   environment: SquareEnvironment;
+  cspMode: string;
   enabled: boolean;
   productionGateEnabled: boolean;
   missingVariables: string[];
@@ -36,6 +37,7 @@ export function getSquareReadiness(): SquareReadiness {
       : "invalid";
   const productionGateEnabled =
     value("SQUARE_PRODUCTION_PAYMENTS_ENABLED") === "true";
+  const cspMode = value("SQUARE_CSP_MODE") || "unset";
   const required = [
     "SQUARE_APPLICATION_ID",
     "SQUARE_LOCATION_ID",
@@ -92,6 +94,7 @@ export function getSquareReadiness(): SquareReadiness {
   const enabled = blockingReasons.length === 0;
   return {
     environment,
+    cspMode,
     enabled,
     productionGateEnabled,
     missingVariables,
