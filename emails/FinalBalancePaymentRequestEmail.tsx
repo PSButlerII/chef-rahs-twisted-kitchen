@@ -1,6 +1,10 @@
 import { Button, Section, Text } from "react-email";
 import { BrandedEmailLayout } from "@/emails/BrandedEmailLayout";
 import { emailStyles } from "@/emails/styles";
+import {
+  getSquareSandboxPaymentNotice,
+  type SquareDisplayEnvironment,
+} from "@/lib/square-display-labels";
 
 type Props = {
   customerName: string;
@@ -9,6 +13,7 @@ type Props = {
   depositPaid: number;
   remainingBalance: number;
   paymentUrl: string;
+  environment: SquareDisplayEnvironment;
 };
 
 export function FinalBalancePaymentRequestEmail({
@@ -18,7 +23,9 @@ export function FinalBalancePaymentRequestEmail({
   depositPaid,
   remainingBalance,
   paymentUrl,
+  environment,
 }: Props) {
+  const sandboxNotice = getSquareSandboxPaymentNotice(environment);
   return (
     <BrandedEmailLayout
       preview={`Your ${serviceType.toLowerCase()} final balance is ready`}
@@ -50,9 +57,9 @@ export function FinalBalancePaymentRequestEmail({
           Pay final balance with Square
         </Button>
       </Section>
-      <Text style={emailStyles.mutedText}>
-        This is a Square Sandbox payment request for testing.
-      </Text>
+      {sandboxNotice ? (
+        <Text style={emailStyles.mutedText}>{sandboxNotice}</Text>
+      ) : null}
     </BrandedEmailLayout>
   );
 }

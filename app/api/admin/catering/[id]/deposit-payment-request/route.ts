@@ -164,6 +164,7 @@ export async function POST(_request: Request, context: Context) {
       subject: `Your ${serviceTypeLabel.toLowerCase()} deposit is ready`,
       type: "service-deposit-payment-request",
       react: DepositPaymentRequestEmail({
+        environment: squareReadiness.environment,
         customerName: serviceRequest.name,
         serviceType: serviceTypeLabel,
         depositAmount: attempt.amountCents / 100,

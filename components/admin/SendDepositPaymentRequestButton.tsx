@@ -2,19 +2,30 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import {
+  getSquareAdminProviderLabel,
+  type SquareDisplayEnvironment,
+} from "@/lib/square-display-labels";
 
 export function SendDepositPaymentRequestButton({
   requestId,
   disabledReason,
+  environment,
 }: {
   requestId: string;
   disabledReason: string | null;
+  environment: SquareDisplayEnvironment;
 }) {
   const router = useRouter();
   const [sending, setSending] = useState(false);
 
   async function sendRequest() {
-    if (!confirm("Create and email this Square Sandbox deposit link?")) return;
+    if (
+      !confirm(
+        `Create and email this ${getSquareAdminProviderLabel(environment)} deposit link?`,
+      )
+    )
+      return;
     setSending(true);
     const response = await fetch(
       `/api/admin/catering/${requestId}/deposit-payment-request`,
@@ -36,7 +47,10 @@ export function SendDepositPaymentRequestButton({
         disabled={Boolean(disabledReason) || sending}
         onClick={sendRequest}
         className="brand-button-primary w-full px-4 py-3 text-sm disabled:bg-neutral-300 disabled:text-neutral-600"
-        title={disabledReason ?? "Create and email a Square Sandbox link."}
+        title={
+          disabledReason ??
+          `Create and email a ${getSquareAdminProviderLabel(environment)} link.`
+        }
       >
         {sending ? "Creating Square Link..." : "Send Deposit Payment Request"}
       </button>

@@ -183,7 +183,7 @@ export async function POST(request: Request, { params }: RouteContext) {
         },
       },
     });
-    console.error("Square sandbox refund request failed.", error);
+    console.error("Square refund request failed.", error);
     return NextResponse.json(
       {
         error:

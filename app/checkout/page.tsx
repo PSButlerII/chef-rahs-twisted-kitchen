@@ -29,6 +29,11 @@ import {
   SquareSandboxPaymentForm,
   type SquareSandboxPaymentHandle,
 } from "@/components/checkout/SquareSandboxPaymentForm";
+import {
+  getSquareCustomerPaymentLabel,
+  getSquareCustomerUnavailableLabel,
+  type SquareDisplayEnvironment,
+} from "@/lib/square-display-labels";
 
 const sectionClass =
   "rounded-lg border border-[#ead8c1] bg-white/95 p-5 shadow-[0_18px_45px_rgba(76,36,18,0.08)] sm:p-6";
@@ -129,11 +134,18 @@ export default function CheckoutPage() {
   const [submitting, setSubmitting] = useState(false);
   const [checkoutMode, setCheckoutMode] = useState<CheckoutMode>("loading");
   const [squarePaymentAvailable, setSquarePaymentAvailable] = useState(false);
+  const [squareEnvironment, setSquareEnvironment] =
+    useState<SquareDisplayEnvironment>("invalid");
   const squarePaymentRef = useRef<SquareSandboxPaymentHandle>(null);
   const squareIdempotencyKeyRef = useRef<string | null>(null);
   const handleSquareAvailability = useCallback((available: boolean) => {
     setSquarePaymentAvailable(available);
   }, []);
+  const handleSquareEnvironment = useCallback(
+    (environment: SquareDisplayEnvironment) =>
+      setSquareEnvironment(environment),
+    [],
+  );
   const router = useRouter();
   const checkoutAllergenConflicts = items.flatMap((item) =>
     (item.allergens ?? []).filter((allergen) =>
@@ -502,7 +514,7 @@ export default function CheckoutPage() {
       }
 
       if (usesSquare && !squareSourceId) {
-        alert("Square sandbox checkout is not ready.");
+        alert("Square checkout is not ready.");
         return;
       }
 
@@ -1151,6 +1163,7 @@ export default function CheckoutPage() {
                     disabled={submitting}
                     onWalletToken={submitOrder}
                     onAvailabilityChange={handleSquareAvailability}
+                    onEnvironmentChange={handleSquareEnvironment}
                   />
                 )}
 
@@ -1295,12 +1308,14 @@ export default function CheckoutPage() {
                       : requiresAllergenAcknowledgement
                         ? "Acknowledge Allergen Warning"
                         : !checkoutPaymentAvailable
-                          ? "Square Sandbox Unavailable"
+                          ? getSquareCustomerUnavailableLabel(squareEnvironment)
                           : requiresApproval
                             ? "Submit for Approval"
                             : manualPaymentCheckoutAllowed
                               ? "Submit Order"
-                              : "Pay with Card (Sandbox)"}
+                              : getSquareCustomerPaymentLabel(
+                                  squareEnvironment,
+                                )}
               </button>
             </section>
           </aside>

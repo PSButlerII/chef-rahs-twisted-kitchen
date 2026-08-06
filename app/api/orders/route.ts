@@ -315,7 +315,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json(
           {
             error:
-              "This sandbox payment request is already being processed. No second charge was attempted.",
+              "This payment request is already being processed. No second charge was attempted.",
           },
           { status: 409 },
         );
@@ -1585,7 +1585,7 @@ export async function POST(request: NextRequest) {
                 note: requiresApproval
                   ? "Order created and waiting for approval."
                   : usesSquare
-                    ? "Order created with a pending Square sandbox payment."
+                    ? "Order created with a pending Square payment."
                     : "Order created and auto-approved.",
               },
             },
@@ -1695,7 +1695,7 @@ export async function POST(request: NextRequest) {
           return NextResponse.json(
             {
               error:
-                "Square has not completed this sandbox payment. No second charge will be attempted with this request identifier.",
+                "Square has not completed this payment. No second charge will be attempted with this request identifier.",
             },
             { status: 409 },
           );
@@ -1744,7 +1744,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json(
           {
             error:
-              "Square sandbox payment could not be confirmed. The payment request is retained to prevent a duplicate charge.",
+              "Square payment could not be confirmed. The payment request is retained to prevent a duplicate charge.",
           },
           { status: 502 },
         );

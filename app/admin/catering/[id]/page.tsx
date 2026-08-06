@@ -8,6 +8,8 @@ import { CateringQuoteForm } from "@/components/admin/CateringQuoteForm";
 import { MarkDepositPaidButton } from "@/components/admin/MarkDepositPaidButton";
 import { SendDepositPaymentRequestButton } from "@/components/admin/SendDepositPaymentRequestButton";
 import { SendFinalBalancePaymentRequestButton } from "@/components/admin/SendFinalBalancePaymentRequestButton";
+import { getSquareReadiness } from "@/lib/square-readiness";
+import { getSquareAdminProviderLabel } from "@/lib/square-display-labels";
 import {
   formatServiceRequestStatus,
   formatServiceRequestType,
@@ -36,6 +38,10 @@ function formatOptionalCurrency(value: number | null) {
 
 export default async function AdminCateringDetailsPage({ params }: PageProps) {
   await requireAdminPage();
+  const squareReadiness = getSquareReadiness();
+  const squareProviderLabel = getSquareAdminProviderLabel(
+    squareReadiness.environment,
+  );
 
   const { id } = await params;
 
@@ -416,7 +422,7 @@ export default async function AdminCateringDetailsPage({ params }: PageProps) {
                   <div className="mt-5 space-y-3 border-t border-[#ead8c1] pt-5">
                     <p className="text-sm font-bold">Square Payment Requests</p>
                     <p className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs font-bold text-amber-950">
-                      Sandbox/test only
+                      {squareProviderLabel}
                     </p>
                     <p className="rounded-md bg-neutral-100 px-3 py-2 text-xs text-neutral-700">
                       Service payment refunds are disabled until the
@@ -425,10 +431,12 @@ export default async function AdminCateringDetailsPage({ params }: PageProps) {
                     <SendDepositPaymentRequestButton
                       requestId={request.id}
                       disabledReason={depositRequestDisabledReason}
+                      environment={squareReadiness.environment}
                     />
                     <SendFinalBalancePaymentRequestButton
                       requestId={request.id}
                       disabledReason={finalBalanceDisabledReason}
+                      environment={squareReadiness.environment}
                     />
                     {staleLinkInvalidated ? (
                       <p className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs font-bold text-amber-950">

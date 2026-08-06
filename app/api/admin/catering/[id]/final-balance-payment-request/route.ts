@@ -207,6 +207,7 @@ export async function POST(_request: Request, context: Context) {
       subject: `Your ${serviceTypeLabel.toLowerCase()} final balance is ready`,
       type: "service-final-balance-payment-request",
       react: FinalBalancePaymentRequestEmail({
+        environment: squareReadiness.environment,
         customerName: serviceRequest.name,
         serviceType: serviceTypeLabel,
         quotedTotal: quoteTotalCents / 100,

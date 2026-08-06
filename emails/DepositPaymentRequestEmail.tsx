@@ -1,12 +1,17 @@
 import { Button, Section, Text } from "react-email";
 import { BrandedEmailLayout } from "@/emails/BrandedEmailLayout";
 import { emailStyles } from "@/emails/styles";
+import {
+  getSquareSandboxPaymentNotice,
+  type SquareDisplayEnvironment,
+} from "@/lib/square-display-labels";
 
 type Props = {
   customerName: string;
   serviceType: string;
   depositAmount: number;
   paymentUrl: string;
+  environment: SquareDisplayEnvironment;
 };
 
 export function DepositPaymentRequestEmail({
@@ -14,7 +19,9 @@ export function DepositPaymentRequestEmail({
   serviceType,
   depositAmount,
   paymentUrl,
+  environment,
 }: Props) {
+  const sandboxNotice = getSquareSandboxPaymentNotice(environment);
   return (
     <BrandedEmailLayout
       preview={`Your ${serviceType.toLowerCase()} deposit is ready`}
@@ -35,9 +42,9 @@ export function DepositPaymentRequestEmail({
           Pay deposit with Square
         </Button>
       </Section>
-      <Text style={emailStyles.mutedText}>
-        This is a Square Sandbox payment request for testing.
-      </Text>
+      {sandboxNotice ? (
+        <Text style={emailStyles.mutedText}>{sandboxNotice}</Text>
+      ) : null}
     </BrandedEmailLayout>
   );
 }

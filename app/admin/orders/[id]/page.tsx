@@ -25,6 +25,8 @@ import type { DecimalLike } from "@/types/display";
 import { getNormalRefundEligibility } from "@/lib/payment-config";
 import { getPaymentRefundEligibility } from "@/lib/refund-eligibility";
 import { RefundPaymentButton } from "@/components/admin/RefundPaymentButton";
+import { getSquareReadiness } from "@/lib/square-readiness";
+import { getSquareAdminProviderLabel } from "@/lib/square-display-labels";
 import type { PaymentPurpose, PaymentWebsiteStatus } from "@prisma/client";
 
 type PageProps = {
@@ -110,6 +112,10 @@ type AdminOrderDetail = {
 
 export default async function AdminOrderDetailsPage({ params }: PageProps) {
   await requireAdminPage();
+  const squareReadiness = getSquareReadiness();
+  const squareProviderLabel = getSquareAdminProviderLabel(
+    squareReadiness.environment,
+  );
 
   const { id } = await params;
 
@@ -515,7 +521,8 @@ export default async function AdminOrderDetailsPage({ params }: PageProps) {
 
                   <p className="mt-3 text-xs text-[#6b5a50]">
                     Refund an eligible paid Square transaction from its ledger
-                    row below. Refunds are full-amount and sandbox-only.
+                    row below. Refunds are full-amount through{" "}
+                    {squareProviderLabel}.
                   </p>
                 </div>
 
@@ -694,6 +701,7 @@ export default async function AdminOrderDetailsPage({ params }: PageProps) {
                     {attempt.paymentPurpose === "ORDER_TOTAL" ? (
                       <RefundPaymentButton
                         paymentAttemptId={attempt.id}
+                        environment={squareReadiness.environment}
                         disabledReason={
                           getPaymentRefundEligibility({
                             ...attempt,

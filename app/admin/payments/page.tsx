@@ -5,6 +5,7 @@ import { MarkOrderPaidButton } from "@/components/admin/MarkOrderPaidButton";
 import { formatPaymentStatus } from "@/lib/format-labels";
 import type { DecimalLike } from "@/types/display";
 import { getSquareReadiness } from "@/lib/square-readiness";
+import { getSquareAdminProviderLabel } from "@/lib/square-display-labels";
 
 type PaymentDueOrder = {
   id: string;
@@ -94,6 +95,9 @@ function getWebsiteMismatchWarning(
 export default async function AdminPaymentsPage() {
   await requireAdminPage();
   const squareReadiness = getSquareReadiness();
+  const squareProviderLabel = getSquareAdminProviderLabel(
+    squareReadiness.environment,
+  );
 
   const [paymentDueOrders, reconciliationOrders, serviceDeposits] =
     await Promise.all([
@@ -269,8 +273,8 @@ export default async function AdminPaymentsPage() {
           <div className="border-b border-[#ead8c1] p-6">
             <h2 className="text-2xl font-black">Service Payment Ledger</h2>
             <p className="mt-2 text-sm text-[#6b5a50]">
-              Square Sandbox deposit and final-balance attempts for catering and
-              personal-chef requests.
+              {squareProviderLabel} deposit and final-balance attempts for
+              catering and personal-chef requests.
             </p>
           </div>
           <div className="overflow-x-auto">
@@ -354,14 +358,16 @@ export default async function AdminPaymentsPage() {
           <div className="border-b border-[#ead8c1] p-6">
             <h2 className="text-2xl font-black">Payment Reconciliation</h2>
             <p className="mt-2 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm font-bold text-amber-950">
-              Square rows shown here are sandbox/test payment data only.
+              {squareReadiness.environment === "sandbox"
+                ? "Square Sandbox rows shown here contain test payment data."
+                : `${squareProviderLabel} rows shown here use the configured environment.`}
             </p>
             <p className="mt-2 text-sm text-[#6b5a50]">
-              This page reads Square sandbox status, payment IDs, receipts, and
-              reconciliation state from the payment ledger and verified webhook
-              records. Admin full refunds are sandbox-only; production Square
-              payments, partial refunds, customer refund requests, and invoices
-              remain future work.
+              This page reads {squareProviderLabel} status, payment IDs,
+              receipts, and reconciliation state from the payment ledger and
+              verified webhook records. Admin refunds use the configured Square
+              environment. Partial refunds, customer refund requests, and
+              invoices remain future work.
             </p>
           </div>
 

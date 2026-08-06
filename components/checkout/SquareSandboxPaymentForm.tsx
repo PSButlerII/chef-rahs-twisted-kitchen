@@ -58,6 +58,7 @@ type Props = {
   disabled: boolean;
   onWalletToken: (sourceId: string) => Promise<void>;
   onAvailabilityChange: (available: boolean) => void;
+  onEnvironmentChange: (environment: PublicConfig["environment"]) => void;
 };
 
 function loadSquareScript(environment: "sandbox" | "production") {
@@ -108,7 +109,7 @@ export const SquareSandboxPaymentForm = forwardRef<
   SquareSandboxPaymentHandle,
   Props
 >(function SquareSandboxPaymentForm(
-  { total, disabled, onWalletToken, onAvailabilityChange },
+  { total, disabled, onWalletToken, onAvailabilityChange, onEnvironmentChange },
   ref,
 ) {
   const cardRef = useRef<SquarePaymentMethod | null>(null);
@@ -141,6 +142,7 @@ export const SquareSandboxPaymentForm = forwardRef<
           cache: "no-store",
         });
         const config = (await response.json()) as PublicConfig;
+        onEnvironmentChange(config.environment);
 
         if (!config.enabled || !config.applicationId || !config.locationId) {
           throw new Error(
@@ -236,7 +238,7 @@ export const SquareSandboxPaymentForm = forwardRef<
         void paymentMethod.destroy?.();
       }
     };
-  }, [onAvailabilityChange, total]);
+  }, [onAvailabilityChange, onEnvironmentChange, total]);
 
   async function payWithWallet(method: SquarePaymentMethod | null) {
     if (!method || disabled) return;

@@ -2,18 +2,25 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import {
+  getSquareAdminRefundLabel,
+  type SquareDisplayEnvironment,
+} from "@/lib/square-display-labels";
 
 export function RefundPaymentButton({
   paymentAttemptId,
   disabledReason,
+  environment,
 }: {
   paymentAttemptId: string;
   disabledReason?: string | null;
+  environment: SquareDisplayEnvironment;
 }) {
   const router = useRouter();
   const [reason, setReason] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const refundLabel = getSquareAdminRefundLabel(environment);
 
   async function submitRefund() {
     const normalizedReason = reason.trim();
@@ -23,7 +30,7 @@ export function RefundPaymentButton({
     }
     if (
       !window.confirm(
-        "Issue a full Square Sandbox refund? This sends money back through Square.",
+        `Issue a full ${refundLabel}? This sends money back through Square.`,
       )
     ) {
       return;
@@ -90,7 +97,7 @@ export function RefundPaymentButton({
         onClick={submitRefund}
         className="mt-2 w-full rounded-lg bg-[#8c2f1b] px-4 py-3 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
       >
-        {submitting ? "Submitting refund…" : "Issue full Square Sandbox refund"}
+        {submitting ? "Submitting refund…" : `Issue full ${refundLabel}`}
       </button>
       {message ? <p className="mt-2 text-xs">{message}</p> : null}
     </div>

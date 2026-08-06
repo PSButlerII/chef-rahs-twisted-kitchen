@@ -7,6 +7,16 @@ first controlled real-money Square rehearsal. Complete it during the approved
 window. Do not paste credentials, tokens, signature keys, card details, or full
 provider payloads into this file.
 
+## Post-rehearsal UI follow-up
+
+The subsequently completed rehearsal confirmed a production standard payment,
+its linked full refund, and the expected payment-ledger status fields. It also
+revealed a copy-only issue: checkout and admin refund controls still displayed
+hardcoded Sandbox labels. The `fix/square-environment-aware-payment-labels`
+follow-up makes those labels environment-aware while retaining explicit Sandbox
+wording during tests. It does not change payment, refund, webhook, CSP, or
+readiness-gate behavior.
+
 ## Rehearsal details
 
 - Rehearsal owner: _Pending_
