@@ -5,6 +5,7 @@ import { useCartStore } from "@/store/cart-store";
 import { useCustomerAllergens } from "@/hooks/useCustomerAllergens";
 import { AllergenConflictWarning } from "@/components/allergens/AllergenConflictWarning";
 import { getWeeklyMealPlanSelectionDetails } from "@/lib/weekly-order-display";
+import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 
 export function CartSummary() {
   const items = useCartStore((state) => state.items);
@@ -15,8 +16,9 @@ export function CartSummary() {
   const removeItem = useCartStore((state) => state.removeItem);
   const clearCart = useCartStore((state) => state.clearCart);
   const { selectedAllergenIdSet } = useCustomerAllergens();
+  const settings = useBusinessSettings();
 
-  const deliveryFee = 10;
+  const deliveryFee = settings.deliveryFee;
   const lateFee = 0;
   const total = subtotal() + deliveryFee + lateFee;
 

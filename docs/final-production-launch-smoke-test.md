@@ -8,11 +8,12 @@ Branch: `qa/final-production-launch-smoke-test`
 
 ## Result
 
-**Launch readiness: blocked.** The production application and authenticated
-admin surfaces are reachable, Square is configured for production with payment
-actions unblocked, and the security checks are clean. However, the live menu has
-no published meal-plan or a-la-carte items. That prevents cart population and
-blocks pickup, delivery, weekly-plan, and production payment-display testing.
+**Launch readiness: partially unblocked; owner payment QA remains.** The
+production application and authenticated admin surfaces are reachable, Square
+is configured for production with payment actions unblocked, and the security
+checks are clean. A `$1.00` à-la-carte item is now published and reaches pickup
+and delivery checkout with production card fields. The controlled real-money
+payment/refund and final gate rollback still require the owner.
 
 No payment, refund, hosted payment link, or live provider call was made during
 this smoke test. No production service-request form was submitted.
@@ -22,10 +23,10 @@ this smoke test. No production service-request form was submitted.
 | Flow                      | Result         | Evidence                                                                                                                                                                                   |
 | ------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Home                      | Pass           | `/` returned HTTP 200 over HTTPS and rendered the primary navigation and service paths.                                                                                                    |
-| Menu                      | Fail / blocker | `/menu` returned HTTP 200 but displayed “Menu coming soon” with no purchasable items or weekly packages.                                                                                   |
-| Cart                      | Partial        | `/cart` loaded correctly and showed the empty-cart state. Add/update/remove behavior could not be exercised without catalog items.                                                         |
-| Guest pickup checkout     | Blocked        | No item can be added. `/checkout` correctly stops at “Your Cart Is Empty.”                                                                                                                 |
-| Guest delivery checkout   | Blocked        | Same catalog blocker as pickup.                                                                                                                                                            |
+| Menu                      | Pass           | `/menu` rendered one `$1.00` a-la-carte item. No weekly package is published.                                                                                                              |
+| Cart                      | Fix pending    | Add/update/remove and `$1.00` subtotal worked. Live cart displayed a stale hardcoded `$10.00` fee; this branch switches the display to live business settings.                             |
+| Guest pickup checkout     | Preflight pass | Pickup rendered the item, `$0.00` delivery fee/tip, `$1.00` total, production card fields, and `Pay with Card`; no order/payment was submitted.                                            |
+| Guest delivery checkout   | Preflight pass | Delivery rendered the same `$1.00` total because the configured delivery fee is `$0.00`; no order/payment was submitted.                                                                   |
 | Weekly meal-plan checkout | Blocked        | No active weekly package or offering is published.                                                                                                                                         |
 | Catering request          | Partial        | The live form, required fields, scheduling controls, and submit control rendered. Submission was not performed because it would create a production request and send customer/admin email. |
 | Personal-chef request     | Partial        | The live form, required fields, scheduling controls, and submit control rendered. Submission was not performed for the same production-side-effect reason.                                 |
@@ -47,8 +48,8 @@ this smoke test. No production service-request form was submitted.
 - The public Square configuration reports `environment: production` and
   `enabled: true`.
 - Admin readiness and reconciliation use “Square,” not “Square Sandbox.”
-- Customer “Pay with Card” could not be visually confirmed because the empty
-  catalog prevents checkout from reaching payment rendering.
+- Customer `Pay with Card` and production Square card fields were visually
+  confirmed for pickup and delivery checkout. No card data was entered.
 - One rehearsal order contained a persisted pre-fix history note with legacy
   “Square sandbox payment” wording. This branch adds a display-only formatter
   so historical notes render as “Square payment” without changing stored data,
@@ -57,7 +58,7 @@ this smoke test. No production service-request form was submitted.
 ## Email evidence
 
 - Production order-submitted and approval/denial delivery were not retriggered;
-  no safe catalog order exists and sending new production email has side effects.
+  sending a real order would create production payment and email side effects.
 - Prior repository QA documents successful rendering/triggers for order
   submission, approval, payment-received, service-request, and refund email
   paths in protected dry-run/Sandbox testing.
@@ -71,25 +72,25 @@ this smoke test. No production service-request form was submitted.
 - `/dev/email-preview` returns HTTP 404 in production.
 - `/api/business-settings` reports `manualPaymentCheckoutAllowed: false`.
 - Square production payment actions are currently unblocked. Confirm that this
-  is the owner-approved launch state before publishing menu items; otherwise
-  set the gate false and redeploy.
+  is the owner-approved launch state; otherwise set the gate false and redeploy.
 - GitHub reports zero open Dependabot alerts after the default-branch rescan.
 - `npm audit` and `npm audit --omit=dev` report zero vulnerabilities.
 - No credentials were read, displayed, changed, or committed.
 
 ## Issues and launch blockers
 
-1. **Blocking:** publish and verify at least one standard item plus the intended
-   weekly package/offering before opening ordering.
-2. Repeat pickup, delivery, weekly cart/checkout, and customer “Pay with Card”
-   verification after catalog publication.
-3. Confirm the currently enabled Square production gate is explicitly approved
+1. Deploy and verify the cart display fix documented in
+   [Production Catalog and Payment Smoke Test](production-catalog-payment-smoke-test.md).
+2. Complete the owner-operated gate-OFF and `$1.00` pickup payment/refund test,
+   including webhook, reconciliation, ledger, and email evidence.
+3. Publish and test a weekly package/offering before enabling weekly ordering.
+4. Confirm the currently enabled Square production gate is explicitly approved
    for launch; disable it if approval is not current.
-4. Record a controlled production Resend delivery check for order submission
+5. Record a controlled production Resend delivery check for order submission
    and the applicable approval/denial path.
-5. Submit internal catering and personal-chef requests only during an approved
+6. Submit internal catering and personal-chef requests only during an approved
    production QA window, then verify their admin detail and email delivery.
-6. Deploy this branch and confirm legacy history notes no longer display
+7. Deploy current source and confirm legacy history notes no longer display
    Sandbox wording.
 
 ## Validation
