@@ -15,6 +15,25 @@ package was upgraded across a major version. Both `npm audit` and
 GitHub alerts will remain open until this commit reaches the default branch and
 Dependabot rescans `package-lock.json`.
 
+## Brace-expansion 1.x follow-up
+
+GitHub subsequently reported `CVE-2026-14257` / `GHSA-mh99-v99m-4gvg`
+against `brace-expansion@1.1.18`. The remaining development-only path was
+`eslint@9.39.4 > minimatch@3.1.5 > brace-expansion@1.1.18`. The npm registry
+audit returned zero vulnerabilities because its current advisory data did not
+classify that installed 1.x version as vulnerable, while GitHub Dependabot's
+advisory treats versions through `5.0.7` as affected.
+
+The latest compatible ESLint 9 release still depends on `minimatch@^3.1.5`, so
+a non-major parent upgrade cannot remove the path. A direct override from
+brace-expansion 1.x to 5.x was rejected during testing because the module API is
+not compatible with minimatch 3. The remediation instead overrides legacy
+`minimatch@^3.1.0` requests to the already-installed `10.2.5` line. After a
+clean npm install, the dependency tree contains one deduplicated
+`minimatch@10.2.5 > brace-expansion@5.0.9` copy; no 1.x copy remains. ESLint,
+the full application check and build, both audit modes, Prisma validation and
+generation, TypeScript, migration status, and lockfile checks pass.
+
 ## Alert-by-alert triage
 
 | GitHub alert / advisory    | Package and vulnerable range                            | Dependency path and scope                                                                      | Application exposure                                                                                                                                                                                            | Fix applied                                                                                                      | Remaining risk and validation                                                                                            |
@@ -22,7 +41,7 @@ Dependabot rescans `package-lock.json`.
 | #48, `GHSA-mh99-v99m-4gvg` | `brace-expansion >=4.0.0 <5.0.8`; first patched `5.0.8` | `react-email > glob > minimatch > brace-expansion`; transitive runtime classification          | The app does not accept customer-controlled glob patterns. The vulnerable expansion path is not used by payment or request handling, but the package ships in the dependency graph.                             | Override the 5.x line to `5.0.9`, which also includes the follow-up mitigation.                                  | No vulnerable 5.x copy remains; audits and dependency-tree inspection pass.                                              |
 | #45, `GHSA-r28c-9q8g-f849` | `postcss <=8.5.17`; first patched `8.5.18`              | `next > postcss` and `@tailwindcss/postcss > postcss`; transitive runtime/build classification | PostCSS runs during trusted application builds. The app has no endpoint that processes user-supplied CSS or `sourceMappingURL` comments.                                                                        | Raise the existing PostCSS override from `8.5.10` to `8.5.25`.                                                   | Current patch includes later incomplete-fix corrections; audits and production build pass.                               |
 | #43, `GHSA-6g55-p6wh-862q` | `postcss <=8.5.11`; first patched `8.5.12`              | Same Next and Tailwind PostCSS paths; transitive runtime/build classification                  | No untrusted CSS-processing feature exists, so the arbitrary-file-read path was not application-reachable. Build tooling was still vulnerable if fed a malicious source.                                        | Same `postcss@8.5.25` override.                                                                                  | No vulnerable PostCSS copy remains; audits and build pass.                                                               |
-| #32, `GHSA-3jxr-9vmj-r5cp` | `brace-expansion <1.1.16`; first patched `1.1.16`       | `eslint > minimatch > brace-expansion`; transitive development scope                           | ESLint uses trusted repository patterns during local/CI checks. No production request path uses this 1.x copy.                                                                                                  | Override the 1.x line to `1.1.18`.                                                                               | Development-only denial-of-service risk removed; lint and full audit pass.                                               |
+| #32, `GHSA-3jxr-9vmj-r5cp` | `brace-expansion <1.1.16`; first patched `1.1.16`       | `eslint > minimatch > brace-expansion`; transitive development scope                           | ESLint uses trusted repository patterns during local/CI checks. No production request path used this dependency chain.                                                                                          | Superseded by the `minimatch@10.2.5` override, which resolves to `brace-expansion@5.0.9`.                        | No brace-expansion 1.x copy remains; lint and full audit pass.                                                           |
 | #24, `GHSA-f88m-g3jw-g9cj` | `sharp <0.35.0`; first patched `0.35.0`                 | `next > sharp`; optional transitive runtime dependency                                         | Next image optimization uses Sharp. Site/admin images can reach this runtime path, although uploads are authenticated and restricted by application validation. This was the most relevant production exposure. | Override Sharp to `0.35.3`, bringing the patched libvips release, and update its install-script allowlist entry. | Image/build compatibility validated by the Next production build and page smoke tests. No vulnerable Sharp copy remains. |
 | #17, `GHSA-3jxr-9vmj-r5cp` | `brace-expansion >=3.0.0 <5.0.7`; first patched `5.0.7` | `react-email > glob > minimatch > brace-expansion`; transitive runtime classification          | No attacker-controlled glob input is passed through the email/rendering flow.                                                                                                                                   | Override the installed 5.x line to `5.0.9`.                                                                      | No vulnerable runtime copy remains; production-only audit passes.                                                        |
 
@@ -31,12 +50,13 @@ Dependabot rescans `package-lock.json`.
 The registry audit also reported `GHSA-rgw5-rvv9-x895`, a follow-up
 brace-expansion denial-of-service advisory, and `GHSA-fxqj-rqcc-2cmp`, an
 incomplete PostCSS source-map fix. They were not among the six open GitHub
-alerts returned during this review. The selected `brace-expansion@5.0.9`,
-`brace-expansion@1.1.18`, and `postcss@8.5.25` overrides cover them as well.
+alerts returned during this review. The selected `brace-expansion@5.0.9` and
+`postcss@8.5.25` overrides cover them as well.
 
 ## Package changes
 
-- `brace-expansion` 1.x: `1.1.14` to `1.1.18`.
+- `brace-expansion` 1.x: eliminated by replacing legacy minimatch 3 requests
+  with `minimatch@10.2.5`, which resolves to `brace-expansion@5.0.9`.
 - `brace-expansion` 5.x: `5.0.6` to `5.0.9`.
 - `postcss`: `8.5.10` to `8.5.25`.
 - `sharp`: `0.34.5` to `0.35.3` with matching platform/libvips packages.
