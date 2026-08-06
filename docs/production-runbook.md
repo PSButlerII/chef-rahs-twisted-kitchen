@@ -472,8 +472,14 @@ Run immediately after launch:
 
 - `https://rahstwistedkitchen.com` loads over HTTPS.
 - `/menu` loads and shows the active published menu.
+- Stop launch if no standard item or intended weekly package/offering is
+  published; cart, checkout, payment-label, and order-email smoke tests are not
+  valid against an empty catalog.
 - `/cart` loads.
-- `/checkout` loads and still shows automated online card checkout as disabled.
+- `/checkout` payment availability matches the owner-approved Square gate
+  state. When production is enabled, customer copy says `Pay with Card` and
+  admin refund copy says `Square refund`; production payment UI never says
+  Sandbox.
 - `/checkout` hides Requested Date and Requested Time while customer scheduling is disabled and shows the configured fulfillment message.
 - Guest regular and weekly orders submit without a customer-supplied `requestedDateTime`.
 - Customer order detail and email do not expose the internal fallback fulfillment time.

@@ -35,3 +35,7 @@ export function getSquareSandboxPaymentNotice(
     ? "This is a Square Sandbox payment request for testing."
     : null;
 }
+
+export function getSquareHistoryDisplayNote(note: string) {
+  return note.replace(/Square sandbox payment/gi, "Square payment");
+}

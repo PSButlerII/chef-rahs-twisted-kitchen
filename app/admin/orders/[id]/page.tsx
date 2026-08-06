@@ -26,7 +26,10 @@ import { getNormalRefundEligibility } from "@/lib/payment-config";
 import { getPaymentRefundEligibility } from "@/lib/refund-eligibility";
 import { RefundPaymentButton } from "@/components/admin/RefundPaymentButton";
 import { getSquareReadiness } from "@/lib/square-readiness";
-import { getSquareAdminProviderLabel } from "@/lib/square-display-labels";
+import {
+  getSquareAdminProviderLabel,
+  getSquareHistoryDisplayNote,
+} from "@/lib/square-display-labels";
 import type { PaymentPurpose, PaymentWebsiteStatus } from "@prisma/client";
 
 type PageProps = {
@@ -547,7 +550,9 @@ export default async function AdminOrderDetailsPage({ params }: PageProps) {
                       {history.createdAt.toLocaleString()}
                     </p>
                     {history.note && (
-                      <p className="mt-1 text-neutral-700">{history.note}</p>
+                      <p className="mt-1 text-neutral-700">
+                        {getSquareHistoryDisplayNote(history.note)}
+                      </p>
                     )}
                   </div>
                 ))}
