@@ -20,16 +20,16 @@ this smoke test. No production service-request form was submitted.
 
 ## Customer flows
 
-| Flow                      | Result         | Evidence                                                                                                                                                                                   |
-| ------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Home                      | Pass           | `/` returned HTTP 200 over HTTPS and rendered the primary navigation and service paths.                                                                                                    |
-| Menu                      | Pass           | `/menu` rendered one `$1.00` a-la-carte item. No weekly package is published.                                                                                                              |
-| Cart                      | Fix pending    | Add/update/remove and `$1.00` subtotal worked. Live cart displayed a stale hardcoded `$10.00` fee; this branch switches the display to live business settings.                             |
-| Guest pickup checkout     | Preflight pass | Pickup rendered the item, `$0.00` delivery fee/tip, `$1.00` total, production card fields, and `Pay with Card`; no order/payment was submitted.                                            |
-| Guest delivery checkout   | Preflight pass | Delivery rendered the same `$1.00` total because the configured delivery fee is `$0.00`; no order/payment was submitted.                                                                   |
-| Weekly meal-plan checkout | Blocked        | No active weekly package or offering is published.                                                                                                                                         |
-| Catering request          | Partial        | The live form, required fields, scheduling controls, and submit control rendered. Submission was not performed because it would create a production request and send customer/admin email. |
-| Personal-chef request     | Partial        | The live form, required fields, scheduling controls, and submit control rendered. Submission was not performed for the same production-side-effect reason.                                 |
+| Flow                      | Result         | Evidence                                                                                                                                                                                                                                                                                                    |
+| ------------------------- | -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Home                      | Pass           | `/` returned HTTP 200 over HTTPS and rendered the primary navigation and service paths.                                                                                                                                                                                                                     |
+| Menu                      | Pass           | `/menu` rendered one `$1.00` a-la-carte item. No weekly package is published.                                                                                                                                                                                                                               |
+| Cart                      | Fix pending    | Add/update/remove and `$1.00` subtotal worked. Live cart displayed a stale hardcoded `$10.00` fee; this branch switches the display to live business settings.                                                                                                                                              |
+| Guest pickup checkout     | Preflight pass | Pickup rendered the item, `$0.00` delivery fee/tip, `$1.00` total, production card fields, and `Pay with Card`; no order/payment was submitted.                                                                                                                                                             |
+| Guest delivery checkout   | Preflight pass | Delivery rendered required contact/address fields, enforced missing-contact validation, loaded production card fields, and showed a `$1.00` total with `$0.00` delivery fee/tip. No order/payment was submitted; see [Production Delivery Checkout Smoke Test](production-delivery-checkout-smoke-test.md). |
+| Weekly meal-plan checkout | Blocked        | No active weekly package or offering is published.                                                                                                                                                                                                                                                          |
+| Catering request          | Partial        | The live form, required fields, scheduling controls, and submit control rendered. Submission was not performed because it would create a production request and send customer/admin email.                                                                                                                  |
+| Personal-chef request     | Partial        | The live form, required fields, scheduling controls, and submit control rendered. Submission was not performed for the same production-side-effect reason.                                                                                                                                                  |
 
 ## Admin flows
 
@@ -83,17 +83,26 @@ this smoke test. No production service-request form was submitted.
    [Production Catalog and Payment Smoke Test](production-catalog-payment-smoke-test.md).
 2. Complete the owner-operated gate-OFF and `$1.00` pickup payment/refund test,
    including webhook, reconciliation, ledger, and email evidence.
-3. Publish and test a weekly package/offering before enabling weekly ordering.
-4. Confirm the currently enabled Square production gate is explicitly approved
+3. Complete the owner-operated `$1.00` delivery payment/refund test and record
+   delivery-specific webhook, reconciliation, ledger, and email evidence.
+4. Publish and test a weekly package/offering before enabling weekly ordering.
+5. Confirm the currently enabled Square production gate is explicitly approved
    for launch; disable it if approval is not current.
-5. Record a controlled production Resend delivery check for order submission
+6. Record a controlled production Resend delivery check for order submission
    and the applicable approval/denial path.
-6. Submit internal catering and personal-chef requests only during an approved
+7. Submit internal catering and personal-chef requests only during an approved
    production QA window, then verify their admin detail and email delivery.
-7. Deploy current source and confirm legacy history notes no longer display
+8. Deploy current source and confirm legacy history notes no longer display
    Sandbox wording.
 
 ## Validation
+
+August 7 follow-up: delivery preflight passed, but current repository validation
+now reports a development-only high-severity `js-yaml@4.3.0` audit advisory and
+the configured validation database returns a Prisma schema-engine error. See
+[Production Delivery Checkout Smoke Test](production-delivery-checkout-smoke-test.md)
+for current results. The original August 6 results below are retained as the
+record of that run.
 
 - `npm audit`: pass, zero vulnerabilities.
 - `npm audit --omit=dev`: pass, zero vulnerabilities.
