@@ -34,6 +34,31 @@ clean npm install, the dependency tree contains one deduplicated
 the full application check and build, both audit modes, Prisma validation and
 generation, TypeScript, migration status, and lockfile checks pass.
 
+## js-yaml development dependency follow-up
+
+On August 7, 2026, `npm audit` reported `CVE-2026-59870` /
+`GHSA-5p4m-2wfm-xmqj` against `js-yaml@4.3.0`. The affected range reported by
+npm is `4.0.0` through `4.3.0`; `4.3.1` is the first patched 4.x release. The
+only installed path was development-only:
+`eslint@9.39.4 > @eslint/eslintrc@3.3.5 > js-yaml@4.3.0`.
+
+Repository source does not import `js-yaml` or parse customer-controlled YAML,
+and `npm audit --omit=dev` remained clean, so this advisory did not expose a
+production request or payment path. It could still affect local or CI linting
+if untrusted YAML were introduced into that tooling flow.
+
+The remediation updates the compatible transitive parent
+`@eslint/eslintrc` from `3.3.5` to `3.3.6` and resolves its `js-yaml` dependency
+to patched `4.3.1`. Both changes stay within their existing major versions and
+require no override, direct dependency, or application-code change. After
+installation, both audit modes report zero vulnerabilities and the dependency
+tree contains only `js-yaml@4.3.1`. Prisma validation and generation,
+TypeScript, ESLint, and lockfile checks pass. The full application check,
+production build, and migration-status check were retried but remain blocked
+at Prisma's connection to the validation database at `192.168.8.195:3306`;
+the build does not begin because its migration preflight stops with a schema
+engine error. No Square provider call was made.
+
 ## Alert-by-alert triage
 
 | GitHub alert / advisory    | Package and vulnerable range                            | Dependency path and scope                                                                      | Application exposure                                                                                                                                                                                            | Fix applied                                                                                                      | Remaining risk and validation                                                                                            |
