@@ -253,12 +253,13 @@ The current CSP permits the Sandbox Web Payments SDK, Google Pay sandbox scripts
   the parent or order refunded. A `refund.updated` event that still carries a
   pending snapshot is checked against Square's read-only refund retrieval API
   before being accepted as pending.
-- Production delivery QA uncovered a local reconciliation gap even though
-  Square completed the refund and delivered both refund webhooks successfully.
-  The affected record must be recovered with the guarded
-  `payment:recover-affected-refund` command after this fix is deployed. The
-  command retrieves and reconciles the existing refund and must never be
-  replaced by issuing another refund.
+- A Square refund can legitimately remain `PENDING` before completing. The app
+  must present that as a temporary provider state and must not finalize the
+  parent payment or order as refunded until Square reports `COMPLETED`.
+  Production delivery QA confirmed that the affected refund later reconciled
+  normally after Square completed it, so recovery apply was not required.
+  Never issue a second refund while waiting; use the read-only provider status
+  check when confirmation is needed.
 - Production, partial, automatic, customer-initiated, PayPal, ACH, and invoice
   refunds remain disabled. Production Square CSP and production refund
   activation are later passes.

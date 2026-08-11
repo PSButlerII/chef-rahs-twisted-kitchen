@@ -22,9 +22,18 @@
 8. Unless the owner separately approves immediate launch, return
    `SQUARE_PRODUCTION_PAYMENTS_ENABLED=false`, restart/redeploy, confirm checkout
    is safely unavailable, and confirm webhooks remain reachable.
+
 9. Complete
    [Square Controlled Production Rehearsal Report](square-production-rehearsal-report.md)
    with sanitized evidence and the final gate state.
+
+### Pending Square refunds
+
+A Square refund may remain `PENDING` before the provider completes it. Do not
+issue another refund. Wait for the verified `refund.updated` event or run the
+read-only refund recovery/status check. Treat the refund as final only after
+Square reports `COMPLETED` and the admin payment ledger shows `REFUNDED` /
+`COMPLETED` with no reconciliation mismatch.
 
 ## Square configuration dry-run completed
 
