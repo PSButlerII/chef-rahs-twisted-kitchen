@@ -246,6 +246,19 @@ The current CSP permits the Sandbox Web Payments SDK, Google Pay sandbox scripts
 - A refund is recorded as a child `PaymentAttempt` with purpose `REFUND` before
   Square is called. Square refund webhooks reconcile that row and retain the
   existing verified-event deduplication.
+- Refund webhook parsing uses Square's `data.object.refund` object and supports
+  `PENDING`, `COMPLETED`, `REJECTED`, and `FAILED`. A completed refund updates
+  the child refund attempt, its parent payment, and the full-refund order
+  summary atomically. Failed or rejected refunds remain failed without marking
+  the parent or order refunded. A `refund.updated` event that still carries a
+  pending snapshot is checked against Square's read-only refund retrieval API
+  before being accepted as pending.
+- Production delivery QA uncovered a local reconciliation gap even though
+  Square completed the refund and delivered both refund webhooks successfully.
+  The affected record must be recovered with the guarded
+  `payment:recover-affected-refund` command after this fix is deployed. The
+  command retrieves and reconciles the existing refund and must never be
+  replaced by issuing another refund.
 - Production, partial, automatic, customer-initiated, PayPal, ACH, and invoice
   refunds remain disabled. Production Square CSP and production refund
   activation are later passes.

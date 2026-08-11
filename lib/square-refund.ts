@@ -1,6 +1,12 @@
 import "server-only";
 
-import { createSquareClient, getSquareServerConfig } from "@/lib/square";
+import {
+  createSquareClient,
+  createSquareReconciliationClient,
+  getSquareServerConfig,
+} from "@/lib/square";
+import { parseSquareRefundStatus } from "@/lib/square-refund-status";
+import type { SquareRefundState } from "@/lib/square-refund-reconciliation";
 
 type RefundSquarePaymentInput = {
   paymentId: string;
@@ -37,4 +43,24 @@ export async function refundSquareSandboxPayment({
   }
 
   return response.refund;
+}
+
+export async function retrieveSquareRefund(
+  refundId: string,
+): Promise<SquareRefundState> {
+  const response = await createSquareReconciliationClient().refunds.get({
+    refundId,
+  });
+  const refund = response.refund;
+  if (!refund?.id) throw new Error("Square did not return the requested refund.");
+
+  return {
+    id: refund.id,
+    status: parseSquareRefundStatus(refund.status),
+    paymentId: refund.paymentId?.trim() || null,
+    locationId: refund.locationId?.trim() || null,
+    amountCents: Number(refund.amountMoney.amount),
+    currency: refund.amountMoney.currency?.trim() || null,
+    updatedAt: new Date(refund.updatedAt ?? refund.createdAt ?? Date.now()),
+  };
 }

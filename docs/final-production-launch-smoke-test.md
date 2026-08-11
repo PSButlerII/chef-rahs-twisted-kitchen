@@ -79,6 +79,14 @@ this smoke test. No production service-request form was submitted.
 
 ## Issues and launch blockers
 
+August 11 refund reconciliation update: an owner-run `$2.00` delivery refund
+completed in Square and both refund webhooks returned HTTP 200, but the matched
+local refund ledger row stayed pending. The app-side terminal transition and
+authoritative refund-status reconciliation are fixed on
+`fix/square-refund-completion-reconciliation`. After deployment, the first
+production operation must be the guarded recovery/backfill for the existing
+refund, not another charge or refund. No duplicate refund should be issued.
+
 1. Deploy and verify the cart display fix documented in
    [Production Catalog and Payment Smoke Test](production-catalog-payment-smoke-test.md).
 2. Complete the owner-operated gate-OFF and `$1.00` pickup payment/refund test,

@@ -477,6 +477,12 @@ export default async function AdminPaymentsPage() {
                             Parent: {latestRefundAttempt.parentPaymentId}
                           </div>
                         ) : null}
+                        {latestRefundAttempt ? (
+                          <div className="mt-1 text-xs text-[#6b5a50]">
+                            Square:{" "}
+                            {latestRefundAttempt.providerStatus ?? "Not set"}
+                          </div>
+                        ) : null}
                         {latestRefundAttempt?.metadata &&
                         typeof latestRefundAttempt.metadata === "object" &&
                         !Array.isArray(latestRefundAttempt.metadata) &&

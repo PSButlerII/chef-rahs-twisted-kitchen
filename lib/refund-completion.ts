@@ -21,6 +21,18 @@ export async function completeRefundAttempt({
   completedAt: Date;
 }) {
   const result = await prisma.$transaction(async (tx) => {
+    const transitioned = await tx.paymentAttempt.updateMany({
+      where: {
+        id: refundAttemptId,
+        websiteStatus: { not: "REFUNDED" },
+      },
+      data: {
+        providerStatus,
+        websiteStatus: "REFUNDED",
+        refundedAt: completedAt,
+        failedAt: null,
+      },
+    });
     const refund = await tx.paymentAttempt.findUniqueOrThrow({
       where: { id: refundAttemptId },
       include: {
@@ -34,21 +46,12 @@ export async function completeRefundAttempt({
       throw new Error("Refund ledger lineage is invalid.");
     }
 
-    const transitioned = refund.websiteStatus !== "REFUNDED";
     const metadata = metadataObject(refund.metadata);
     const reason =
       typeof metadata.refundReason === "string"
         ? metadata.refundReason
         : "Admin-approved full refund";
 
-    await tx.paymentAttempt.update({
-      where: { id: refund.id },
-      data: {
-        providerStatus,
-        websiteStatus: "REFUNDED",
-        refundedAt: completedAt,
-      },
-    });
     await tx.paymentAttempt.update({
       where: { id: refund.parentPayment.id },
       data: {
@@ -57,9 +60,15 @@ export async function completeRefundAttempt({
       },
     });
 
-    if (refund.order && refund.order.status !== "REFUNDED") {
+    const order = refund.order;
+    const isFullOrderRefund =
+      Boolean(order) &&
+      refund.parentPayment.paymentPurpose === "ORDER_TOTAL" &&
+      refund.amountCents === refund.parentPayment.amountCents;
+
+    if (isFullOrderRefund && order && order.status !== "REFUNDED") {
       await tx.order.update({
-        where: { id: refund.order.id },
+        where: { id: order.id },
         data: {
           status: "REFUNDED",
           paymentStatus: "REFUNDED",
@@ -74,7 +83,7 @@ export async function completeRefundAttempt({
     }
 
     return {
-      transitioned,
+      transitioned: transitioned.count === 1,
       refundId: refund.id,
       metadata,
       reason,

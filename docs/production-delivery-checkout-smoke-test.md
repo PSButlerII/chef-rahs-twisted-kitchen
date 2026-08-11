@@ -63,7 +63,22 @@ No new delivery payment row appeared in admin reconciliation during this QA.
 
 ## Controlled refund
 
-Status: **Not run — no delivery payment was created.**
+August 11, 2026 update: **Provider refund completed; local recovery required.**
+The owner completed a `$2.00` delivery payment and refund. Square's receipt
+shows the refund completed, and the live `refund.created` and `refund.updated`
+deliveries both returned HTTP 200. The local refund ledger row nevertheless
+remained `PENDING`, leaving the parent payment and order out of sync.
+
+The application-side reconciliation fix reads the documented
+`data.object.refund.status` value, supports `PENDING`, `COMPLETED`, `REJECTED`,
+and `FAILED`, and performs an authoritative read-only Square refund lookup when
+a `refund.updated` snapshot is still pending. A guarded recovery command is
+provided for the affected refund. It must be run before another payment test;
+do **not** issue a second refund.
+
+Original August 7 branch status: **Not run — no delivery payment was created
+during that preflight.** The August 11 owner-run result above supersedes this
+for the production refund lifecycle.
 
 After the owner completes the payment, refund that same order with reason
 `Production delivery smoke test refund`. Record sanitized evidence that:
@@ -80,9 +95,16 @@ After the owner completes the payment, refund that same order with reason
 
 ## Webhook result
 
-New delivery payment/refund webhook result: **Not run.** Existing production
-pickup rehearsal rows remain `COMPLETED` and show no reconciliation mismatch,
-but they are not evidence for this delivery test.
+August 11 update: Square returned HTTP 200 for both refund events, but the
+provider snapshot was accepted without an authoritative status-recovery path
+and the local completion transition did not occur. Deploy this fix and run
+`npm run payment:recover-affected-refund`, review its dry-run output, then run
+`npm run payment:recover-affected-refund -- --apply` on the production host.
+The command retrieves the existing refund; it never creates one.
+
+Original August 7 branch status: **Not run.** Existing production pickup
+rehearsal rows were not evidence for this delivery test. The August 11
+owner-run webhook result above is the current delivery-refund evidence.
 
 ## Admin reconciliation result
 

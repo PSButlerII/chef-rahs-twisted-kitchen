@@ -7,7 +7,11 @@ import {
 import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { WebhooksHelper } from "square";
-import { completeRefundAttempt } from "@/lib/refund-completion";
+import {
+  reconcileSquareRefundAttempt,
+  squareRefundStateFromWebhook,
+} from "@/lib/square-refund-reconciliation";
+import { retrieveSquareRefund } from "@/lib/square-refund";
 
 export const dynamic = "force-dynamic";
 
@@ -141,7 +145,7 @@ export async function POST(request: Request) {
           refundId: refund?.id ?? null,
           providerStatus: payment?.status ?? null,
           refundStatus: refund?.status ?? null,
-          environment: "sandbox",
+          environment: process.env.SQUARE_ENVIRONMENT?.trim() ?? "unknown",
         },
       },
     });
@@ -168,15 +172,15 @@ export async function POST(request: Request) {
     const squareConfig = getSquareReconciliationConfig();
 
     if (eventType.startsWith("refund.")) {
-      if (!refund?.id) {
-        throw new Error("Refund event does not include a refund ID.");
-      }
+      if (!refund) throw new Error("Refund event does not include a refund.");
+      const webhookRefundState = squareRefundStateFromWebhook(refund);
+      let refundState = webhookRefundState;
 
       const attempt = await prisma.paymentAttempt.findUnique({
         where: {
           provider_providerPaymentId: {
             provider: "SQUARE",
-            providerPaymentId: refund.id,
+            providerPaymentId: refundState.id,
           },
         },
       });
@@ -193,40 +197,19 @@ export async function POST(request: Request) {
         return NextResponse.json({ received: true, ignored: true });
       }
 
-      const amountCents = Number(refund.amount_money?.amount);
-      if (
-        !Number.isSafeInteger(amountCents) ||
-        amountCents !== attempt.amountCents ||
-        refund.amount_money?.currency !== attempt.currency ||
-        refund.location_id !== squareConfig.locationId
-      ) {
-        throw new Error(
-          "Square refund amount, currency, or location does not match the ledger.",
-        );
+      // Square can deliver an updated event while its snapshot is still
+      // PENDING. Read the authoritative refund before accepting that state as
+      // terminal for this delivery. This is read-only and never creates a
+      // second refund.
+      if (eventType === "refund.updated" && refundState.status === "PENDING") {
+        refundState = await retrieveSquareRefund(refundState.id);
       }
 
-      const status = refund.status ?? "UNKNOWN";
-      const eventAt = new Date(
-        refund.updated_at ?? refund.created_at ?? Date.now(),
-      );
-
-      if (status === "COMPLETED") {
-        await completeRefundAttempt({
-          refundAttemptId: attempt.id,
-          providerStatus: status,
-          completedAt: eventAt,
-        });
-      } else {
-        const failed = status === "FAILED" || status === "REJECTED";
-        await prisma.paymentAttempt.update({
-          where: { id: attempt.id },
-          data: {
-            providerStatus: status,
-            websiteStatus: failed ? "FAILED" : "PENDING",
-            ...(failed ? { failedAt: eventAt } : {}),
-          },
-        });
-      }
+      await reconcileSquareRefundAttempt({
+        refundAttemptId: attempt.id,
+        refund: refundState,
+        expectedLocationId: squareConfig.locationId,
+      });
 
       await prisma.paymentWebhookEvent.update({
         where: { id: storedEvent.id },
@@ -234,6 +217,13 @@ export async function POST(request: Request) {
           paymentAttemptId: attempt.id,
           processingStatus: "PROCESSED",
           processedAt: new Date(),
+          rawSummary: {
+            refundId: refundState.id,
+            webhookRefundStatus: webhookRefundState.status,
+            reconciledRefundStatus: refundState.status,
+            environment:
+              process.env.SQUARE_ENVIRONMENT?.trim() ?? "unknown",
+          },
         },
       });
       return NextResponse.json({ received: true });
