@@ -5,6 +5,7 @@ import { useRef, useState } from "react";
 import {
   defaultWeeklyMealSlotLabel,
   getWeeklyMealSlotLabelOptions,
+  isBreakfastWeeklyMealSlotLabel,
   normalizeWeeklyMealSlotLabels,
 } from "@/lib/weekly-package-labels";
 
@@ -25,6 +26,14 @@ export type WeeklyMealPlanPackageFormData = {
 type Props = {
   periodId: string;
   pkg?: WeeklyMealPlanPackageFormData;
+  offerings: WeeklyOfferingEligibilityOption[];
+};
+
+export type WeeklyOfferingEligibilityOption = {
+  id: string;
+  name: string;
+  breakfastOnly: boolean;
+  available: boolean;
 };
 
 async function readError(response: Response, fallback: string) {
@@ -35,16 +44,49 @@ async function readError(response: Response, fallback: string) {
   return data?.error ?? fallback;
 }
 
-export function WeeklyMealPlanPackageForm({ periodId, pkg }: Props) {
+export function WeeklyMealPlanPackageForm({ periodId, pkg, offerings }: Props) {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
   const [mealsPerDay, setMealsPerDay] = useState(pkg?.mealsPerDay ?? 1);
+  const [mealSlotLabels, setMealSlotLabels] = useState(() =>
+    normalizeWeeklyMealSlotLabels(
+      pkg?.mealSlotLabels,
+      pkg?.mealsPerDay ?? 1,
+    ),
+  );
+  const [previewOfferingIds, setPreviewOfferingIds] = useState<
+    Record<number, string>
+  >({});
   const [saving, setSaving] = useState(false);
   const isEditing = Boolean(pkg);
-  const mealSlotLabels = normalizeWeeklyMealSlotLabels(
-    pkg?.mealSlotLabels,
-    mealsPerDay,
-  );
+
+  function changeMealsPerDay(nextMealsPerDay: number) {
+    setMealsPerDay(nextMealsPerDay);
+    setMealSlotLabels((current) =>
+      normalizeWeeklyMealSlotLabels(current, nextMealsPerDay),
+    );
+    setPreviewOfferingIds((current) =>
+      Object.fromEntries(
+        Object.entries(current).filter(
+          ([slotNumber]) => Number(slotNumber) <= nextMealsPerDay,
+        ),
+      ),
+    );
+  }
+
+  function changeSlotLabel(slotNumber: number, nextLabel: string) {
+    setMealSlotLabels((current) =>
+      Array.from({ length: mealsPerDay }, (_, index) =>
+        index === slotNumber - 1
+          ? nextLabel
+          : (current[index] ?? defaultWeeklyMealSlotLabel(index + 1)),
+      ),
+    );
+    setPreviewOfferingIds((current) => ({
+      ...current,
+      [slotNumber]: "",
+    }));
+  }
 
   async function handleSubmit(formData: FormData) {
     setSaving(true);
@@ -70,6 +112,8 @@ export function WeeklyMealPlanPackageForm({ periodId, pkg }: Props) {
       if (!pkg) {
         formRef.current?.reset();
         setMealsPerDay(1);
+        setMealSlotLabels([defaultWeeklyMealSlotLabel(1)]);
+        setPreviewOfferingIds({});
       }
 
       router.refresh();
@@ -130,7 +174,9 @@ export function WeeklyMealPlanPackageForm({ periodId, pkg }: Props) {
           <select
             name="mealsPerDay"
             value={String(mealsPerDay)}
-            onChange={(event) => setMealsPerDay(Number(event.target.value))}
+            onChange={(event) =>
+              changeMealsPerDay(Number(event.target.value))
+            }
             className="admin-input"
           >
             <option value="1">1 meal</option>
@@ -172,23 +218,68 @@ export function WeeklyMealPlanPackageForm({ periodId, pkg }: Props) {
             const selectedLabel = labelOptions.includes(savedLabel)
               ? savedLabel
               : defaultWeeklyMealSlotLabel(slotNumber);
+            const isBreakfastSlot =
+              isBreakfastWeeklyMealSlotLabel(selectedLabel);
+            const eligibleOfferings = offerings.filter(
+              (offering) =>
+                offering.available &&
+                (!offering.breakfastOnly || isBreakfastSlot),
+            );
 
             return (
-              <label key={slotNumber} className="admin-label">
-                Slot {slotNumber}
-                <select
-                  name={`mealSlotLabel${slotNumber}`}
-                  defaultValue={selectedLabel}
-                  className="admin-input"
-                  required
-                >
-                  {labelOptions.map((label) => (
-                    <option key={label} value={label}>
-                      {label}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              <div
+                key={slotNumber}
+                className="grid gap-3 rounded-lg border border-[#ead8c1] bg-white p-3"
+              >
+                <label className="admin-label">
+                  Slot {slotNumber}
+                  <select
+                    name={`mealSlotLabel${slotNumber}`}
+                    value={selectedLabel}
+                    onChange={(event) =>
+                      changeSlotLabel(slotNumber, event.target.value)
+                    }
+                    className="admin-input"
+                    required
+                  >
+                    {labelOptions.map((label) => (
+                      <option key={label} value={label}>
+                        {label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="admin-label">
+                  Eligible offering preview
+                  <select
+                    value={previewOfferingIds[slotNumber] ?? ""}
+                    onChange={(event) =>
+                      setPreviewOfferingIds((current) => ({
+                        ...current,
+                        [slotNumber]: event.target.value,
+                      }))
+                    }
+                    className="admin-input"
+                    aria-label={`Slot ${slotNumber} eligible offering preview`}
+                  >
+                    <option value="">Select an offering to preview</option>
+                    {eligibleOfferings.map((offering) => (
+                      <option key={offering.id} value={offering.id}>
+                        {offering.name} ·{" "}
+                        {offering.breakfastOnly ? "Breakfast" : "Standard"}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <p className="text-xs leading-5 text-[#6b5a50]">
+                  Preview only; packages do not save an offering per slot. {" "}
+                  {isBreakfastSlot
+                    ? "Breakfast and Standard offerings are eligible for a Breakfast slot."
+                    : "Breakfast-only offerings are excluded because this is not a Breakfast slot."}
+                </p>
+              </div>
             );
           })}
         </div>

@@ -79,3 +79,17 @@ for order submission and applicable approval/denial messages remains required.
 5. Retain any separately required pickup checkout rehearsal evidence.
 
 Delivery payment/refund evidence is complete and is no longer a launch blocker.
+
+## Weekly admin slot selector follow-up
+
+Weekly package slot labels are admin-configured and continue to display from
+the saved package configuration. The package editor now controls slot-label
+state in React, so changing a slot to or from Breakfast immediately recomputes
+its offering eligibility preview without a browser refresh. Preview choices are
+clearly labeled `Breakfast` or `Standard`.
+
+The preview mirrors existing validation: Breakfast-only offerings are excluded
+from non-Breakfast slots, while Standard offerings remain eligible in Breakfast
+slots and are explicitly labeled. The preview does not persist a per-slot
+offering assignment. No customer checkout, payment, Square, refund, webhook, or
+production-gate behavior changed.

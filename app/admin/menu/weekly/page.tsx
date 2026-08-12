@@ -819,7 +819,15 @@ export default async function AdminWeeklyMenuPage() {
                           </p>
                         </div>
 
-                        <WeeklyMealPlanPackageForm periodId={period.id} />
+                        <WeeklyMealPlanPackageForm
+                          periodId={period.id}
+                          offerings={period.offerings.map((offering) => ({
+                            id: offering.id,
+                            name: offering.name,
+                            breakfastOnly: offering.breakfastOnly,
+                            available: offering.available,
+                          }))}
+                        />
 
                         {period.packages.length > 0 ? (
                           <div className="space-y-3">
@@ -894,6 +902,15 @@ export default async function AdminWeeklyMenuPage() {
                                     <WeeklyMealPlanPackageForm
                                       periodId={period.id}
                                       pkg={packageFormData}
+                                      offerings={period.offerings.map(
+                                        (offering) => ({
+                                          id: offering.id,
+                                          name: offering.name,
+                                          breakfastOnly:
+                                            offering.breakfastOnly,
+                                          available: offering.available,
+                                        }),
+                                      )}
                                     />
                                   </div>
                                 </details>
