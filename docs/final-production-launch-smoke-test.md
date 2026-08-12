@@ -1,6 +1,6 @@
 # Final Production Launch Smoke Test
 
-Date updated: August 11, 2026
+Date updated: August 12, 2026
 
 Site: `https://rahstwistedkitchen.com`
 
@@ -22,7 +22,7 @@ reconciliation are aligned with no mismatch.
 | Menu and cart | Pass | Published catalog content reached cart and checkout with server-authoritative totals. |
 | Guest pickup checkout | Preflight pass | Production card fields and pickup checkout rendered; retain any separately required owner rehearsal evidence. |
 | Guest delivery checkout | Pass | Preflight passed, then the owner completed a real `$2.00` Square production delivery payment and full refund. See [Production Delivery Checkout Smoke Test](production-delivery-checkout-smoke-test.md). |
-| Weekly meal-plan checkout | Blocked | No active weekly package/offering was available for a complete production checkout test. |
+| Weekly meal-plan checkout | Preflight pass; payment not run | Published standard and by-request packages were tested. Required selections, matching allergen warnings, acknowledgement gating, a `$0.50` option, trusted totals, production `Pay with Card`, and approval-first `Submit for Approval` all passed. Breakfast selection and a by-request name/config mismatch remain; see [Weekly Options, Allergens, And By-Request Readiness](weekly-options-allergens-byrequest-readiness.md). |
 | Catering request | Partial | Form availability was verified, but a production request was not submitted. |
 | Personal-chef request | Partial | Form availability was verified, but a production request was not submitted. |
 
@@ -70,7 +70,9 @@ for order submission and applicable approval/denial messages remains required.
 
 ## Remaining launch blockers
 
-1. Publish and test a weekly package/offering before enabling weekly ordering.
+1. Correct or approve the weekly Breakfast-slot and by-request package
+   configuration, then obtain explicit approval for one controlled real-money
+   standard weekly payment.
 2. Record controlled production Resend delivery evidence for order submission
    and the applicable approval/denial flow.
 3. Submit internal catering and personal-chef requests during an approved
@@ -79,3 +81,10 @@ for order submission and applicable approval/denial messages remains required.
 5. Retain any separately required pickup checkout rehearsal evidence.
 
 Delivery payment/refund evidence is complete and is no longer a launch blocker.
+
+## Future admin UX note
+
+Auto-capitalization or name normalization for admin-entered menu/package/
+offering names would reduce inconsistent customer-facing copy. Keep this as a
+future admin UX improvement unless launch copy quality requires manual cleanup
+before release.
