@@ -22,7 +22,7 @@ reconciliation are aligned with no mismatch.
 | Menu and cart | Pass | Published catalog content reached cart and checkout with server-authoritative totals. |
 | Guest pickup checkout | Preflight pass | Production card fields and pickup checkout rendered; retain any separately required owner rehearsal evidence. |
 | Guest delivery checkout | Pass | Preflight passed, then the owner completed a real `$2.00` Square production delivery payment and full refund. See [Production Delivery Checkout Smoke Test](production-delivery-checkout-smoke-test.md). |
-| Weekly meal-plan checkout | Preflight pass; payment not run | Published standard and by-request packages were tested. Required selections, matching allergen warnings, acknowledgement gating, a `$0.50` option, trusted totals, production `Pay with Card`, and approval-first `Submit for Approval` all passed. Breakfast selection and a by-request name/config mismatch remain; see [Weekly Options, Allergens, And By-Request Readiness](weekly-options-allergens-byrequest-readiness.md). |
+| Weekly meal-plan checkout | Prior preflight passed; live recheck blocked | The earlier published-content test passed required selections, allergens, upcharges, trusted totals, production `Pay with Card`, and approval-first behavior. On August 12 the selector fix passed in production admin, but the weekly menu was Draft and unavailable publicly, so customer/cart/checkout could not be rechecked. See [Weekly Admin Selector Live Recheck](weekly-admin-selector-live-recheck.md). |
 | Catering request | Partial | Form availability was verified, but a production request was not submitted. |
 | Personal-chef request | Partial | Form availability was verified, but a production request was not submitted. |
 
@@ -70,9 +70,10 @@ for order submission and applicable approval/denial messages remains required.
 
 ## Remaining launch blockers
 
-1. Correct or approve the weekly Breakfast-slot and by-request package
-   configuration, then obtain explicit approval for one controlled real-money
-   standard weekly payment.
+1. Review and publish the intended weekly menu, rerun customer/cart/checkout
+   preflight, correct or approve the by-request package configuration, then
+   obtain explicit approval for one controlled real-money standard weekly
+   payment.
 2. Record controlled production Resend delivery evidence for order submission
    and the applicable approval/denial flow.
 3. Submit internal catering and personal-chef requests during an approved
@@ -95,3 +96,9 @@ from non-Breakfast slots, while Standard offerings remain eligible in Breakfast
 slots and are explicitly labeled. The preview does not persist a per-slot
 offering assignment. No customer checkout, payment, Square, refund, webhook, or
 production-gate behavior changed.
+
+The August 12 production recheck confirmed that this behavior is deployed: both
+slot-type changes updated immediately, stale previews cleared, and reducing the
+meal count removed obsolete preview state. The weekly menu was `Draft` during
+the recheck, however, so the public menu showed `Menu coming soon` and weekly
+cart/checkout preflight remains blocked until the intended menu is published.

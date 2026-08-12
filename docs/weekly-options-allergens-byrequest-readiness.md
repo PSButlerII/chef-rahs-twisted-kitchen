@@ -166,3 +166,18 @@ the `$0.50` option, trusted totals, standard Square preflight, and by-request
 approval-first behavior passed. Breakfast selection and by-request package copy
 need configuration correction before final weekly launch evidence.
 
+## August 12 admin selector live recheck
+
+The deployed admin improvement passed a later production recheck. Changing a
+slot to Breakfast and back recomputed eligible offerings immediately without a
+browser refresh. Breakfast and Standard offerings were explicitly labeled,
+Breakfast-only offerings disappeared from non-Breakfast slots, Standard
+offerings remained eligible for Breakfast slots, and stale preview choices were
+cleared. Meals-per-day reductions also removed obsolete preview state safely.
+
+At the time of that recheck, `weekly menu test` was `Draft`. The public menu
+therefore showed `Menu coming soon`, so this earlier customer/cart/checkout
+evidence could not be repeated. See
+[Weekly Admin Selector Live Recheck](weekly-admin-selector-live-recheck.md).
+No real payment was run and no payment behavior changed.
+
