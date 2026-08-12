@@ -175,9 +175,11 @@ Breakfast-only offerings disappeared from non-Breakfast slots, Standard
 offerings remained eligible for Breakfast slots, and stale preview choices were
 cleared. Meals-per-day reductions also removed obsolete preview state safely.
 
-At the time of that recheck, `weekly menu test` was `Draft`. The public menu
-therefore showed `Menu coming soon`, so this earlier customer/cart/checkout
-evidence could not be repeated. See
+The menu was initially Draft during that recheck. After the owner published it,
+the customer rerun passed saved Breakfast labels and eligibility, required
+selections, allergen warnings, the `$0.50` option, trusted `$1.50` standard cart
+and checkout totals, production `Pay with Card`, and by-request `Submit for
+Approval` without Square fields. See
 [Weekly Admin Selector Live Recheck](weekly-admin-selector-live-recheck.md).
 No real payment was run and no payment behavior changed.
 
