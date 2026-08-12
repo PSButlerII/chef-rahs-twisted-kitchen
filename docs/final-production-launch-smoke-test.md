@@ -22,7 +22,7 @@ reconciliation are aligned with no mismatch.
 | Menu and cart | Pass | Published catalog content reached cart and checkout with server-authoritative totals. |
 | Guest pickup checkout | Preflight pass | Production card fields and pickup checkout rendered; retain any separately required owner rehearsal evidence. |
 | Guest delivery checkout | Pass | Preflight passed, then the owner completed a real `$2.00` Square production delivery payment and full refund. See [Production Delivery Checkout Smoke Test](production-delivery-checkout-smoke-test.md). |
-| Weekly meal-plan checkout | Technical preflight pass; content blocked | The final content preflight again passed Breakfast eligibility, required selections, allergens, the `$0.50` upcharge, trusted totals, production `Pay with Card`, and approval-first `Submit for Approval`. Content is not launch-final: `5 day/` is incomplete, `$1.00` prices are unconfirmed, and offering copy needs review. See [Weekly Content Final Preflight](weekly-content-final-preflight.md). |
+| Weekly meal-plan checkout | Ready after owner price confirmation | The by-request name is corrected to `5 day / 15 meals`, offering names are corrected, and both workflows passed again. The retained `$1.00` price still needs owner confirmation and explicit payment authorization. No payment was run. See [Weekly Content Correction Verification](weekly-content-correction-verification.md). |
 | Catering request | Partial | Form availability was verified, but a production request was not submitted. |
 | Personal-chef request | Partial | Form availability was verified, but a production request was not submitted. |
 
@@ -70,8 +70,8 @@ for order submission and applicable approval/denial messages remains required.
 
 ## Remaining launch blockers
 
-1. Approve/correct weekly customer-facing names and test prices, then obtain
-   explicit approval for one controlled real-money standard weekly payment.
+1. Confirm that the retained `$1.00` weekly price is intentional for the test,
+   then explicitly approve one controlled real-money standard weekly payment.
 2. Record controlled production Resend delivery evidence for order submission
    and the applicable approval/denial flow.
 3. Submit internal catering and personal-chef requests during an approved
@@ -107,3 +107,10 @@ clear content approval: `5 day/` remains incomplete, both `$1.00` package
 prices are unconfirmed, and `Bisquets and gravy` / `pizza` require spelling or
 capitalization review. See
 [Weekly Content Final Preflight](weekly-content-final-preflight.md).
+
+The follow-up correction verification confirmed that `5 day / 15 meals` now
+matches its 5×3 configuration and the visible offerings are corrected to
+`Biscuits and Gravy`, `Pizza`, and `Eggs and Bacon`. Both preflight branches
+passed. Only owner confirmation of the retained `$1.00` test price and explicit
+payment authorization remain before the controlled weekly payment. See
+[Weekly Content Correction Verification](weekly-content-correction-verification.md).
