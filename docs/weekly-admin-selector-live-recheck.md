@@ -128,3 +128,11 @@ cart persistence/math, production card readiness, and by-request approval-first
 behavior passed. Weekly checkout is technically ready for an explicitly
 owner-approved controlled payment after the remaining content review. No real
 payment was run.
+
+## Final content-preflight follow-up
+
+A later production preflight reconfirmed both workflow branches. The technical
+checkout result remains a pass, but content is not launch-final: `5 day/` is
+still incomplete, `$1.00` package pricing has not been owner-confirmed, and
+`Bisquets and gravy` / `pizza` need copy review. See
+[Weekly Content Final Preflight](weekly-content-final-preflight.md).

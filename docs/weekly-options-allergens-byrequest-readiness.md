@@ -183,3 +183,12 @@ Approval` without Square fields. See
 [Weekly Admin Selector Live Recheck](weekly-admin-selector-live-recheck.md).
 No real payment was run and no payment behavior changed.
 
+## Final content-preflight follow-up
+
+The final production preflight reconfirmed allergens, option math, trusted
+totals, production card readiness, and approval-first behavior. Content approval
+remains blocked by the incomplete `5 day/` package name, unconfirmed `$1.00`
+prices, and offering spelling/capitalization. See
+[Weekly Content Final Preflight](weekly-content-final-preflight.md). No real
+payment or approval request was submitted.
+

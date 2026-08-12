@@ -22,7 +22,7 @@ reconciliation are aligned with no mismatch.
 | Menu and cart | Pass | Published catalog content reached cart and checkout with server-authoritative totals. |
 | Guest pickup checkout | Preflight pass | Production card fields and pickup checkout rendered; retain any separately required owner rehearsal evidence. |
 | Guest delivery checkout | Pass | Preflight passed, then the owner completed a real `$2.00` Square production delivery payment and full refund. See [Production Delivery Checkout Smoke Test](production-delivery-checkout-smoke-test.md). |
-| Weekly meal-plan checkout | Preflight pass; payment not run | After publication, the live recheck passed saved Breakfast labels, Breakfast-only eligibility, required selections, allergens, a `$0.50` upcharge, trusted cart totals, production `Pay with Card`, and approval-first `Submit for Approval`. No order or payment was submitted. See [Weekly Admin Selector Live Recheck](weekly-admin-selector-live-recheck.md). |
+| Weekly meal-plan checkout | Technical preflight pass; content blocked | The final content preflight again passed Breakfast eligibility, required selections, allergens, the `$0.50` upcharge, trusted totals, production `Pay with Card`, and approval-first `Submit for Approval`. Content is not launch-final: `5 day/` is incomplete, `$1.00` prices are unconfirmed, and offering copy needs review. See [Weekly Content Final Preflight](weekly-content-final-preflight.md). |
 | Catering request | Partial | Form availability was verified, but a production request was not submitted. |
 | Personal-chef request | Partial | Form availability was verified, but a production request was not submitted. |
 
@@ -101,3 +101,9 @@ meal count removed obsolete preview state. After the owner published the weekly
 menu, customer selections, Breakfast eligibility, cart totals, production card
 readiness, and by-request approval-first checkout all passed preflight. No real
 payment was run.
+
+The final content preflight confirmed the payment workflows again but did not
+clear content approval: `5 day/` remains incomplete, both `$1.00` package
+prices are unconfirmed, and `Bisquets and gravy` / `pizza` require spelling or
+capitalization review. See
+[Weekly Content Final Preflight](weekly-content-final-preflight.md).
