@@ -8,12 +8,14 @@ import {
 
 export function OrderPaymentRequestEmail({
   customerName,
+  itemName,
   orderId,
   amountDue,
   paymentUrl,
   environment,
 }: {
   customerName: string;
+  itemName: string;
   orderId: string;
   amountDue: number;
   paymentUrl: string;
@@ -28,9 +30,10 @@ export function OrderPaymentRequestEmail({
     >
       <Text style={emailStyles.text}>Hi {customerName},</Text>
       <Text style={emailStyles.text}>
-        Order <strong>{orderId}</strong> has been approved. The amount due is
-        <strong> ${amountDue.toFixed(2)}</strong>.
+        Your <strong>{itemName}</strong> order has been approved. The amount
+        due is <strong>${amountDue.toFixed(2)}</strong>.
       </Text>
+      <Text style={emailStyles.mutedText}>Order reference: {orderId}</Text>
       <Text style={emailStyles.text}>
         This secure Square-hosted payment link expires in 2 hours. Square is the
         official source for your payment receipt.

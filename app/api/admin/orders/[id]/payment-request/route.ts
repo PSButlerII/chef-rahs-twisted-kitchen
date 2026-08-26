@@ -9,6 +9,10 @@ import { PENDING_PAYMENT_EXPIRATION_MS } from "@/lib/payment-config";
 import { prisma } from "@/lib/prisma";
 import { createSquareOrderPaymentLink } from "@/lib/square-deposit-payment-link";
 import { getSquareReadiness } from "@/lib/square-readiness";
+import {
+  getWebsiteOrderReferenceNote,
+  getWeeklyOrderPaymentItemName,
+} from "@/lib/weekly-payment-label";
 
 type Context = { params: Promise<{ id: string }> };
 const activeStatuses = ["CREATED", "PENDING", "REQUIRES_ACTION"] as const;
@@ -27,7 +31,15 @@ export async function POST(_request: Request, context: Context) {
   const now = new Date();
   const order = await prisma.order.findUnique({
     where: { id },
-    include: { items: { select: { weeklyMealPlanSelection: { select: { id: true } } } } },
+    include: {
+      items: {
+        select: {
+          weeklyMealPlanSelection: {
+            select: { id: true, packageName: true },
+          },
+        },
+      },
+    },
   });
   if (!order) return NextResponse.json({ error: "Order not found." }, { status: 404 });
   const isWeekly = order.items.some((item) => Boolean(item.weeklyMealPlanSelection));
@@ -43,6 +55,13 @@ export async function POST(_request: Request, context: Context) {
   const amountCents = Math.round(Number(order.total) * 100);
   if (amountCents <= 0) return NextResponse.json({ error: "This order has no payable balance." }, { status: 409 });
 
+  const itemName = getWeeklyOrderPaymentItemName(
+    order.items.flatMap((item) =>
+      item.weeklyMealPlanSelection ? [item.weeklyMealPlanSelection] : [],
+    ),
+  );
+  const orderReferenceNote = getWebsiteOrderReferenceNote(id);
+
   let attempt = await prisma.paymentAttempt.findFirst({
     where: { orderId: id, paymentPurpose: "ORDER_TOTAL", websiteStatus: { in: [...activeStatuses] }, paidAt: null, expiresAt: { gt: now } },
     orderBy: { createdAt: "desc" },
@@ -53,7 +72,7 @@ export async function POST(_request: Request, context: Context) {
     const idempotencyKey = `ordlink_${createHash("sha256").update(`${id}:${amountCents}:${count + 1}`).digest("hex").slice(0, 36)}`;
     try {
       attempt = await prisma.paymentAttempt.create({
-        data: { provider: "SQUARE", paymentPurpose: "ORDER_TOTAL", websiteStatus: "PENDING", providerStatus: "PAYMENT_LINK_PENDING", amountCents, tipCents: Math.round(Number(order.tipAmount) * 100), currency: "USD", idempotencyKey, orderId: id, expiresAt: new Date(now.getTime() + PENDING_PAYMENT_EXPIRATION_MS), metadata: { environment: readiness.environment, checkout: "approved-weekly-payment-request" } },
+        data: { provider: "SQUARE", paymentPurpose: "ORDER_TOTAL", websiteStatus: "PENDING", providerStatus: "PAYMENT_LINK_PENDING", amountCents, tipCents: Math.round(Number(order.tipAmount) * 100), currency: "USD", idempotencyKey, orderId: id, expiresAt: new Date(now.getTime() + PENDING_PAYMENT_EXPIRATION_MS), metadata: { environment: readiness.environment, checkout: "approved-weekly-payment-request", squareItemName: itemName, orderReference: id } },
       });
       created = true;
     } catch (error) {
@@ -65,13 +84,13 @@ export async function POST(_request: Request, context: Context) {
   let attemptMetadata = metadata(attempt.metadata);
   let paymentUrl = typeof attemptMetadata.squarePaymentLinkUrl === "string" ? attemptMetadata.squarePaymentLinkUrl : null;
   if (!paymentUrl) {
-    const link = await createSquareOrderPaymentLink({ amountCents: attempt.amountCents, customerEmail: order.customerEmail, idempotencyKey: attempt.idempotencyKey, orderId: id });
+    const link = await createSquareOrderPaymentLink({ amountCents: attempt.amountCents, customerEmail: order.customerEmail, idempotencyKey: attempt.idempotencyKey, itemName, orderId: id, orderReferenceNote });
     paymentUrl = link.url;
-    attemptMetadata = { ...attemptMetadata, squarePaymentLinkId: link.id, squarePaymentLinkUrl: link.url, squarePaymentLinkLongUrl: link.longUrl };
+    attemptMetadata = { ...attemptMetadata, squareItemName: itemName, orderReference: id, squarePaymentLinkId: link.id, squarePaymentLinkUrl: link.url, squarePaymentLinkLongUrl: link.longUrl };
     attempt = await prisma.paymentAttempt.update({ where: { id: attempt.id }, data: { providerOrderId: link.orderId, providerStatus: "PAYMENT_LINK_CREATED", metadata: attemptMetadata } });
   }
   const mode = getEmailDeliveryMode();
-  await sendAppEmail({ to: order.customerEmail, subject: "Your approved order is ready for payment", type: "approved-order-payment-request", react: OrderPaymentRequestEmail({ customerName: order.customerName, orderId: id, amountDue: attempt.amountCents / 100, paymentUrl, environment: readiness.environment }) });
+  await sendAppEmail({ to: order.customerEmail, subject: `Pay for your ${itemName} order`, type: "approved-order-payment-request", react: OrderPaymentRequestEmail({ customerName: order.customerName, itemName, orderId: id, amountDue: attempt.amountCents / 100, paymentUrl, environment: readiness.environment }) });
   await prisma.$transaction([
     prisma.paymentAttempt.update({ where: { id: attempt.id }, data: { metadata: { ...attemptMetadata, paymentRequestEmailMode: mode, paymentRequestEmailHandledAt: new Date().toISOString() } } }),
     prisma.order.update({ where: { id }, data: { paymentProvider: "square", paymentStatus: "PAYMENT_PENDING", payByDate: attempt.expiresAt } }),

@@ -1,6 +1,7 @@
 import "server-only";
 
 import { createSquareClient, getSquareServerConfig } from "@/lib/square";
+import { buildSquareOrderPaymentLinkRequest } from "@/lib/weekly-payment-label";
 
 type Input = {
   amountCents: number;
@@ -52,22 +53,15 @@ export async function createSquareOrderPaymentLink(input: {
   amountCents: number;
   customerEmail: string;
   idempotencyKey: string;
+  itemName: string;
   orderId: string;
+  orderReferenceNote: string;
 }) {
   const config = getSquareServerConfig();
   const client = createSquareClient();
-  const description = `Order payment for ${input.orderId}`;
-  const response = await client.checkout.paymentLinks.create({
-    idempotencyKey: input.idempotencyKey,
-    description,
-    quickPay: {
-      name: `Order ${input.orderId}`,
-      priceMoney: { amount: BigInt(input.amountCents), currency: "USD" },
-      locationId: config.locationId,
-    },
-    prePopulatedData: { buyerEmail: input.customerEmail },
-    paymentNote: description,
-  });
+  const response = await client.checkout.paymentLinks.create(
+    buildSquareOrderPaymentLinkRequest({ ...input, locationId: config.locationId }),
+  );
   const link = response.paymentLink;
   if (!link?.id || !link.orderId || !link.url) {
     throw new Error("Square did not return a complete payment link.");

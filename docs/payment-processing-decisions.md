@@ -23,6 +23,9 @@ disabled.
 - For an approved unpaid weekly order, admin sends a Square-hosted order-total
   payment request from the order detail. The ledger uses the trusted persisted
   order total, including saved option deltas, delivery/late fees, and tip.
+- The hosted checkout uses the trusted weekly package snapshot for its concise
+  customer-facing item name. The order ID remains in the payment ledger and
+  Square payment note for reconciliation.
 - A current active request is reused on resend; expired/cancelled attempts do
   not block a replacement. Webhooks reconcile the hosted payment through the
   existing `providerOrderId` / `ORDER_TOTAL` path.

@@ -138,3 +138,9 @@ request using the trusted saved order total. The customer receives the link by
 email, and an authenticated customer also sees it on order detail. This path
 requires safe end-to-end QA; no Square link or payment was created during
 automated validation.
+
+Square-hosted checkout now labels approved weekly order-total requests with the
+trusted saved package name, such as `Weekly Meal Plan — Dinner and Lunch`.
+Selection details remain in the website, emails, and internal order snapshots;
+the order ID remains internal reconciliation data rather than the primary item
+name.

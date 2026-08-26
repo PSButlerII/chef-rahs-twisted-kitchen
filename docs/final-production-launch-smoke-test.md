@@ -116,6 +116,9 @@ authenticated customer order detail shows the active Pay Now link, and guest
 customers receive the direct hosted link by email. A safe environment must
 still verify approval, request creation/reuse, email delivery, expiration, and
 webhook-paid reconciliation before this workflow is marked production-passed.
+The hosted checkout item now uses the trusted saved weekly package name instead
+of exposing a generic `Order <id>` label. The full order ID remains in the
+payment ledger and Square payment note for reconciliation.
 Do not create another QA order solely to recover an existing approved unpaid
 order: after deployment, admin may send its payment request from that order's
 detail page, or the owner may cancel it as QA data.
