@@ -20,11 +20,17 @@
     "db:seed-demo": "tsx prisma/seed-demo-data.ts"
   },
   "overrides": {
+    "@prisma/config@7.9.1": {
+      "deepmerge-ts": "8.0.2"
+    },
     "@babel/core": "7.29.6",
     "@hono/node-server": "1.19.13",
     "brace-expansion@^5.0.0": "5.0.9",
     "minimatch@^3.1.0": "10.2.5",
-    "postcss": "8.5.25",
+    "postcss": {
+      ".": "8.5.25",
+      "nanoid": "3.3.18"
+    },
     "sharp": "0.35.3"
   },
   "dependencies": {
