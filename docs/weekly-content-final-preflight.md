@@ -129,3 +129,12 @@ branches behave correctly and the standard package is technically ready to
 accept a controlled payment. Weekly content is not launch-final until the owner
 resolves the incomplete name, confirms pricing, and approves offering copy. No
 real payment was run.
+
+## Approval-required payment workflow follow-up
+
+Approval-required weekly checkout still collects nothing before approval.
+After approval, admin can now create or reuse a two-hour Square-hosted payment
+request using the trusted saved order total. The customer receives the link by
+email, and an authenticated customer also sees it on order detail. This path
+requires safe end-to-end QA; no Square link or payment was created during
+automated validation.

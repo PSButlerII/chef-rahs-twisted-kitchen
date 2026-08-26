@@ -107,3 +107,15 @@ clear content approval: `5 day/` remains incomplete, both `$1.00` package
 prices are unconfirmed, and `Bisquets and gravy` / `pizza` require spelling or
 capitalization review. See
 [Weekly Content Final Preflight](weekly-content-final-preflight.md).
+
+## Approval-required weekly payment follow-up
+
+The missing post-approval collection path is implemented. Admin order detail
+now sends or resends a guarded two-hour Square-hosted order-total request;
+authenticated customer order detail shows the active Pay Now link, and guest
+customers receive the direct hosted link by email. A safe environment must
+still verify approval, request creation/reuse, email delivery, expiration, and
+webhook-paid reconciliation before this workflow is marked production-passed.
+Do not create another QA order solely to recover an existing approved unpaid
+order: after deployment, admin may send its payment request from that order's
+detail page, or the owner may cancel it as QA data.

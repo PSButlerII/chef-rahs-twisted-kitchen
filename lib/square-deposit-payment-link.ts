@@ -47,3 +47,35 @@ export function createSquareDepositPaymentLink(
 ) {
   return createSquareServicePaymentLink({ ...input, purposeLabel: "deposit" });
 }
+
+export async function createSquareOrderPaymentLink(input: {
+  amountCents: number;
+  customerEmail: string;
+  idempotencyKey: string;
+  orderId: string;
+}) {
+  const config = getSquareServerConfig();
+  const client = createSquareClient();
+  const description = `Order payment for ${input.orderId}`;
+  const response = await client.checkout.paymentLinks.create({
+    idempotencyKey: input.idempotencyKey,
+    description,
+    quickPay: {
+      name: `Order ${input.orderId}`,
+      priceMoney: { amount: BigInt(input.amountCents), currency: "USD" },
+      locationId: config.locationId,
+    },
+    prePopulatedData: { buyerEmail: input.customerEmail },
+    paymentNote: description,
+  });
+  const link = response.paymentLink;
+  if (!link?.id || !link.orderId || !link.url) {
+    throw new Error("Square did not return a complete payment link.");
+  }
+  return {
+    id: link.id,
+    orderId: link.orderId,
+    url: link.url,
+    longUrl: link.longUrl ?? null,
+  };
+}

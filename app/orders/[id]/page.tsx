@@ -65,6 +65,13 @@ type OrderDetail = {
     notes: string | null;
     weeklyMealPlanSelection: WeeklyOrderSelectionDisplay | null;
   }[];
+  paymentAttempts: {
+    websiteStatus: string;
+    paymentPurpose: string;
+    paidAt: Date | null;
+    expiresAt: Date | null;
+    metadata: unknown;
+  }[];
 };
 
 export default async function OrderPage({ params }: OrderPageProps) {
@@ -107,6 +114,10 @@ export default async function OrderPage({ params }: OrderPageProps) {
         },
       },
       user: true,
+      paymentAttempts: {
+        where: { paymentPurpose: "ORDER_TOTAL" },
+        orderBy: { createdAt: "desc" },
+      },
     },
   })) as OrderDetail | null;
 
@@ -117,6 +128,15 @@ export default async function OrderPage({ params }: OrderPageProps) {
   const paymentDue =
     order.paymentStatus === "PAY_BY_DATE" ||
     order.paymentStatus === "OFFLINE_PAYMENT_DUE";
+  const activePaymentAttempt = order.paymentAttempts.find((attempt) =>
+    ["CREATED", "PENDING", "REQUIRES_ACTION"].includes(attempt.websiteStatus) &&
+    !attempt.paidAt &&
+    (!attempt.expiresAt || attempt.expiresAt > new Date())
+  );
+  const activeMetadata = activePaymentAttempt?.metadata;
+  const paymentUrl = activeMetadata && typeof activeMetadata === "object" && !Array.isArray(activeMetadata) && "squarePaymentLinkUrl" in activeMetadata && typeof activeMetadata.squarePaymentLinkUrl === "string"
+    ? activeMetadata.squarePaymentLinkUrl
+    : null;
   const hasWeeklyMealPlan = order.items.some((item) =>
     Boolean(item.weeklyMealPlanSelection),
   );
@@ -210,6 +230,18 @@ export default async function OrderPage({ params }: OrderPageProps) {
               )}
             </section>
           )}
+
+          {order.approvalStatus === "APPROVED" && paymentUrl && order.paymentStatus !== "PAID" && !["CANCELLED", "COMPLETED", "REFUNDED"].includes(order.status) ? (
+            <section className="mt-6 rounded-lg border border-[#d99426] bg-[#fff3cf] p-5 text-[#6f1f12]">
+              <h2 className="text-xl font-black">Payment Due</h2>
+              <p className="mt-2 text-sm">
+                Complete payment through Square before {activePaymentAttempt?.expiresAt?.toLocaleString() ?? "the payment request expires"}.
+              </p>
+              <a href={paymentUrl} target="_blank" rel="noreferrer" className="brand-button-primary mt-4 inline-block px-5 py-3 text-sm">
+                Pay Now with Square
+              </a>
+            </section>
+          ) : null}
 
           {paymentDue && (
             <section className="mt-6 rounded-lg border border-[#d99426] bg-[#fff3cf] p-5 text-[#6f1f12]">

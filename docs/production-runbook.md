@@ -404,7 +404,15 @@ Launch posture:
 
 - Production customer checkout is online-payment only; manual/offline checkout is hidden and rejected.
 - Manual/offline checkout can be enabled only in development/testing with `ALLOW_MANUAL_PAYMENT_IN_CHECKOUT=true`.
-- Approval-required orders are submitted without payment and receive payment requests only after approval in a future phase.
+- Approval-required weekly orders are submitted without payment. After approval,
+  open the admin order detail and use **Send Payment Request**. The action
+  creates or safely reuses one active two-hour Square-hosted `ORDER_TOTAL`
+  request and emails it to the customer. Authenticated customers also see
+  **Pay Now with Square** on their order detail while the link is active.
+- If an approved weekly request expires, its ledger attempt becomes `EXPIRED`
+  and no longer blocks a replacement request. The approved order and weekly
+  capacity remain held; the worker does not cancel an already `ACCEPTED` order.
+  Admin must resend or deliberately cancel the order according to operations.
 - Admins should mark orders or deposits paid only after payment is actually confirmed outside the app.
 - Do not configure live Square credentials. Validate card/wallet tokenization, a completed test payment, receipt data, webhook reconciliation, and missing-config disablement in Sandbox.
 - Do not add Stripe launch wording; Stripe is legacy/optional only while current env parsing still exists.

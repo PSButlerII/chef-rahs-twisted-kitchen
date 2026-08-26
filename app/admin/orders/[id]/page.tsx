@@ -31,6 +31,7 @@ import {
   getSquareHistoryDisplayNote,
 } from "@/lib/square-display-labels";
 import type { PaymentPurpose, PaymentWebsiteStatus } from "@prisma/client";
+import { SendOrderPaymentRequestButton } from "@/components/admin/SendOrderPaymentRequestButton";
 
 type PageProps = {
   params: Promise<{
@@ -180,6 +181,27 @@ export default async function AdminOrderDetailsPage({ params }: PageProps) {
     status: order.status,
     statusHistory: order.statusHistory.map((history) => history.status),
   });
+  const activeOrderPaymentAttempt = order.paymentAttempts.find((attempt) =>
+    attempt.paymentPurpose === "ORDER_TOTAL" &&
+    ["CREATED", "PENDING", "REQUIRES_ACTION"].includes(attempt.websiteStatus) &&
+    !attempt.paidAt &&
+    (!attempt.expiresAt || attempt.expiresAt > new Date())
+  );
+  const activePaymentMetadata = activeOrderPaymentAttempt?.metadata;
+  const activePaymentUrl = activePaymentMetadata && typeof activePaymentMetadata === "object" && !Array.isArray(activePaymentMetadata) && "squarePaymentLinkUrl" in activePaymentMetadata && typeof activePaymentMetadata.squarePaymentLinkUrl === "string"
+    ? activePaymentMetadata.squarePaymentLinkUrl
+    : null;
+  const paymentRequestDisabledReason = !hasWeeklyMealPlan
+    ? "Only weekly orders use this post-approval payment request."
+    : order.approvalStatus !== "APPROVED"
+      ? "Approve this order before requesting payment."
+      : order.paidAt || order.paymentStatus === "PAID"
+        ? "This order is already paid."
+        : ["CANCELLED", "COMPLETED", "REFUNDED"].includes(order.status)
+          ? "This order is no longer payable."
+          : !squareReadiness.enabled
+            ? squareReadiness.adminMessage
+            : null;
 
   return (
     <main className="admin-page print:bg-white print:px-0 print:py-0">
@@ -534,6 +556,17 @@ export default async function AdminOrderDetailsPage({ params }: PageProps) {
                     <MarkOrderPaidButton orderId={order.id} />
                   </div>
                 )}
+                <SendOrderPaymentRequestButton
+                  orderId={order.id}
+                  environment={squareReadiness.environment}
+                  activePaymentUrl={activePaymentUrl}
+                  disabledReason={paymentRequestDisabledReason}
+                />
+                {activeOrderPaymentAttempt ? (
+                  <p className="mt-3 text-xs text-[#6b5a50]">
+                    Active request expires: {activeOrderPaymentAttempt.expiresAt?.toLocaleString() ?? "Not set"}
+                  </p>
+                ) : null}
               </div>
             </div>
 

@@ -57,6 +57,14 @@ export function OrderApprovalEmail({
         </Button>
       )}
 
+      {approved ? (
+        <Text style={emailStyles.text}>
+          If payment is still due, the business will send a separate secure
+          Square payment request. Payment is not collected from this approval
+          email.
+        </Text>
+      ) : null}
+
       <Text style={{ ...emailStyles.mutedText, marginTop: "18px" }}>
         {orderUrl
           ? "You can log into your account to view order details and updates."

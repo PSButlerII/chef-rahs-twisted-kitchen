@@ -20,6 +20,12 @@ disabled.
 
 - Orders that require approval must not collect payment at checkout.
 - By-request weekly packages request payment only after admin approval.
+- For an approved unpaid weekly order, admin sends a Square-hosted order-total
+  payment request from the order detail. The ledger uses the trusted persisted
+  order total, including saved option deltas, delivery/late fees, and tip.
+- A current active request is reused on resend; expired/cancelled attempts do
+  not block a replacement. Webhooks reconcile the hosted payment through the
+  existing `providerOrderId` / `ORDER_TOTAL` path.
 - Catering and personal-chef requests always require approval before payment.
 - Approved catering and personal-chef requests require a 50% deposit.
 - Admin sends a separate final-balance payment link by email.

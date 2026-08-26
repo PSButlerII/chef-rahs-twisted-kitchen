@@ -63,7 +63,9 @@ export async function PATCH(request: Request, context: RouteContext) {
           paymentStatus:
             approvalStatus === "DENIED"
               ? "CANCELLED"
-              : undefined,
+              : approvalStatus === "APPROVED"
+                ? "PAYMENT_DUE"
+                : undefined,
         },
       });
 
