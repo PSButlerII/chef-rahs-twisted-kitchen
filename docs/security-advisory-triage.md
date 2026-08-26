@@ -100,3 +100,52 @@ changed.
 - Prisma validation/client generation, lint, TypeScript, Next production build,
   migration status, checkout/admin smoke tests, and `git diff --check` passed.
 - No production Square call was made and production payments remain disabled.
+
+## Prisma / deepmerge-ts and nanoid follow-up
+
+Date: August 26, 2026
+
+### Scope and policy
+
+This review covers the npm audit findings for `deepmerge-ts` and `nanoid`.
+Neither package is imported directly by application code. No payment, Square,
+refund, webhook, authentication, or production-gate code changed.
+
+### GHSA-ggr8-5vv4-36mx — deepmerge-ts recursive merge exhaustion
+
+- Severity reported by npm: high.
+- Vulnerable installed version: `7.1.5`; patched range: `>=8.0.0`.
+- Dependency path: root dev dependency `prisma@7.9.1` →
+  `@prisma/config@7.9.1` → `deepmerge-ts@7.1.5`.
+- Production impact: Prisma config/CLI and build/deploy tooling only. No
+  untrusted hosted-request path to the merge API was found. Exploitation would
+  require control of trusted Prisma/build configuration or another tooling
+  input.
+- Fix: parent-scoped npm override for only `@prisma/config@7.9.1`, resolving
+  `deepmerge-ts` to `8.0.2`. Prisma itself remains unchanged. Version 8.0.2
+  preserves the named `deepmerge` export Prisma uses and passed Prisma
+  validation, generation, migration status, and the complete application build.
+- Remaining risk: this override crosses Prisma's exact transitive dependency
+  major. It is deliberately scoped to the current Prisma config version and
+  should be removed when Prisma adopts deepmerge-ts 8 directly.
+
+### GHSA-2v37-7h3g-55p8 — nanoid zero-size custom generator loop
+
+- Severity reported by npm: high.
+- Vulnerable installed version: `3.3.17`; patched range: `>=3.3.18`.
+- Dependency path: `next@16.2.12` and development dependency
+  `@tailwindcss/postcss@4.2.4` → overridden `postcss@8.5.25` →
+  `nanoid@3.3.17`.
+- Production impact: Nano ID is present in the production install graph through
+  Next/PostCSS, but no application import, custom generator call, user-supplied
+  CSS processing route, or payment/order/token ID use was found.
+- Fix: the existing PostCSS override now scopes Nano ID to `3.3.18`, the first
+  patched release. This patch version satisfies PostCSS's declared range and
+  preserves its `nanoid/non-secure` API and ID behavior.
+
+### Result
+
+- `npm audit`: zero vulnerabilities.
+- `npm audit --omit=dev`: zero vulnerabilities.
+- Installed affected versions: `deepmerge-ts@8.0.2` and `nanoid@3.3.18`.
+- No vulnerable versions remain in the installed dependency graph.
