@@ -315,6 +315,8 @@ Next.js generated types under `.next` can become stale after route changes or in
 
 BusinessSettings provide global defaults, and WeeklyMenuPeriod stores resolved dates for each published period. The order API remains the source of truth.
 
+Shared public fee/cutoff policy copy reads `BusinessSettings` through the server-side settings helper. Zero delivery/late fees use explicit no-charge wording; positive fees use the configured amount. Do not reintroduce hardcoded policy amounts. Display copy remains informational and must never replace server-authoritative fee calculation in the order API.
+
 ## 11. Weekly Meal Plan Behavior
 
 - A package requires `days * mealsPerDay` customer selections.

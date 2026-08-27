@@ -24,7 +24,7 @@ Customer ordering must not be opened yet. The real standard catalog has not been
 | Weekly menu content | Blocked | `weekly menu test` is Draft, dated August 26–28, at `2/2` QA capacity. Its packages are `5 day / 15 meals` and `Dinner and lunch`, both `$1.00`. Names/spelling are improved, but pricing, title casing, dates, capacity, descriptions, and final owner approval are not launch-ready. |
 | Allergens/options/upcharges | Functional evidence retained; content blocked | Weekly QA data contains allergen tags and a `$0.50` Roasted chicken upcharge. The production QA order preserves 15 selections and allergen acknowledgement. Previous preflight established trusted upcharge math and persistence, but no current cart/checkout preflight was possible while content is Draft. |
 | Pricing | Blocked | The only standard test item and both weekly packages are `$1.00` QA data. No evidence was found that these are owner-approved launch prices. |
-| Delivery/late-fee settings | Needs owner confirmation | Delivery fee and late fee are both `$0.00`; weekend ordering is disabled; cutoff is Thursday at 5:00 PM; timezone is `America/New_York`; weekly defaults are Wednesday open, Friday 5:00 PM late-fee start, Friday 10:00 PM close, and Sunday fulfillment. The public footer still says late orders may include `$10`, which conflicts with the configured `$0` late fee. |
+| Delivery/late-fee settings | Display mismatch fixed; values need owner confirmation | Delivery fee and late fee are both `$0.00`; weekend ordering is disabled; cutoff is Thursday at 5:00 PM; timezone is `America/New_York`; weekly defaults are Wednesday open, Friday 5:00 PM late-fee start, Friday 10:00 PM close, and Sunday fulfillment. Public footer/policy copy now reads these settings and no longer claims a hardcoded `$10` fee. |
 | Service-request content | Pass for continued lead collection | Catering and Personal Chef pages render clear copy and forms. Name and email are required; planning fields are optional. The two prior QA requests remain in the shared admin queue as evidence. Approval/denial controls render, and deposit/final-balance buttons are disabled before approval. No new request was submitted. |
 | Active payment-link review | Pass with one non-link follow-up | No active pending `ORDER_TOTAL`, service-deposit, or final-balance attempt was found, and no approved unpaid order was found. Paid and completed-refund evidence remains preserved. One refund child remains provider/website `PENDING`; it is not a payable link and must not trigger another refund. |
 | Mobile display | Pass for current hold/forms | At a 390 px viewport, the empty-state menu and Catering form had no horizontal overflow; the Catering submit control remained visible. |
@@ -66,12 +66,12 @@ Read-only admin/database review confirmed the configured weekly allergens and op
 
 Because the catalog is correctly unavailable, this pass did not create a cart or attempt checkout. Cart estimate versus server checkout total and current email rendering must be rechecked after the real catalog is entered but before publication/go-live.
 
-Late fees remain authoritative at checkout/server calculation. The configured fee is currently `$0.00`, despite the public `$10` footer statement.
+Late fees remain authoritative at checkout/server calculation. Public footer and checkout policy text are informational and now display the configured value without becoming a source of truth.
 
 ## Business settings
 
 - Delivery fee: `$0.00` — owner confirmation required.
-- Late fee: `$0.00` — owner confirmation required and inconsistent with footer copy.
+- Late fee: `$0.00` — owner confirmation required; public copy now reports that late fees are not currently charged.
 - Service-request deposit: `50%`.
 - Standard cutoff: Thursday at 5:00 PM.
 - Weekend ordering: disabled.
@@ -107,7 +107,7 @@ Therefore, no active customer-payable hosted link was identified. The pending re
 1. The real standard catalog is absent; only an archived test item exists.
 2. The weekly period is QA-only, Draft, dated for an elapsed test window, and already at capacity.
 3. Both weekly packages remain at unapproved `$1.00` QA pricing.
-4. Public footer late-fee copy says `$10`, while the configured late fee is `$0.00`.
+4. Fixed in `fix/business-settings-policy-copy-sync`: public fee/cutoff policy copy previously hardcoded a `$10` late fee and now reflects Business Settings.
 5. Delivery fee is `$0.00` and requires explicit owner approval.
 6. One refund child remains pending and should be monitored without issuing a duplicate refund.
 

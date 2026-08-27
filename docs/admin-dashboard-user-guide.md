@@ -463,6 +463,8 @@ Unavailable items should not be purchasable by customers. Historical orders keep
 
 Availability/publication is also the current launch-hold control. Before making an item sellable, verify its price, allergens, options, and upcharges. Review delivery-fee and weekly late-fee settings in Business Settings because those server-authoritative fees affect checkout totals. Unpublishing an item prevents new storefront selection but does not cancel a Square hosted link that was already created.
 
+The public footer and checkout policy notices read the current cutoff, delivery fee, late fee, and weekend-ordering setting. A zero fee is described as not currently charged rather than showing stale policy copy. These notices are informational; checkout and server submission remain authoritative for the actual order total.
+
 ### Editing a Menu Item
 
 Open an item detail panel and choose Edit Item.

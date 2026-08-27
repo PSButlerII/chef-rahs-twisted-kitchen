@@ -775,8 +775,9 @@ export default function CheckoutPage() {
 
                 {fixedWeeklyWindowState?.state === "late" && (
                   <div className="rounded-lg border border-[#d99426] bg-[#fff3cf] p-4 text-sm font-medium text-[#6f1f12]">
-                    Weekly meal plan orders are in the late-order window and
-                    include a ${settings.lateFee.toFixed(2)} late fee.
+                    {settings.lateFee > 0
+                      ? `Weekly meal plan orders are in the late-order window and include a $${settings.lateFee.toFixed(2)} late fee.`
+                      : "Weekly meal plan ordering is in the late-order window. Late fees are currently not being charged."}
                   </div>
                 )}
               </div>
@@ -1012,8 +1013,9 @@ export default function CheckoutPage() {
                 </div>
 
                 <p className="mt-3 text-xs leading-5 text-[#6b5a50]">
-                  Orders placed after {cutoffText} may include a $
-                  {settings.lateFee.toFixed(2)} late-order fee.
+                  {settings.lateFee > 0
+                    ? `Orders placed after ${cutoffText} may include a $${settings.lateFee.toFixed(2)} late-order fee.`
+                    : "Late fees are currently not being charged."}
                   {settings.noWeekendOrdering
                     ? " Weekend ordering is currently unavailable."
                     : ""}

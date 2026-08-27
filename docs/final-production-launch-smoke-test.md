@@ -73,7 +73,7 @@ separate admin notification email.
 ## Remaining launch blockers
 
 1. Enter, approve, and publish the real standard menu and a current weekly menu intended for customer purchase.
-2. Confirm production delivery/late-fee values and align the public `$10` late-fee copy with the configured value.
+2. Confirm the final production delivery/late-fee values. Public policy copy now reflects Business Settings rather than a hardcoded amount.
 3. Re-run final cart/checkout preflight with the approved content before publication.
 
 Delivery payment/refund evidence is complete and is no longer a launch blocker.
