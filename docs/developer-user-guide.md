@@ -8,7 +8,7 @@ Sandbox payment actions continue to depend on the application ID, location ID,
 and access token; webhook verification separately requires its signature key and
 exact notification URL.
 
-Production actions additionally require the production gate set to `true`, all
+Production actions require `SQUARE_ENVIRONMENT=production`, the production gate set to `true`, all
 Square credentials, the canonical HTTPS app URL, exact production webhook URL,
 and explicitly approved production CSP mode. Customer endpoints expose only a
 generic unavailable message. The authenticated admin payments page may show the
@@ -16,7 +16,9 @@ environment, gate state, missing variable names, and sanitized URL/CSP blockers,
 never secret values. Turning the gate off leaves verified webhook reconciliation
 available.
 
-Last updated: July 14, 2026
+The current Hostinger deployment intentionally keeps the production gate enabled while launch availability is controlled by unpublished menu and weekly content. The gate remains the emergency payment rollback, not a catalog-availability control. Verified webhook reconciliation remains available when customer payment creation is gated off.
+
+Last updated: August 27, 2026
 
 This guide covers local setup, database maintenance, validation, launch rules, and production deployment for the current application. Use `docs/production-runbook.md` as the final production checklist and `docs/fresh-db-deployment-rehearsal.md` for a full rehearsal record.
 
@@ -30,7 +32,7 @@ Chef Rah's Twisted Kitchen is a Next.js food-service application with:
 - Owner/admin order, kitchen, menu, customer, report, and settings tools.
 - Catering and personal-chef request workflows.
 - Transactional email through Resend and React Email.
-- Manual/offline payment tracking for launch.
+- Square production card checkout, hosted approval/deposit/final-balance links, ledger reconciliation, and refunds.
 
 The server is authoritative for prices, fees, weekly windows, option upcharges, user ownership, and fulfillment scheduling. Do not move these decisions to client-only code.
 
@@ -60,6 +62,8 @@ Set-Location chef-rahs-twisted-kitchen
 npm ci
 Copy-Item .env.example .env
 ```
+
+Use `npm install` when intentionally resolving an existing checkout or updating reviewed dependencies; use `npm ci` for a clean lockfile-exact install in CI, deployment, and reproducible validation. Never run a broad dependency update as part of ordinary setup.
 
 Edit `.env` with local-only values. Do not commit secrets, production credentials, or a real customer database URL.
 
@@ -104,6 +108,8 @@ mysql://DB_USER:URL_ENCODED_PASSWORD@127.0.0.1:3306/DB_NAME
 ```
 
 Although Hostinger guidance may refer to `localhost`, Prisma returned `P1000` with that host during deployment. phpMyAdmin's `SELECT CURRENT_USER();` reported the account as `user@127.0.0.1`; using the same host in `DATABASE_URL` fixed authentication. Treat the phpMyAdmin account host and Hostinger database panel as the source of truth for this deployment.
+
+Local validation can fail before application checks if the configured database host is offline, firewalled, or unreachable from the current network. A LAN-accessible MariaDB instance may also require an explicit user/host grant; grant only the required database permissions to the narrowest client host or range. Do not weaken production grants for local QA.
 
 Always URL-encode special characters in the password. For example, `+` becomes `%2B` and `!` becomes `%21`. If credentials or the full URL were exposed while troubleshooting, rotate the database password, update the encoded production URL, and redeploy before launch.
 
@@ -167,10 +173,12 @@ Start from `.env.example`.
 | `EMAIL_PREVIEW_FILES`               | Enables local preview file output when supported by the email utility. Keep it `false` in production unless intentionally debugging.                       |
 | `ALLOW_LOCAL_UPLOADS_IN_PRODUCTION` | Keep `false` or unset for launch; local production uploads are not durable.                                                                                |
 | `ALLOW_MANUAL_PAYMENT_IN_CHECKOUT`  | Development/test-only manual checkout override. It must be explicitly `true` and is ignored in production.                                                 |
-| `SQUARE_ENVIRONMENT`                | Must be `sandbox`; other values disable checkout in this phase.                                                                                            |
-| `SQUARE_APPLICATION_ID`             | Sandbox Web Payments SDK application identifier.                                                                                                           |
-| `SQUARE_LOCATION_ID`                | Sandbox location identifier.                                                                                                                               |
-| `SQUARE_ACCESS_TOKEN`               | Server-side Sandbox secret; never expose through `NEXT_PUBLIC_*`.                                                                                          |
+| `SQUARE_ENVIRONMENT`                | `sandbox` locally or `production` only for an explicitly approved live deployment.                                                                         |
+| `SQUARE_CSP_MODE`                   | Selects the reviewed Square CSP source set for the matching environment; production never permits `unsafe-eval`.                                            |
+| `SQUARE_PRODUCTION_PAYMENTS_ENABLED` | Explicit production payment-creation gate and emergency rollback control, not the routine catalog publication switch.                                    |
+| `SQUARE_APPLICATION_ID`             | Environment-matching Web Payments SDK application identifier.                                                                                              |
+| `SQUARE_LOCATION_ID`                | Environment-matching Square location identifier.                                                                                                           |
+| `SQUARE_ACCESS_TOKEN`               | Server-side Square secret; never expose through `NEXT_PUBLIC_*`.                                                                                            |
 | `SQUARE_WEBHOOK_SIGNATURE_KEY`      | Server-only signature key used with the raw webhook body.                                                                                                  |
 | `SQUARE_WEBHOOK_NOTIFICATION_URL`   | Exact Square webhook subscription URL used during signature verification.                                                                                  |
 | `PAYMENT_JOBS_TOKEN`                | Server-only secret of at least 32 characters for the protected pending-payment expiration job.                                                             |
@@ -180,7 +188,7 @@ Start from `.env.example`.
 | `ADMIN_EMAIL`                       | Legacy single-user input for `npm run admin:promote`. Not needed for owner-managed admins.                                                                 |
 | `ADMIN_ROLE`                        | Legacy role for `npm run admin:promote`; defaults to `ADMIN`.                                                                                              |
 
-Legacy Stripe placeholders may remain blank while the existing env parser supports them. Stripe is not the selected payment integration. Square standard checkout is Sandbox-only and PayPal remains later work. See `docs/payment-processing-decisions.md`.
+Legacy Stripe placeholders may remain blank while the existing env parser supports them. Stripe is not the selected payment integration. Square is the production provider and PayPal remains later work. See `docs/payment-processing-decisions.md`.
 
 ## 6. Owner And Admin Setup
 
@@ -242,14 +250,15 @@ The default origin is `http://localhost:3000`. When using another port, update a
 For a clean production-style validation on Windows PowerShell:
 
 ```powershell
-Remove-Item -Recurse -Force .next -ErrorAction SilentlyContinue
+npm audit
+npm audit --omit=dev
+npx prisma validate
 npm run prisma:generate
 npm run check
 npm run build
 npx tsc --noEmit --pretty false
+npx prisma migrate status
 git diff --check
-npx tsx scripts/qa-late-fee-rules.ts
-npm run db:seed-demo
 ```
 
 Notes:
@@ -257,8 +266,8 @@ Notes:
 - `npm run check` runs ESLint, Prisma generation, Next route type generation, TypeScript, and a production build.
 - The build inside `npm run check` also invokes the migration-aware `prebuild`, so `check` requires a valid `DATABASE_URL` and database connectivity.
 - The separate build and `tsc` commands are still useful final deployment checks.
-- The QA script validates the weekly open, late-fee, close, and fixed Sunday fulfillment rules.
-- The demo seed changes the configured database. Run it only against cleanup-safe data.
+- `prisma validate`, generation, builds, and migration status require the expected Prisma configuration; build/check also need a reachable database because `prebuild` runs `migrate deploy`.
+- Seeds are intentionally excluded from routine validation because they mutate the configured database.
 
 ## 9. TypeScript And Hostinger Notes
 
@@ -434,11 +443,89 @@ Production rules:
 - Keep `ALLOW_LOCAL_UPLOADS_IN_PRODUCTION=false` or unset until durable object storage is approved.
 - Keep local email preview routes and preview files out of the production workflow.
 - Run `npm run env:check` with final live values before launch approval.
-- Keep automated online checkout disabled until a selected provider has a dedicated, reviewed integration.
+- Treat `SQUARE_PRODUCTION_PAYMENTS_ENABLED` as an emergency payment-creation rollback, not as the normal catalog hold. The current content hold uses publication state; see `docs/launch-hold-order-availability-runbook.md`.
 
-## 17. Future Developer Notes
+## 17. Payment Architecture and Operations
 
-- Square and PayPal are selected for a future automated payment phase. Launch uses manual links, invoices, and offline payment tracking; do not claim either provider is integrated.
+### Checkout, hosted links, and the ledger
+
+The server is authoritative for item/package prices, paid options, tips, fees, and the final amount. Taxes are included in listed prices and are not added as a separate checkout line. Standard pickup, delivery, and non-approval weekly orders use Square card checkout. Approval-required weekly orders, service deposits, and service final balances use Square-hosted payment links only after the applicable admin decision.
+
+`PaymentAttempt` is the internal ledger. Its provider status records Square's state while website status records the application's state. Purposes distinguish `ORDER_TOTAL`, `SERVICE_DEPOSIT`, `SERVICE_FINAL_BALANCE`, and `REFUND`. Refund attempts are child rows linked to the original parent payment. Provider IDs, idempotency keys, receipts/references, timestamps, and sanitized metadata support reconciliation without making the order table a provider event log.
+
+Payment creation must retain its existing idempotency and active-attempt checks. Standard checkout and hosted requests use a two-hour (`120` minute) pending window computed by the server. Do not accept a customer-selected pay-by date for Square. Approved weekly hosted links use trusted package/order data for customer-facing item names while retaining the order ID internally.
+
+### Square configuration and readiness
+
+Keep application ID, location ID, access token, and webhook signature key aligned to one Square environment. `SQUARE_ACCESS_TOKEN` and `SQUARE_WEBHOOK_SIGNATURE_KEY` are server-only. Production customer payment creation additionally requires the production gate, canonical HTTPS URLs, and approved production CSP. Run `npm run env:check` with the intended deployed values; never print secrets.
+
+Turning the production gate off is the emergency rollback for new customer payment actions. It is not the normal launch-hold mechanism and must not disable verified webhook reconciliation for payments already in flight. Hostinger rebuilds after environment changes, so the present hold keeps the gate enabled and unpublishes customer-purchasable content.
+
+### Webhooks and deduplication
+
+The webhook endpoint is `/api/webhooks/square`. The exact production notification URL is `https://rahstwistedkitchen.com/api/webhooks/square`; scheme, host, and path must match because signature verification uses it. Subscribe only to:
+
+- `payment.created`
+- `payment.updated`
+- `refund.created`
+- `refund.updated`
+
+The route verifies the Square signature against the raw body before parsing or deduplication. `PaymentWebhookEvent` has a unique provider/event-ID key. A verified duplicate returns success and is not reconciled twice; a create-time `P2002` catch covers races. Unsupported verified events are stored as ignored. Avoid noisy payout/order events unless a reviewed feature intentionally consumes them, and never treat an unverified event as a duplicate.
+
+### Refund reconciliation and recovery
+
+Square refunds may validly remain `PENDING`. Only `COMPLETED` transitions the refund child and eligible parent/order state to refunded. `FAILED` and `REJECTED` remain terminal failures and never mark the parent refunded. Completion is idempotent and notification logic must not emit duplicate emails.
+
+For the specifically documented affected refund, use the local, read-only-by-default recovery command:
+
+```powershell
+npm run payment:recover-affected-refund
+npm run payment:recover-affected-refund -- --apply
+```
+
+Run dry mode first. Apply mode reconciles local rows only after retrieving authoritative Square status; it must never create another refund. The script operates against the `DATABASE_URL` and Square credentials loaded in the shell where it runs. Running it locally does not magically operate on the live website—verify the target environment before using `--apply`. See `docs/production-runbook.md` and `docs/payment-processing-decisions.md` for the incident-safe procedure.
+
+### Pending-payment expiration
+
+`POST /api/jobs/expire-pending-payments` is protected by `PAYMENT_JOBS_TOKEN` (minimum 32 characters) in the `x-payment-jobs-token` header. Schedule it at the production cadence documented in `docs/production-runbook.md`. It expires eligible pending attempts after their server-generated two-hour deadline, revokes retry tokens, cancels eligible unpaid orders, releases weekly capacity, and sends the non-payment cancellation email according to configured email delivery mode. The worker uses conditional updates so repeated or overlapping runs are safe.
+
+An approved weekly order is capacity-bearing while its active payment request is pending. Capacity is released only when the eligible unpaid order is cancelled by expiration; payment-link creation itself must not increment capacity again.
+
+### Weekly and service-request flows
+
+Weekly packages require `days * mealsPerDay` selections. Admin slot labels drive the customer labels and selector eligibility preview. Breakfast-only offerings are invalid in non-Breakfast slots; Standard offerings may be used in Breakfast slots. The API revalidates the period, package, required slots, offering eligibility, allergens/options, and trusted option upcharges.
+
+Normal weekly packages follow immediate checkout. `Requires chef approval` packages submit as approval-first, expose no Square fields, then become payment due after approval. Their hosted checkout uses a customer-friendly trusted package name and keeps the internal order ID for reconciliation.
+
+Catering and Personal Chef forms create service requests, not orders or payments. Both share the admin service queue. Customers receive confirmation email; no separate admin-notification email is currently sent, so operations rely on the queue. Deposit and final-balance hosted-link actions become available only in the appropriate approved/payment phase. Paid-in-full is derived from the required paid deposit/final-balance ledger state; operational service completion remains a separate, manual workflow state.
+
+### Dependency security maintenance
+
+Use targeted patch/minor parent upgrades or a narrowly scoped, compatibility-verified override. Never run `npm audit fix --force`. Re-run both `npm audit` and `npm audit --omit=dev`, inspect `npm explain`/`npm ls` paths, and distinguish runtime reachability from CLI/build tooling. Avoid Prisma, Next, React, Tailwind, Square, or Auth major changes during launch hardening. Do not downgrade Prisma merely to silence an advisory if that breaks the current adapter/toolchain.
+
+After remediation is merged, allow Dependabot/GitHub dependency alerts to rescan the default branch and confirm the alert clears. The repository may use narrowly scoped transitive overrides where the parent has no safe release; preserve the rationale in `docs/security-advisory-triage.md` and remove an override when the parent adopts the patch.
+
+## 18. Launch Hold and Production Deployment
+
+Deploy the latest reviewed `main` to Hostinger and verify the commit/build logs. Hostinger's fixed build lifecycle runs Prisma generation and `migrate deploy` through `prebuild`; do not add seed, bootstrap, or ad-hoc payment work to that lifecycle.
+
+Production Square is ready, but the site can remain in content-hold mode. Keep standard menu items and weekly offerings/packages unpublished unless intentionally sellable. Service forms may remain available for lead collection. Existing Square-hosted links are independent of catalog visibility, so audit active/pending attempts separately before and during the hold.
+
+Before publishing the real catalog, verify names, prices, allergens, options/upcharges, weekly labels and offerings, fees, payment readiness, and admin reconciliation. Use:
+
+- `docs/launch-hold-order-availability-runbook.md`
+- `docs/production-runbook.md`
+- `docs/payment-processing-decisions.md`
+- `docs/square-production-activation-plan.md`
+- `docs/square-production-rehearsal-report.md`
+- `docs/final-production-launch-smoke-test.md`
+- `docs/service-request-production-submission-evidence.md`
+- `docs/weekly-content-final-preflight.md`
+- `docs/security-advisory-triage.md`
+
+## 19. Future Developer Notes
+
+- Square production payment workflows are implemented. PayPal, ACH, and any broader provider expansion remain future scope.
 - Tokenized guest order tracking and public guest order detail links are future scope. Guest thank-you and email flows must not expose protected order data.
-- Durable upload/object storage remains a production decision. Local filesystem uploads are not a durable hosting strategy.
+- Direct durable filesystem storage on Hostinger was proven feasible, but admin upload implementation remains post-launch scope. See `docs/post-launch-backlog.md`.
 - SMS/customer scheduling notifications may be added later; the current fulfillment message says the owner will notify the customer when delivery is scheduled.

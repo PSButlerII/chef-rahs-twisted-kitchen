@@ -1,8 +1,10 @@
 # Chef Rah's Twisted Kitchen Admin Dashboard User Guide
 
-Last updated: July 14, 2026
+Last updated: August 27, 2026
 
 This guide explains how to use the admin dashboard for daily operations, menu management, service requests, weekly meal plans, gallery updates, customer lookup, payments, reports, notifications, and business settings.
+
+The dashboard is the operating center for paid pickup/delivery orders, weekly and approval-required orders, Square reconciliation, Catering and Personal Chef requests, catalog publication, and launch-hold controls. During the current content hold, admins control new purchasing through menu and weekly publication while continuing to monitor existing orders, service leads, and active payment links.
 
 The guide is written for business admins, kitchen staff, and trusted operators. It avoids developer-only details unless they affect how the dashboard should be used.
 
@@ -55,7 +57,7 @@ Keep at least one owner at all times. The page disables unsafe last-owner demoti
 | Gallery manager | `/admin/gallery` | Add, edit, sort, categorize, replace, or remove public gallery images. |
 | Customers | `/admin/customers` | Search customers and review order/payment activity. |
 | Customer detail | `/admin/customers/[id]` | Review a customer account, order history, service requests, and payment alerts. |
-| Payments | `/admin/payments` | Track outstanding manual/offline payments and mark orders paid. |
+| Payments | `/admin/payments` | Reconcile website and Square payment state, receipts, refunds, and payment requests. |
 | Reports | `/admin/reports` | Review revenue, order, payment, approval, and service request metrics. |
 | Notifications | `/admin/notifications` | Review active/planned notification types and current email delivery mode. |
 | Business settings | `/admin/settings` | Manage fees, general order rules, global checkout scheduling, weekly ordering windows, fixed fulfillment, and customer-facing fulfillment messages. |
@@ -219,7 +221,30 @@ Use the Approval Decision card.
 3. Choose Approve Order or Deny Order.
 4. Confirm the browser prompt.
 
-Approving an order notifies the customer and moves the order forward. Denying an order notifies the customer and cancels the order.
+Approving an order notifies the customer and moves the order forward. Standard paid pickup, delivery, and non-approval weekly orders normally arrive already paid. An approval-required weekly order moves to `PAYMENT_DUE`; use its payment-request control after approval to send or safely reuse a two-hour Square-hosted payment link. Denying an order notifies the customer and cancels the order.
+
+Common payment/approval states are:
+
+- `AWAITING_APPROVAL`: no payment is collected yet.
+- `PAYMENT_DUE`: approved and ready for an admin-created payment request.
+- `PAYMENT_PENDING`: a Square checkout or hosted link is active but not completed.
+- `PAID`: Square completion and the website ledger agree.
+- `REFUNDED`: the completed refund has reconciled locally.
+- `EXPIRED` / `EXPIRED_NON_PAYMENT`: the two-hour payment window ended without payment.
+- `CANCELLED`: the order is no longer active.
+
+### Approved Weekly Payment Requests
+
+For a weekly package marked `Requires chef approval`:
+
+1. The customer submits the order for approval; no Square fields appear and no payment is taken.
+2. Review and approve it. The order becomes `PAYMENT_DUE`.
+3. Use **Send payment request** on the order detail page. The app creates or reuses one active `ORDER_TOTAL` attempt and emails the hosted Square link.
+4. A signed-in customer can also use **Pay Now** from the protected order page. A guest uses the emailed hosted link; there is no public guest order-tracking page.
+5. Do not repeatedly send a still-active request. The duplicate guard intentionally reuses the active attempt.
+6. After a request expires or is invalidated as stale, create a replacement from the same admin page.
+
+The Square checkout item uses the trusted weekly package/order data for a customer-friendly name. The internal order ID remains available for reconciliation.
 
 ### Updating Order Status
 
@@ -372,6 +397,10 @@ Notes:
 
 Use Mark Deposit Paid only after the deposit is actually received. Duplicate deposit-paid actions are blocked.
 
+Approved service requests expose **Send deposit payment request** only when the deposit phase is eligible. After the deposit is paid, **Send final payment request** becomes available when the remaining balance is due. These create Square-hosted requests; do not send one merely to inspect it. Payment state and operational completion are separate: a paid balance does not automatically mean the event work is completed.
+
+Public Catering and Personal Chef forms share this admin queue. Customers receive a submission confirmation email. The current production flow does not send a separate admin-notification email, so staff must monitor this queue. Before approval, payment controls remain unavailable and no payment link is created.
+
 ## Menu Manager
 
 Routes:
@@ -431,6 +460,8 @@ Production note: local file uploads are blocked in production unless durable upl
 Use Mark Available or Mark Unavailable inside an item detail panel.
 
 Unavailable items should not be purchasable by customers. Historical orders keep their saved item snapshots.
+
+Availability/publication is also the current launch-hold control. Before making an item sellable, verify its price, allergens, options, and upcharges. Review delivery-fee and weekly late-fee settings in Business Settings because those server-authoritative fees affect checkout totals. Unpublishing an item prevents new storefront selection but does not cancel a Square hosted link that was already created.
 
 ### Editing a Menu Item
 
@@ -623,6 +654,10 @@ Fields:
 
 Offerings should be written as complete meals, not open-ended custom meal builders. Breakfast offerings receive a Breakfast-only badge in admin and are shown only in package slots labeled Breakfast. They do not appear in Lunch, Dinner, Snack, or generic Meal slots, and the server rejects a Breakfast offering submitted for a non-Breakfast slot.
 
+The package editor labels selector choices as `Item · Breakfast` or `Item · Standard`. Changing a slot label immediately recomputes the eligibility preview and safely clears stale preview choices; no refresh is required. Breakfast-only offerings are filtered from non-Breakfast slots. Standard offerings may remain valid in Breakfast slots under the existing business rule. This selector is an eligibility preview, not a saved per-slot offering assignment.
+
+Customers must complete every configured slot. The customer view uses the admin-configured slot labels, enforces the required count, and preserves allergens, selected options, and server-authoritative upcharges. A `By request` package remains approval-first and does not display Square payment fields before approval.
+
 ### Weekly Offering Allergens
 
 Each weekly offering can be tagged with allergens.
@@ -757,16 +792,37 @@ Use customer detail pages to answer support questions, follow up on payments, or
 
 Route: `/admin/payments`
 
-Payment Management focuses on manual/offline payment tracking. Online card checkout is not currently enabled.
+Payment Management is the reconciliation view for website orders and Square activity. Standard production checkout, approved-weekly order links, and eligible service deposit/final-balance links write `PaymentAttempt` ledger rows.
 
-The page shows:
+Use the page to compare:
 
-- Count of payments due.
-- Outstanding total.
-- Online checkout placeholder status.
-- Table of outstanding payments.
+- Website/ledger status and Square provider status.
+- Payment purpose (`ORDER_TOTAL`, `SERVICE_DEPOSIT`, `SERVICE_FINAL_BALANCE`, or `REFUND`).
+- Square payment/reference and receipt information.
+- Paid/refunded timestamps.
+- Parent payment and child refund rows.
+- Reconciliation warnings.
 
-Use Mark Paid only after payment has been confirmed. The app rejects duplicate payment marking once an order is already paid.
+`No mismatch detected` means the website state agrees with the provider evidence available to the app. A mismatch is a review signal, not permission to charge or refund again. Open the related order/request and Square receipt before taking action.
+
+Square refunds can remain `PENDING` before becoming `COMPLETED`. A pending refund is a valid temporary state. Do not issue a second refund. After Square completes it, the refund child and parent payment reconcile to `REFUNDED`; the order display follows for a full standard-order refund. Failed or rejected refunds remain visibly failed/rejected and must not mark the parent refunded.
+
+Normal refunds are admin-only, full refunds of eligible standard `ORDER_TOTAL` payments. Enter the reason, review the confirmation, and submit once. The normal action is unavailable after 24 hours, fulfillment, or preparing/service-started status. Square is the receipt source. Duplicate webhook events and repeated completion processing are guarded against.
+
+Legacy **Mark Paid** controls are only for a genuine externally confirmed manual/offline payment. Manual customer checkout is disabled in production.
+
+## Launch-Hold / Content-Hold Operations
+
+Square production payments are tested and intentionally remain enabled. Hostinger environment-variable changes trigger a full rebuild, so launch hold is controlled through catalog publication rather than toggling the payment gate.
+
+- Unpublish or remove standard menu items and weekly offerings/packages that are not intentionally sellable.
+- Review by-request weekly packages before publishing.
+- Service request forms may remain live when lead collection is desired; they do not charge before approval.
+- Unpublishing content does **not** invalidate an already-created Square hosted payment link. Review active/pending payment attempts separately, and do not resend links unless payment is intended.
+- Monitor Orders and Payments after every content change.
+- Before publishing real content, verify names, prices, allergens, options/upcharges, weekly slots/offerings, delivery fee, late fee, and that the enabled payment gate is still intentional.
+
+See `docs/launch-hold-order-availability-runbook.md` for the complete hold and publishing checklist.
 
 ## Reports
 
@@ -988,9 +1044,11 @@ Before production launch:
 - `OWNER_EMAIL` must match a registered user before bootstrapping the first owner with `npm run owner:promote`.
 - Confirm global and weekly customer scheduling are disabled, both public fulfillment times are blank, and the fixed Sunday messages do not promise a time.
 - Durable image storage must be decided if admins need direct production uploads.
-- Square/PayPal automated checkout is future work; manual payment tracking remains supported for launch.
+- Square production payments are implemented and tested. The current launch hold is enforced operationally through unpublished menu/weekly content, not by disabling the production payment gate.
+- PayPal remains deferred.
+- Review active hosted payment links separately because unpublishing catalog content does not cancel them.
 
-See `docs/launch-readiness-checklist.md` for the technical launch checklist.
+See `docs/launch-hold-order-availability-runbook.md`, `docs/production-runbook.md`, and `docs/final-production-launch-smoke-test.md` for the current operational and technical checklists.
 
 ## Troubleshooting
 
