@@ -20,10 +20,10 @@ reconciliation are aligned with no mismatch.
 | Flow | Result | Evidence |
 | --- | --- | --- |
 | Home | Pass | The public home route returned successfully over HTTPS. |
-| Menu and cart | Pass | Published catalog content reached cart and checkout with server-authoritative totals. |
+| Menu and cart | Technical evidence passed; current content blocked | Earlier QA proved cart and trusted checkout totals. The current public menu correctly shows `Menu coming soon`; no real standard catalog is available for launch. See [Production Content and Admin Data Readiness](production-content-admin-data-readiness.md). |
 | Guest pickup checkout | Preflight pass | Production card fields and pickup checkout rendered; retain any separately required owner rehearsal evidence. |
 | Guest delivery checkout | Pass | Preflight passed, then the owner completed a real `$2.00` Square production delivery payment and full refund. See [Production Delivery Checkout Smoke Test](production-delivery-checkout-smoke-test.md). |
-| Weekly meal-plan checkout | Technical preflight pass; content blocked | The final content preflight again passed Breakfast eligibility, required selections, allergens, the `$0.50` upcharge, trusted totals, production `Pay with Card`, and approval-first `Submit for Approval`. Content is not launch-final: `5 day/` is incomplete, `$1.00` prices are unconfirmed, and offering copy needs review. See [Weekly Content Final Preflight](weekly-content-final-preflight.md). |
+| Weekly meal-plan checkout | Technical preflight pass; content blocked | Earlier preflight passed Breakfast eligibility, required selections, allergens, the `$0.50` upcharge, trusted totals, production `Pay with Card`, and approval-first `Submit for Approval`. The corrected package/offering names now exist, but the only weekly period is Draft, uses `$1.00` QA prices/test dates, and is already at capacity. See [Production Content and Admin Data Readiness](production-content-admin-data-readiness.md). |
 | Catering request | Pass | A clearly marked production QA request submitted successfully, reached the thank-you page, appeared accurately in the admin queue/detail, and delivered its customer confirmation email. See [Service Request Production Submission Evidence](service-request-production-submission-evidence.md). |
 | Personal-chef request | Pass | A clearly marked production QA request submitted successfully, reached the thank-you page, appeared accurately in the admin queue/detail, and delivered its customer confirmation email. See [Service Request Production Submission Evidence](service-request-production-submission-evidence.md). |
 
@@ -72,8 +72,9 @@ separate admin notification email.
 
 ## Remaining launch blockers
 
-1. Approve and publish the real standard menu and weekly content intended for
-   customer purchase.
+1. Enter, approve, and publish the real standard menu and a current weekly menu intended for customer purchase.
+2. Confirm production delivery/late-fee values and align the public `$10` late-fee copy with the configured value.
+3. Re-run final cart/checkout preflight with the approved content before publication.
 
 Delivery payment/refund evidence is complete and is no longer a launch blocker.
 Production catering and personal-chef submission/admin/email evidence is also
@@ -110,11 +111,11 @@ menu, customer selections, Breakfast eligibility, cart totals, production card
 readiness, and by-request approval-first checkout all passed preflight. No real
 payment was run.
 
-The final content preflight confirmed the payment workflows again but did not
-clear content approval: `5 day/` remains incomplete, both `$1.00` package
-prices are unconfirmed, and `Bisquets and gravy` / `pizza` require spelling or
-capitalization review. See
-[Weekly Content Final Preflight](weekly-content-final-preflight.md).
+The August 27 production data review confirmed the earlier spelling/name issues
+are corrected (`5 day / 15 meals`, `Biscuits and Gravy`, and `Pizza`). Content
+approval is still blocked because the period remains Draft with QA dates,
+`$1.00` prices, and full QA capacity; the real standard catalog is also absent.
+See [Production Content and Admin Data Readiness](production-content-admin-data-readiness.md).
 
 ## Approval-required weekly payment follow-up
 

@@ -115,3 +115,17 @@ action while the production Square gate remains enabled. Record who published
 the content, when it was published, and the first post-publish monitoring
 result.
 
+## August 27 production content review
+
+The read-only production review confirmed this hold is active: the public menu
+shows no purchasable content, admin has no active standard items, and the only
+weekly period is Draft. No active pending order-total, deposit, or final-balance
+request was found. One refund remains pending; it is not a payable link and is
+not permission to issue another refund.
+
+Opening ordering remains blocked on the real catalog, current weekly content,
+owner-approved prices, and confirmation of the configured `$0` delivery/late
+fees. The public footer currently refers to a possible `$10` late fee, so that
+copy and Business Settings must agree before publication. See
+[Production Content and Admin Data Readiness](production-content-admin-data-readiness.md).
+
