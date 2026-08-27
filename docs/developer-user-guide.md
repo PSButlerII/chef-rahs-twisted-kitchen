@@ -275,7 +275,7 @@ Notes:
 
 ### Hostinger Upload Storage Feasibility
 
-Production testing confirmed that the deployed Node/Next.js runtime can write, read, and publicly serve files from Hostinger's `public_html/image_uploads` directory. The admin-only durable upload implementation now uses that finding. It validates size, MIME and magic bytes, generates UUID names, and returns public URLs without exposing the absolute path. A production upload rehearsal remains required after environment configuration.
+Production testing confirmed that the deployed Node/Next.js runtime can write, read, and publicly serve files from Hostinger's `public_html/image_uploads` directory. The admin-only durable upload implementation now uses that finding. It validates size, MIME and magic bytes, generates UUID names, and returns public URLs without exposing the absolute path. Gallery uploads are stored below the public base as `/gallery/<uuid>`, while bundled images remain under `/gallery/webp`. The public gallery composes both sources, gives matching database `src` values precedence, and exposes built-in images to admin as read-only references. A production upload rehearsal remains required after environment configuration.
 
 Hostinger runs the fixed command `npm run build`. Before deployment, configure `DATABASE_URL` in the Hostinger environment and confirm it points to the production MySQL/MariaDB database that the build environment can reach with migration permissions.
 

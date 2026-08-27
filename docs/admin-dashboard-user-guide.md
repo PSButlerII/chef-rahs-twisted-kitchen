@@ -54,7 +54,7 @@ Keep at least one owner at all times. The page disables unsafe last-owner demoti
 | Weekly menu manager    | `/admin/menu/weekly`     | Manage weekly periods, packages, slot labels, General/Breakfast offerings, allowed options, ordering windows, and fulfillment prep.                 |
 | Menu categories        | `/admin/menu/categories` | Rename display categories and control sort order.                                                                                                   |
 | Archived menu items    | `/admin/menu/archived`   | Restore or permanently delete archived menu items.                                                                                                  |
-| Gallery manager        | `/admin/gallery`         | Add, edit, sort, categorize, replace, or remove public gallery images.                                                                              |
+| Gallery manager        | `/admin/gallery`         | Manage uploaded gallery images and review built-in site images.                                                                                     |
 | Customers              | `/admin/customers`       | Search customers and review order/payment activity.                                                                                                 |
 | Customer detail        | `/admin/customers/[id]`  | Review a customer account, order history, service requests, and payment alerts.                                                                     |
 | Payments               | `/admin/payments`        | Reconcile website and Square payment state, receipts, refunds, and payment requests.                                                                |
@@ -711,7 +711,7 @@ Use Open Kitchen Board to move from weekly prep into active kitchen order manage
 
 Route: `/admin/gallery`
 
-Use the gallery manager to control public gallery images.
+Use the gallery manager to control uploaded, database-backed public gallery images and review the built-in site images. Built-in cards are marked read-only and do not offer edit or delete actions.
 
 ### Adding a Gallery Image
 
@@ -734,6 +734,8 @@ Gallery categories:
 Images must be JPG, PNG, or WebP and 5 MB or smaller. WebP is preferred for public performance.
 
 Production uploads require the durable filesystem environment configuration. If it is missing, the admin upload control fails closed and a manually hosted public URL may still be used.
+
+The public gallery displays both sources. Built-in images live under `/gallery/webp`; uploaded production images use `/image_uploads/gallery/<uuid>`. If both sources use the same `src`, the database-backed record is shown once and takes precedence.
 
 ### Editing a Gallery Image
 
