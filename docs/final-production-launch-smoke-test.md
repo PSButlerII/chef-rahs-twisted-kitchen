@@ -6,8 +6,8 @@ Site: `https://rahstwistedkitchen.com`
 
 ## Result
 
-**Launch readiness: service-request evidence passed; final payment-gate decision
-remains.**
+**Launch readiness: payment and service-request evidence passed; real catalog
+content approval remains.**
 
 The production application and authenticated admin surfaces are reachable.
 Square production delivery checkout has now been exercised with a real `$2.00`
@@ -72,11 +72,22 @@ separate admin notification email.
 
 ## Remaining launch blockers
 
-1. Confirm the final Square production gate state is explicitly owner-approved.
+1. Approve and publish the real standard menu and weekly content intended for
+   customer purchase.
 
 Delivery payment/refund evidence is complete and is no longer a launch blocker.
 Production catering and personal-chef submission/admin/email evidence is also
 complete and is no longer a launch blocker.
+
+## Launch-hold state
+
+Square production payments remain intentionally enabled. The site is held from
+general purchasing by unpublishing or removing menu and weekly content until
+the owner approves the real catalog. This avoids Hostinger rebuilds caused by
+environment-variable changes while preserving the tested production payment
+configuration. Follow the
+[Launch-Hold Order Availability Runbook](launch-hold-order-availability-runbook.md),
+including its separate review of active/pending hosted payment links.
 
 ## Weekly admin slot selector follow-up
 

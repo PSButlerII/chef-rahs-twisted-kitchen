@@ -1,6 +1,23 @@
 # Production Deployment Runbook
 
+## Current launch-hold state
+
+Production Square payments are tested and intentionally remain enabled. Until
+the owner approves the real catalog, purchasing is controlled through
+unpublished/inactive standard-menu and weekly content rather than toggling
+`SQUARE_PRODUCTION_PAYMENTS_ENABLED`. Hostinger environment changes trigger a
+full rebuild, so do not use routine gate changes as catalog scheduling.
+
+Follow [Launch-Hold Order Availability Runbook](launch-hold-order-availability-runbook.md)
+for the content-hold checklist, active hosted-link review, and pre-launch
+publishing procedure. The Square gate remains available as an emergency
+rollback control when a payment incident justifies a rebuild/redeploy.
+
 ## Controlled Square rehearsal runbook
+
+This is the reusable full gate-off rehearsal procedure. It records how to test
+from a disabled state; it does not override the current enabled content-hold
+decision above.
 
 1. Deploy the latest approved `main` and confirm migrations and dependency
    audits are current.
@@ -19,9 +36,9 @@
 7. From the authenticated order detail, issue one full refund with reason
    `Production rehearsal refund`. Verify the refund webhook, child ledger row,
    parent/order state, email behavior, duplicate protection, and reconciliation.
-8. Unless the owner separately approves immediate launch, return
-   `SQUARE_PRODUCTION_PAYMENTS_ENABLED=false`, restart/redeploy, confirm checkout
-   is safely unavailable, and confirm webhooks remain reachable.
+8. For a future pre-activation rehearsal, return the gate to `false` unless the
+   owner approves the next operating state. The current production site instead
+   follows the documented enabled content-hold strategy.
 
 9. Complete
    [Square Controlled Production Rehearsal Report](square-production-rehearsal-report.md)
@@ -39,17 +56,16 @@ Square reports `COMPLETED` and the admin payment ledger shows `REFUNDED` /
 
 The application-side, no-provider dry-run is recorded in
 [Square Production Configuration Dry-Run](square-production-config-dry-run.md).
-Production payments remain disabled. Repeat its gate-off checks after any
-payment configuration change. A real-money rehearsal is permitted only after
-explicit owner approval, verified production secrets, approved CSP/wallet
-configuration, confirmed webhook subscription, and rollback monitoring. The
-dry-run itself must never call Square payment, refund, or payment-link APIs.
+The dry-run preceded the completed production payment evidence. Production
+payments are now enabled and the site is held through catalog availability.
+Repeat the dry-run checks after any payment configuration change. The dry-run
+itself must never call Square payment, refund, or payment-link APIs.
 
 ## Square production gate and rollback
 
-Production payment creation is fail-closed. Keep
-`SQUARE_PRODUCTION_PAYMENTS_ENABLED=false` until the complete Square activation
-checklist and owner approval are recorded. Production also requires
+Production payment creation is fail-closed. Activation evidence and owner
+approval have been recorded, and the current intentional state is
+`SQUARE_PRODUCTION_PAYMENTS_ENABLED=true`. Production also requires
 `SQUARE_ENVIRONMENT=production`, all Square credentials, the exact production
 webhook URL, HTTPS `NEXT_PUBLIC_APP_URL`, and `SQUARE_CSP_MODE=production` after
 CSP rehearsal. Credentials must stay in the host secret store.
@@ -59,20 +75,18 @@ checkout and authenticated hosted-link/refund APIs are blocked and the admin
 payments page reports the blocker. Do not disable the webhook route: verified
 in-flight events must remain able to reconcile.
 
-Last updated: July 29, 2026
+Last updated: August 27, 2026
 
 Use this runbook to prepare, deploy, verify, and recover the production Chef Rah's Twisted Kitchen app at `https://rahstwistedkitchen.com`.
 
-This runbook does not itself enable payments. Square checkout, hosted service
-payment links, and refunds remain guarded to Sandbox in application code.
-Production credentials, CSP, wallet registration, webhook configuration,
-controlled live smoke tests, and owner approval are still required before
-production payment launch.
+This runbook does not itself change payment configuration. Production Square
+checkout is enabled and tested. Catalog publishing controls the current launch
+hold; hosted payment links must be reviewed separately because unpublishing
+catalog content does not invalidate an existing link.
 
-Use [Square Production Activation Plan](square-production-activation-plan.md)
-as the required payment-specific go/no-go checklist. Do not set
-`SQUARE_ENVIRONMENT=production` until its implementation, security, operations,
-rehearsal, and rollback gates are complete.
+The [Square Production Activation Plan](square-production-activation-plan.md)
+records the completed payment-specific activation checklist and remains the
+reference for future configuration changes or reactivation rehearsals.
 
 ## 1. Node.js Runtime
 
@@ -122,17 +136,19 @@ Workflow-specific variables:
 | `ADMIN_EMAIL`           | Legacy single-account input for `npm run admin:promote`; not required for normal role management.                                                                                                    |
 | `ADMIN_ROLE`            | Legacy role for `npm run admin:promote`; defaults to `ADMIN`.                                                                                                                                        |
 
-Square sandbox payment variables:
+Square payment variables and historical Sandbox testing:
 
 - Legacy Stripe environment variables may remain documented or blank while current env parsing exists.
 - Stripe is not the planned launch provider.
 - Square is the first provider; PayPal follows later.
-- Standard checkout sandbox testing uses `SQUARE_ENVIRONMENT=sandbox`, `SQUARE_APPLICATION_ID`, `SQUARE_LOCATION_ID`, `SQUARE_ACCESS_TOKEN`, `SQUARE_WEBHOOK_SIGNATURE_KEY`, and the exact `SQUARE_WEBHOOK_NOTIFICATION_URL`.
+- Sandbox testing used `SQUARE_ENVIRONMENT=sandbox`; production uses the same
+  identifiers/secrets with `SQUARE_ENVIRONMENT=production`, the exact production
+  webhook URL, production CSP, and the explicit production gate.
 - Keep Square access tokens and webhook signature keys server-side. Never expose them through `NEXT_PUBLIC_*` variables, browser code, logs, or API responses.
-- Only Sandbox Payments API calls are allowed in this phase. Live production payments remain disabled. See `docs/payment-processing-decisions.md`.
-- Production values, CSP changes, wallets, webhooks, scheduled jobs, rehearsal,
-  and rollback are planned in
-  [Square Production Activation Plan](square-production-activation-plan.md).
+- Production payment activation, CSP, webhooks, scheduled jobs, rehearsal, and
+  rollback are complete and recorded in
+  [Square Production Activation Plan](square-production-activation-plan.md)
+  and the production smoke-test documents.
 
 Pending-payment expiration scheduling:
 

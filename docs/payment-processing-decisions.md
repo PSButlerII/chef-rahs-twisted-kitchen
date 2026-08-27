@@ -2,17 +2,31 @@
 
 Date: July 27, 2026
 
-Status: Square Sandbox standard checkout, service payment links, protected
-pending-payment expiration, and admin full refunds for eligible standard orders
-are implemented. Production payments/refunds and public retry links remain
+Status: Square production checkout and refunds are tested and enabled. Hosted
+payment requests, protected pending-payment expiration, reconciliation, and
+eligible standard-order refunds are implemented. Public retry links remain
 disabled.
+
+## Launch-hold payment decision
+
+- Keep `SQUARE_PRODUCTION_PAYMENTS_ENABLED=true` during the content hold.
+- Avoid routine Hostinger environment changes because they trigger a full
+  application rebuild.
+- Control general purchasing by unpublishing/inactivating standard menu and
+  weekly content until the owner approves the real catalog.
+- Treat already-created hosted payment links separately: removing catalog
+  content does not guarantee that a Square link is invalidated.
+- Do not send or resend order, deposit, or final-balance requests unless payment
+  is intended.
+- Keep the production gate rollback available for an actual payment incident,
+  not ordinary content scheduling.
 
 ## Provider Sequence And Scope
 
 - Square is the first provider. PayPal follows after Square is stable unless the client changes priority.
 - The Square and PayPal business accounts are created and vetted.
 - Standard pickup, delivery, and weekly meal plan orders that do not require approval will charge immediately at checkout.
-- Standard sandbox checkout uses Square-hosted card fields and shows supported Apple Pay or Google Pay methods when the browser, device, domain, and Square Sandbox allow them.
+- Production standard checkout uses Square-hosted card fields and shows supported Apple Pay or Google Pay methods when the browser, device, domain, and Square support them.
 - ACH should be limited to larger approved catering, personal-chef, and final-balance payments in a later phase.
 - Square is the official receipt source.
 
@@ -33,7 +47,7 @@ disabled.
 - Approved catering and personal-chef requests require a 50% deposit.
 - Admin sends a separate final-balance payment link by email.
 - Menu items and options can require approval according to owner/admin configuration.
-- Admins can issue sandbox deposit and final-balance payment links after the
+- Admins can issue deposit and final-balance payment links after the
   required approval/payment phase. This does not change approval behavior.
 
 ## Checkout And Manual Payment Policy
@@ -42,7 +56,10 @@ disabled.
 - Manual invoice, cash, and offline checkout options are hidden and rejected by default.
 - Manual/offline checkout may be enabled only for development or testing by explicitly setting `ALLOW_MANUAL_PAYMENT_IN_CHECKOUT=true`.
 - The development flag is ignored when `NODE_ENV=production`.
-- Complete Sandbox configuration enables standard checkout. Missing or non-sandbox configuration safely disables the payment UI. Approval-required orders still submit without collecting payment.
+- Complete Square configuration enables standard checkout only when the
+  selected environment and production gate are valid. Missing configuration
+  safely disables payment UI. Approval-required orders still submit without
+  collecting payment.
 
 ## Taxes, Tips, And Trusted Totals
 
@@ -82,7 +99,7 @@ Normal refund eligibility requires all of the following:
 
 The shared refund helper disables the admin action after preparation starts or
 the window expires. Eligible paid standard-order payments can be fully refunded
-through Square Sandbox by an admin. Partial refunds, exceptional refunds,
+through Square by an admin. Partial refunds, exceptional refunds,
 disputes, and service-request refund rules still require explicit workflows and
 audit requirements before live integration.
 
@@ -98,7 +115,7 @@ The owner performs payment reconciliation. The admin payment view must ultimatel
 - refund status; and
 - mismatch warnings.
 
-The admin payment view reads the internal payment ledger and compares it with existing order summary fields. It shows verified Sandbox provider states, payment IDs, receipt references, paid/refund timestamps, amount mismatches, and missing timestamp/status warnings. Square rows are explicitly labeled as test data.
+The admin payment view reads the internal payment ledger and compares it with existing order summary fields. It shows verified provider states, payment IDs, receipt references, paid/refund timestamps, amount mismatches, and missing timestamp/status warnings. Environment labels distinguish Sandbox evidence from production records.
 
 ## Data Model Review
 
@@ -133,33 +150,35 @@ The ledger supports this planned normalized flow:
 5. `FAILED`, `CANCELLED`, or `EXPIRED` — the attempt is terminal without payment.
 6. `PARTIALLY_REFUNDED` or `REFUNDED` — verified refund ledger rows update the original payment summary.
 
-Standard Square sandbox checkout creates pending attempts and transitions
+Standard Square checkout creates pending attempts and transitions
 completed payments to `PAID`. The expiration worker performs the `PENDING` to
 `EXPIRED` transition together with safe order cancellation, retry-token
 revocation, weekly-capacity release, history, metadata, and one-time email
 handling.
 
-## Environment Plan
+## Environment configuration
 
-Planned variables:
+Production uses host-managed values; secrets must never be committed:
 
 ```dotenv
-SQUARE_ENVIRONMENT=sandbox
+SQUARE_ENVIRONMENT=production
 SQUARE_APPLICATION_ID=
 SQUARE_LOCATION_ID=
 SQUARE_ACCESS_TOKEN=
 SQUARE_WEBHOOK_SIGNATURE_KEY=
+SQUARE_WEBHOOK_NOTIFICATION_URL=https://rahstwistedkitchen.com/api/webhooks/square
+SQUARE_PRODUCTION_PAYMENTS_ENABLED=true
 PAYMENT_JOBS_TOKEN=
 ALLOW_MANUAL_PAYMENT_IN_CHECKOUT=false
 ```
 
 `SQUARE_ACCESS_TOKEN` and `SQUARE_WEBHOOK_SIGNATURE_KEY` are server-side secrets. Never expose them through `NEXT_PUBLIC_*`, client components, logs, email, audit metadata, or API responses. The application and location IDs are identifiers rather than secrets, but should remain server-configured until the selected Square browser integration explicitly needs a public application ID.
 
-## Square Sandbox Standard Checkout
+## Square standard checkout and historical Sandbox procedure
 
 Set `SQUARE_ENVIRONMENT=sandbox`, `SQUARE_APPLICATION_ID`, `SQUARE_LOCATION_ID`, and the server-only `SQUARE_ACCESS_TOKEN`. Webhook processing also requires the server-only `SQUARE_WEBHOOK_SIGNATURE_KEY` and the exact `SQUARE_WEBHOOK_NOTIFICATION_URL` registered in the Square Developer Console.
 
-The browser receives only the application and location identifiers after the server confirms that Sandbox checkout is completely configured. Square Web Payments SDK creates a one-time source token. `/api/orders` independently validates the cart and recalculates subtotal, fees, tip, and total. It creates the pending order and `PaymentAttempt` transactionally before calling Square Payments API with the ledger idempotency key. A completed response marks both records paid; an ambiguous failure retains a pending attempt and key instead of risking a second charge.
+The browser receives only the application and location identifiers after the server confirms that the selected Square environment is completely configured and, in production, explicitly gated on. Square Web Payments SDK creates a one-time source token. `/api/orders` independently validates the cart and recalculates subtotal, fees, tip, and total. It creates the pending order and `PaymentAttempt` transactionally before calling Square Payments API with the ledger idempotency key. A completed response marks both records paid; an ambiguous failure retains a pending attempt and key instead of risking a second charge.
 
 `POST /api/webhooks/square` reads the raw request body, verifies
 `x-square-hmacsha256-signature` with the exact notification URL, hashes and
@@ -192,8 +211,8 @@ and location, then mark both the ledger and service-request deposit paid.
 Expired unpaid deposit attempts do not cancel the service request and may be
 replaced by a new admin request.
 
-Service-payment refunds, partial refunds, invoices, active retry links,
-production payment links, and public guest order tracking are not included.
+Service-payment refunds, partial refunds, invoices, active retry links, and
+public guest order tracking are not included.
 
 Approved catering and personal-chef requests with a paid deposit may also use a
 Square Sandbox hosted final-balance link. The server calculates the trusted
@@ -223,21 +242,22 @@ Receiving final payment must not mark catering or personal-chef work
 `COMPLETED`; an admin selects Completed only after the event or service has
 actually finished.
 
-The current CSP permits the Sandbox Web Payments SDK, Google Pay sandbox scripts, and Square wallet font assets. React/Turbopack `unsafe-eval` support is enabled only while `NODE_ENV=development`; production responses omit it. Production Square hosts and a final production CSP review remain a later pass.
+The current CSP permits the selected Square Web Payments SDK, wallet resources,
+and Square font assets. React/Turbopack `unsafe-eval` support is enabled only
+while `NODE_ENV=development`; production responses omit it.
 
-## Follow-Up For Live Square Integration
+## Ongoing Square follow-up
 
-1. Review production credentials, hosts, CSP endpoints, wallet domain registration, webhook URL, and operational controls before permitting the production environment.
+1. Re-review production credentials, hosts, CSP endpoints, wallet domain registration, webhook URL, and operational controls after configuration changes.
 2. Add out-of-order webhook replay/recovery.
 3. Configure and monitor the payment-expiration scheduled job in each deployed environment.
 4. Implement secure guest retry-token issuance and redemption without public guest order tracking.
 5. Define the service-work-start signal before enabling deposit/final-balance
    refunds.
 6. Define metadata retention/redaction rules and operational cleanup.
-7. Run ambiguous-failure, retry, duplicate-charge, wallet, receipt, and
-   controlled production payment/refund smoke tests before enabling live
-   Square.
-## Square Sandbox refund workflow
+7. Continue periodic ambiguous-failure, retry, duplicate-charge, wallet,
+   receipt, and controlled payment/refund rehearsals.
+## Square refund workflow
 
 - Refunds are admin-only. Customers cannot request or initiate them in the
   application.
@@ -245,7 +265,7 @@ The current CSP permits the Sandbox Web Payments SDK, Google Pay sandbox scripts
   unless the order has already been fulfilled or service work has already
   started.”
 - This implementation supports full refunds for eligible paid standard-order
-  Square Sandbox payments. It does not accept a client-provided amount; the
+  Square payments. It does not accept a client-provided amount; the
   trusted ledger amount, including any charged tip, is refunded.
 - Preparing-or-later, fulfilled, cancelled, already-refunded, unpaid, non-Square,
   and provider-ID-less payments are blocked.
@@ -269,6 +289,5 @@ The current CSP permits the Sandbox Web Payments SDK, Google Pay sandbox scripts
   normally after Square completed it, so recovery apply was not required.
   Never issue a second refund while waiting; use the read-only provider status
   check when confirmation is needed.
-- Production, partial, automatic, customer-initiated, PayPal, ACH, and invoice
-  refunds remain disabled. Production Square CSP and production refund
-  activation are later passes.
+- Partial, automatic, customer-initiated, PayPal, ACH, invoice, and service
+  payment refunds remain disabled pending their separately defined workflows.
