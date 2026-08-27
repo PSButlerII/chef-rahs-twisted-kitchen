@@ -1,12 +1,13 @@
 # Final Production Launch Smoke Test
 
-Date updated: August 12, 2026
+Date updated: August 27, 2026
 
 Site: `https://rahstwistedkitchen.com`
 
 ## Result
 
-**Launch readiness: partially unblocked; delivery payment/refund passed.**
+**Launch readiness: service-request evidence passed; final payment-gate decision
+remains.**
 
 The production application and authenticated admin surfaces are reachable.
 Square production delivery checkout has now been exercised with a real `$2.00`
@@ -23,8 +24,8 @@ reconciliation are aligned with no mismatch.
 | Guest pickup checkout | Preflight pass | Production card fields and pickup checkout rendered; retain any separately required owner rehearsal evidence. |
 | Guest delivery checkout | Pass | Preflight passed, then the owner completed a real `$2.00` Square production delivery payment and full refund. See [Production Delivery Checkout Smoke Test](production-delivery-checkout-smoke-test.md). |
 | Weekly meal-plan checkout | Technical preflight pass; content blocked | The final content preflight again passed Breakfast eligibility, required selections, allergens, the `$0.50` upcharge, trusted totals, production `Pay with Card`, and approval-first `Submit for Approval`. Content is not launch-final: `5 day/` is incomplete, `$1.00` prices are unconfirmed, and offering copy needs review. See [Weekly Content Final Preflight](weekly-content-final-preflight.md). |
-| Catering request | Partial | Form availability was verified, but a production request was not submitted. |
-| Personal-chef request | Partial | Form availability was verified, but a production request was not submitted. |
+| Catering request | Pass | A clearly marked production QA request submitted successfully, reached the thank-you page, appeared accurately in the admin queue/detail, and delivered its customer confirmation email. See [Service Request Production Submission Evidence](service-request-production-submission-evidence.md). |
+| Personal-chef request | Pass | A clearly marked production QA request submitted successfully, reached the thank-you page, appeared accurately in the admin queue/detail, and delivered its customer confirmation email. See [Service Request Production Submission Evidence](service-request-production-submission-evidence.md). |
 
 ## Delivery payment and refund evidence
 
@@ -52,13 +53,14 @@ must never issue a second refund solely because provider completion is delayed.
 | Orders and order detail | Pass | The production order and payment ledger details rendered. |
 | Payments and reconciliation | Pass | The completed delivery refund shows ledger `REFUNDED`, Square `COMPLETED`, populated refund timestamps, and no mismatch. |
 | Refund controls | Pass | The owner exercised one full production refund. No duplicate refund was issued. |
-| Catering/personal-chef admin | Partial | Lists rendered, but production service-request submissions remain outstanding. |
+| Catering/personal-chef admin | Pass | Both production QA records appeared with correct type, event, status, approval, and submitted-date labels. Type filters and detail pages worked; approval controls rendered; payment controls remained disabled before approval. |
 
 ## Email evidence
 
-The completed payment/refund lifecycle does not by itself prove production
-Resend inbox/provider delivery. A controlled production Resend delivery check
-for order submission and applicable approval/denial messages remains required.
+Production service-request routes sent branded customer confirmation emails
+with the expected catering and personal-chef subjects, and the owner confirmed
+receipt of both messages on August 27, 2026. The routes do not implement a
+separate admin notification email.
 
 ## Safety and security
 
@@ -70,16 +72,11 @@ for order submission and applicable approval/denial messages remains required.
 
 ## Remaining launch blockers
 
-1. Approve/correct weekly customer-facing names and test prices, then obtain
-   explicit approval for one controlled real-money standard weekly payment.
-2. Record controlled production Resend delivery evidence for order submission
-   and the applicable approval/denial flow.
-3. Submit internal catering and personal-chef requests during an approved
-   production QA window, then verify admin detail and email delivery.
-4. Confirm the final Square production gate state is explicitly owner-approved.
-5. Retain any separately required pickup checkout rehearsal evidence.
+1. Confirm the final Square production gate state is explicitly owner-approved.
 
 Delivery payment/refund evidence is complete and is no longer a launch blocker.
+Production catering and personal-chef submission/admin/email evidence is also
+complete and is no longer a launch blocker.
 
 ## Weekly admin slot selector follow-up
 
