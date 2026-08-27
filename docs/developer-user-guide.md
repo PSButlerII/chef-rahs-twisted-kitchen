@@ -159,34 +159,36 @@ Neither `npm run db:seed` nor `npm run db:seed-demo` runs automatically during t
 
 Start from `.env.example`.
 
-| Variable                            | Purpose                                                                                                                                                    |
-| ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `DATABASE_URL`                      | MySQL-compatible Prisma URL. Hostinger production currently uses `mysql://DB_USER:URL_ENCODED_PASSWORD@127.0.0.1:3306/DB_NAME`.                            |
-| `AUTH_SECRET`                       | Auth.js signing/encryption secret. Use a strong, stable value.                                                                                             |
-| `AUTH_URL`                          | Canonical Auth.js origin. Local default is `http://localhost:3000`; production is `https://rahstwistedkitchen.com`.                                        |
-| `NEXTAUTH_URL`                      | Compatibility Auth.js origin; keep it aligned with `AUTH_URL`.                                                                                             |
-| `NEXT_PUBLIC_APP_URL`               | Public application origin used for links and email assets.                                                                                                 |
-| `BUSINESS_TIME_ZONE`                | Business-local scheduling zone, expected to be `America/New_York` for launch.                                                                              |
-| `RESEND_API_KEY`                    | Resend API key used only when live sending is enabled.                                                                                                     |
-| `EMAIL_FROM_ADDRESS`                | Verified sender name/address used by transactional email.                                                                                                  |
-| `EMAIL_DRY_RUN`                     | `true` logs/renders without sending; `false` permits live Resend delivery.                                                                                 |
-| `EMAIL_PREVIEW_FILES`               | Enables local preview file output when supported by the email utility. Keep it `false` in production unless intentionally debugging.                       |
-| `ALLOW_LOCAL_UPLOADS_IN_PRODUCTION` | Keep `false` or unset for launch; local production uploads are not durable.                                                                                |
-| `ALLOW_MANUAL_PAYMENT_IN_CHECKOUT`  | Development/test-only manual checkout override. It must be explicitly `true` and is ignored in production.                                                 |
-| `SQUARE_ENVIRONMENT`                | `sandbox` locally or `production` only for an explicitly approved live deployment.                                                                         |
-| `SQUARE_CSP_MODE`                   | Selects the reviewed Square CSP source set for the matching environment; production never permits `unsafe-eval`.                                            |
-| `SQUARE_PRODUCTION_PAYMENTS_ENABLED` | Explicit production payment-creation gate and emergency rollback control, not the routine catalog publication switch.                                    |
-| `SQUARE_APPLICATION_ID`             | Environment-matching Web Payments SDK application identifier.                                                                                              |
-| `SQUARE_LOCATION_ID`                | Environment-matching Square location identifier.                                                                                                           |
-| `SQUARE_ACCESS_TOKEN`               | Server-side Square secret; never expose through `NEXT_PUBLIC_*`.                                                                                            |
-| `SQUARE_WEBHOOK_SIGNATURE_KEY`      | Server-only signature key used with the raw webhook body.                                                                                                  |
-| `SQUARE_WEBHOOK_NOTIFICATION_URL`   | Exact Square webhook subscription URL used during signature verification.                                                                                  |
-| `PAYMENT_JOBS_TOKEN`                | Server-only secret of at least 32 characters for the protected pending-payment expiration job.                                                             |
-| `OWNER_EMAIL`                       | Existing registered user's email for the one-time owner bootstrap. It is never a user-creation input.                                                      |
-| `OWNER_BOOTSTRAP_TOKEN`             | Temporary long random secret for `POST /api/setup/promote-owner` when the host has no console. Remove it and restart/redeploy immediately after success.   |
-| `FOUNDATION_SEED_TOKEN`             | Temporary long random secret for `POST /api/setup/seed-foundation` when the host has no console. Remove it and restart/redeploy immediately after success. |
-| `ADMIN_EMAIL`                       | Legacy single-user input for `npm run admin:promote`. Not needed for owner-managed admins.                                                                 |
-| `ADMIN_ROLE`                        | Legacy role for `npm run admin:promote`; defaults to `ADMIN`.                                                                                              |
+| Variable                             | Purpose                                                                                                                                                    |
+| ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`                       | MySQL-compatible Prisma URL. Hostinger production currently uses `mysql://DB_USER:URL_ENCODED_PASSWORD@127.0.0.1:3306/DB_NAME`.                            |
+| `AUTH_SECRET`                        | Auth.js signing/encryption secret. Use a strong, stable value.                                                                                             |
+| `AUTH_URL`                           | Canonical Auth.js origin. Local default is `http://localhost:3000`; production is `https://rahstwistedkitchen.com`.                                        |
+| `NEXTAUTH_URL`                       | Compatibility Auth.js origin; keep it aligned with `AUTH_URL`.                                                                                             |
+| `NEXT_PUBLIC_APP_URL`                | Public application origin used for links and email assets.                                                                                                 |
+| `BUSINESS_TIME_ZONE`                 | Business-local scheduling zone, expected to be `America/New_York` for launch.                                                                              |
+| `RESEND_API_KEY`                     | Resend API key used only when live sending is enabled.                                                                                                     |
+| `EMAIL_FROM_ADDRESS`                 | Verified sender name/address used by transactional email.                                                                                                  |
+| `EMAIL_DRY_RUN`                      | `true` logs/renders without sending; `false` permits live Resend delivery.                                                                                 |
+| `EMAIL_PREVIEW_FILES`                | Enables local preview file output when supported by the email utility. Keep it `false` in production unless intentionally debugging.                       |
+| `UPLOAD_STORAGE_DRIVER`              | Must be `filesystem` to enable admin uploads; other values fail closed.                                                                                    |
+| `UPLOAD_FILESYSTEM_DIR`              | Absolute server-only durable upload directory; never return it to clients.                                                                                 |
+| `NEXT_PUBLIC_UPLOAD_BASE_URL`        | Public URL base corresponding to the filesystem directory.                                                                                                 |
+| `ALLOW_MANUAL_PAYMENT_IN_CHECKOUT`   | Development/test-only manual checkout override. It must be explicitly `true` and is ignored in production.                                                 |
+| `SQUARE_ENVIRONMENT`                 | `sandbox` locally or `production` only for an explicitly approved live deployment.                                                                         |
+| `SQUARE_CSP_MODE`                    | Selects the reviewed Square CSP source set for the matching environment; production never permits `unsafe-eval`.                                           |
+| `SQUARE_PRODUCTION_PAYMENTS_ENABLED` | Explicit production payment-creation gate and emergency rollback control, not the routine catalog publication switch.                                      |
+| `SQUARE_APPLICATION_ID`              | Environment-matching Web Payments SDK application identifier.                                                                                              |
+| `SQUARE_LOCATION_ID`                 | Environment-matching Square location identifier.                                                                                                           |
+| `SQUARE_ACCESS_TOKEN`                | Server-side Square secret; never expose through `NEXT_PUBLIC_*`.                                                                                           |
+| `SQUARE_WEBHOOK_SIGNATURE_KEY`       | Server-only signature key used with the raw webhook body.                                                                                                  |
+| `SQUARE_WEBHOOK_NOTIFICATION_URL`    | Exact Square webhook subscription URL used during signature verification.                                                                                  |
+| `PAYMENT_JOBS_TOKEN`                 | Server-only secret of at least 32 characters for the protected pending-payment expiration job.                                                             |
+| `OWNER_EMAIL`                        | Existing registered user's email for the one-time owner bootstrap. It is never a user-creation input.                                                      |
+| `OWNER_BOOTSTRAP_TOKEN`              | Temporary long random secret for `POST /api/setup/promote-owner` when the host has no console. Remove it and restart/redeploy immediately after success.   |
+| `FOUNDATION_SEED_TOKEN`              | Temporary long random secret for `POST /api/setup/seed-foundation` when the host has no console. Remove it and restart/redeploy immediately after success. |
+| `ADMIN_EMAIL`                        | Legacy single-user input for `npm run admin:promote`. Not needed for owner-managed admins.                                                                 |
+| `ADMIN_ROLE`                         | Legacy role for `npm run admin:promote`; defaults to `ADMIN`.                                                                                              |
 
 Legacy Stripe placeholders may remain blank while the existing env parser supports them. Stripe is not the selected payment integration. Square is the production provider and PayPal remains later work. See `docs/payment-processing-decisions.md`.
 
@@ -273,7 +275,7 @@ Notes:
 
 ### Hostinger Upload Storage Feasibility
 
-Production testing confirmed that the deployed Node/Next.js runtime can write, read, and publicly serve files from Hostinger's `public_html/image_uploads` directory. The temporary feasibility endpoint and its environment variables have been removed. This finding and the future upload implementation plan are preserved in `docs/post-launch-backlog.md`; no upload feature is enabled in the current release.
+Production testing confirmed that the deployed Node/Next.js runtime can write, read, and publicly serve files from Hostinger's `public_html/image_uploads` directory. The admin-only durable upload implementation now uses that finding. It validates size, MIME and magic bytes, generates UUID names, and returns public URLs without exposing the absolute path. A production upload rehearsal remains required after environment configuration.
 
 Hostinger runs the fixed command `npm run build`. Before deployment, configure `DATABASE_URL` in the Hostinger environment and confirm it points to the production MySQL/MariaDB database that the build environment can reach with migration permissions.
 
@@ -442,7 +444,7 @@ Production rules:
 - Verify `npm run build` logs show its `prebuild` generation and migration deployment before `next build`; `prisma generate` alone is not sufficient.
 - Review foundation seed behavior before running it on an existing database.
 - Do not run the demo seed against real customer data unless explicitly intended.
-- Keep `ALLOW_LOCAL_UPLOADS_IN_PRODUCTION=false` or unset until durable object storage is approved.
+- Configure the three durable upload variables and back up uploaded files separately from the database unless hosting backups cover the upload directory.
 - Keep local email preview routes and preview files out of the production workflow.
 - Run `npm run env:check` with final live values before launch approval.
 - Treat `SQUARE_PRODUCTION_PAYMENTS_ENABLED` as an emergency payment-creation rollback, not as the normal catalog hold. The current content hold uses publication state; see `docs/launch-hold-order-availability-runbook.md`.
@@ -529,5 +531,5 @@ Before publishing the real catalog, verify names, prices, allergens, options/upc
 
 - Square production payment workflows are implemented. PayPal, ACH, and any broader provider expansion remain future scope.
 - Tokenized guest order tracking and public guest order detail links are future scope. Guest thank-you and email flows must not expose protected order data.
-- Direct durable filesystem storage on Hostinger was proven feasible, but admin upload implementation remains post-launch scope. See `docs/post-launch-backlog.md`.
+- Durable admin filesystem uploads are implemented; production environment and backup/restore rehearsal remain. FTP/SFTP is not required. If SFTP is introduced later, use a dedicated limited account.
 - SMS/customer scheduling notifications may be added later; the current fulfillment message says the owner will notify the customer when delivery is scheduled.

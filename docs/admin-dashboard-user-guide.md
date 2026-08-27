@@ -14,9 +14,9 @@ The guide is written for business admins, kitchen staff, and trusted operators. 
 
 Only accounts with the `ADMIN` or `OWNER` role can access the admin dashboard.
 
-| Role | Access |
-| --- | --- |
-| `OWNER` | All normal admin pages plus the owner-only Role Manager. The owner can assign `CUSTOMER`, `ADMIN`, or `OWNER` to registered users. |
+| Role    | Access                                                                                                                                       |
+| ------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `OWNER` | All normal admin pages plus the owner-only Role Manager. The owner can assign `CUSTOMER`, `ADMIN`, or `OWNER` to registered users.           |
 | `ADMIN` | Normal admin operations, including orders, kitchen, menus, customers, reports, notifications, and settings. Admins cannot manage user roles. |
 
 1. Register or sign in with the admin account.
@@ -42,26 +42,26 @@ Keep at least one owner at all times. The page disables unsafe last-owner demoti
 
 ### Main Admin Routes
 
-| Area | Route | Purpose |
-| --- | --- | --- |
-| Dashboard | `/admin` | Main control center with metrics, alerts, recent orders, and quick links. |
-| Orders | `/admin/orders` | Review, filter, and open customer orders. |
-| Order detail | `/admin/orders/[id]` | Approve or deny orders, update status, mark paid, review snapshots, and print kitchen tickets. |
-| Kitchen view | `/admin/kitchen` | Prep-ready approved orders in active kitchen statuses. |
-| Service Requests | `/admin/catering` | Shared queue for catering and personal chef requests. |
-| Service request detail | `/admin/catering/[id]` | Approve or deny requests, quote, manage deposits, and update request status. |
-| Menu manager | `/admin/menu` | Manage standard menu items, categories, type, availability, allergens, and option groups. |
-| Weekly menu manager | `/admin/menu/weekly` | Manage weekly periods, packages, slot labels, General/Breakfast offerings, allowed options, ordering windows, and fulfillment prep. |
-| Menu categories | `/admin/menu/categories` | Rename display categories and control sort order. |
-| Archived menu items | `/admin/menu/archived` | Restore or permanently delete archived menu items. |
-| Gallery manager | `/admin/gallery` | Add, edit, sort, categorize, replace, or remove public gallery images. |
-| Customers | `/admin/customers` | Search customers and review order/payment activity. |
-| Customer detail | `/admin/customers/[id]` | Review a customer account, order history, service requests, and payment alerts. |
-| Payments | `/admin/payments` | Reconcile website and Square payment state, receipts, refunds, and payment requests. |
-| Reports | `/admin/reports` | Review revenue, order, payment, approval, and service request metrics. |
-| Notifications | `/admin/notifications` | Review active/planned notification types and current email delivery mode. |
-| Business settings | `/admin/settings` | Manage fees, general order rules, global checkout scheduling, weekly ordering windows, fixed fulfillment, and customer-facing fulfillment messages. |
-| Role manager | `/admin/role-manager` | Owner-only user role management for registered customer, admin, and owner accounts. |
+| Area                   | Route                    | Purpose                                                                                                                                             |
+| ---------------------- | ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Dashboard              | `/admin`                 | Main control center with metrics, alerts, recent orders, and quick links.                                                                           |
+| Orders                 | `/admin/orders`          | Review, filter, and open customer orders.                                                                                                           |
+| Order detail           | `/admin/orders/[id]`     | Approve or deny orders, update status, mark paid, review snapshots, and print kitchen tickets.                                                      |
+| Kitchen view           | `/admin/kitchen`         | Prep-ready approved orders in active kitchen statuses.                                                                                              |
+| Service Requests       | `/admin/catering`        | Shared queue for catering and personal chef requests.                                                                                               |
+| Service request detail | `/admin/catering/[id]`   | Approve or deny requests, quote, manage deposits, and update request status.                                                                        |
+| Menu manager           | `/admin/menu`            | Manage standard menu items, categories, type, availability, allergens, and option groups.                                                           |
+| Weekly menu manager    | `/admin/menu/weekly`     | Manage weekly periods, packages, slot labels, General/Breakfast offerings, allowed options, ordering windows, and fulfillment prep.                 |
+| Menu categories        | `/admin/menu/categories` | Rename display categories and control sort order.                                                                                                   |
+| Archived menu items    | `/admin/menu/archived`   | Restore or permanently delete archived menu items.                                                                                                  |
+| Gallery manager        | `/admin/gallery`         | Add, edit, sort, categorize, replace, or remove public gallery images.                                                                              |
+| Customers              | `/admin/customers`       | Search customers and review order/payment activity.                                                                                                 |
+| Customer detail        | `/admin/customers/[id]`  | Review a customer account, order history, service requests, and payment alerts.                                                                     |
+| Payments               | `/admin/payments`        | Reconcile website and Square payment state, receipts, refunds, and payment requests.                                                                |
+| Reports                | `/admin/reports`         | Review revenue, order, payment, approval, and service request metrics.                                                                              |
+| Notifications          | `/admin/notifications`   | Review active/planned notification types and current email delivery mode.                                                                           |
+| Business settings      | `/admin/settings`        | Manage fees, general order rules, global checkout scheduling, weekly ordering windows, fixed fulfillment, and customer-facing fulfillment messages. |
+| Role manager           | `/admin/role-manager`    | Owner-only user role management for registered customer, admin, and owner accounts.                                                                 |
 
 ## Daily Operating Workflow
 
@@ -173,24 +173,24 @@ Tip: Use `Approval Pending` when checking orders with request-only proteins or o
 
 ### Order Statuses
 
-| Status | Meaning |
-| --- | --- |
-| Pending | Submitted and awaiting review. |
-| Accepted | Accepted into the workflow. |
-| Preparing | Kitchen is preparing the order. |
-| Ready | Ready for pickup, delivery, or final handoff. |
-| Out for Delivery | Delivery workflow has started. |
-| Completed | Fulfilled and closed. |
-| Cancelled | Cancelled and no longer active. |
-| Refunded | Refunded and no longer active. |
+| Status           | Meaning                                       |
+| ---------------- | --------------------------------------------- |
+| Pending          | Submitted and awaiting review.                |
+| Accepted         | Accepted into the workflow.                   |
+| Preparing        | Kitchen is preparing the order.               |
+| Ready            | Ready for pickup, delivery, or final handoff. |
+| Out for Delivery | Delivery workflow has started.                |
+| Completed        | Fulfilled and closed.                         |
+| Cancelled        | Cancelled and no longer active.               |
+| Refunded         | Refunded and no longer active.                |
 
 ### Approval Statuses
 
-| Status | Meaning |
-| --- | --- |
-| Pending | Requires review. |
-| Approved | Approved to continue. |
-| Denied | Denied and should not move forward unless the customer submits a revised order. |
+| Status   | Meaning                                                                         |
+| -------- | ------------------------------------------------------------------------------- |
+| Pending  | Requires review.                                                                |
+| Approved | Approved to continue.                                                           |
+| Denied   | Denied and should not move forward unless the customer submits a revised order. |
 
 The app blocks duplicate final approval decisions. After an order is approved or denied, the decision buttons are replaced by final-state messaging.
 
@@ -345,16 +345,16 @@ Use these to narrow the request queue:
 
 ### Service Request Statuses
 
-| Status | Meaning |
-| --- | --- |
-| New | Submitted and not yet reviewed. |
-| Reviewing | Admin is reviewing details. |
-| Quoted | Quote information has been provided. |
-| Approved | Request approved to continue. |
-| Deposit Due | Deposit is required before moving forward. |
-| Deposit Paid | Deposit has been marked paid. |
-| Completed | Event/request is complete. |
-| Cancelled | Request is closed without fulfillment. |
+| Status       | Meaning                                    |
+| ------------ | ------------------------------------------ |
+| New          | Submitted and not yet reviewed.            |
+| Reviewing    | Admin is reviewing details.                |
+| Quoted       | Quote information has been provided.       |
+| Approved     | Request approved to continue.              |
+| Deposit Due  | Deposit is required before moving forward. |
+| Deposit Paid | Deposit has been marked paid.              |
+| Completed    | Event/request is complete.                 |
+| Cancelled    | Request is closed without fulfillment.     |
 
 ### Service Request Detail
 
@@ -453,7 +453,7 @@ Fields:
 
 Image uploads must be JPG, PNG, or WebP and 5 MB or smaller.
 
-Production note: local file uploads are blocked in production unless durable upload storage is explicitly allowed. Until durable storage is chosen, use public image URLs for production menu images.
+Production uploads use the configured durable Hostinger filesystem directory. The upload control stores the returned public URL in the same image field; manually entered public URLs remain supported.
 
 ### Availability
 
@@ -577,12 +577,12 @@ Launch periods should resolve to this business-local schedule:
 
 Weekly menu statuses:
 
-| Status | Meaning |
-| --- | --- |
-| Draft | Internal setup; not ready for customers. |
+| Status    | Meaning                                             |
+| --------- | --------------------------------------------------- |
+| Draft     | Internal setup; not ready for customers.            |
 | Published | Visible to customers for the current eligible week. |
-| Closed | No longer accepting orders. |
-| Archived | Retained historically but not active. |
+| Closed    | No longer accepting orders.                         |
+| Archived  | Retained historically but not active.               |
 
 Capacity counts submitted customer orders for the weekly menu, not meal plan item quantity.
 
@@ -733,7 +733,7 @@ Gallery categories:
 
 Images must be JPG, PNG, or WebP and 5 MB or smaller. WebP is preferred for public performance.
 
-Production note: until durable upload storage is configured, use public image URLs for production images.
+Production uploads require the durable filesystem environment configuration. If it is missing, the admin upload control fails closed and a manually hosted public URL may still be used.
 
 ### Editing a Gallery Image
 
@@ -937,10 +937,10 @@ Image URL fields accept:
 
 Production warning:
 
-- Local uploads write to `public/uploads`.
-- Local uploads are safe for local demos.
-- Local production uploads are blocked unless `ALLOW_LOCAL_UPLOADS_IN_PRODUCTION="true"`.
-- For production, use durable external image URLs until a durable upload provider is selected.
+- Admin uploads write outside the repository to the configured durable filesystem directory.
+- Uploaded names are generated UUIDs; JPG, PNG, and WebP signatures are verified server-side.
+- The generic upload route requires an authenticated `ADMIN` or `OWNER` session.
+- Database backups and uploaded-file backups are separate unless the Hostinger backup plan explicitly covers `public_html/image_uploads`.
 
 ## Allergen Workflow
 
@@ -1087,4 +1087,3 @@ Quote editing locks after certain final states, denied approvals, or paid deposi
 ### A deposit paid button is missing
 
 The request may not have a deposit due, the deposit may already be paid, the request may not be approved, or the request may be in a locked/final state.
-

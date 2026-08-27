@@ -17,15 +17,15 @@ reconciliation are aligned with no mismatch.
 
 ## Customer flows
 
-| Flow | Result | Evidence |
-| --- | --- | --- |
-| Home | Pass | The public home route returned successfully over HTTPS. |
-| Menu and cart | Technical evidence passed; current content blocked | Earlier QA proved cart and trusted checkout totals. The current public menu correctly shows `Menu coming soon`; no real standard catalog is available for launch. See [Production Content and Admin Data Readiness](production-content-admin-data-readiness.md). |
-| Guest pickup checkout | Preflight pass | Production card fields and pickup checkout rendered; retain any separately required owner rehearsal evidence. |
-| Guest delivery checkout | Pass | Preflight passed, then the owner completed a real `$2.00` Square production delivery payment and full refund. See [Production Delivery Checkout Smoke Test](production-delivery-checkout-smoke-test.md). |
-| Weekly meal-plan checkout | Technical preflight pass; content blocked | Earlier preflight passed Breakfast eligibility, required selections, allergens, the `$0.50` upcharge, trusted totals, production `Pay with Card`, and approval-first `Submit for Approval`. The corrected package/offering names now exist, but the only weekly period is Draft, uses `$1.00` QA prices/test dates, and is already at capacity. See [Production Content and Admin Data Readiness](production-content-admin-data-readiness.md). |
-| Catering request | Pass | A clearly marked production QA request submitted successfully, reached the thank-you page, appeared accurately in the admin queue/detail, and delivered its customer confirmation email. See [Service Request Production Submission Evidence](service-request-production-submission-evidence.md). |
-| Personal-chef request | Pass | A clearly marked production QA request submitted successfully, reached the thank-you page, appeared accurately in the admin queue/detail, and delivered its customer confirmation email. See [Service Request Production Submission Evidence](service-request-production-submission-evidence.md). |
+| Flow                      | Result                                             | Evidence                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| ------------------------- | -------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Home                      | Pass                                               | The public home route returned successfully over HTTPS.                                                                                                                                                                                                                                                                                                                                                                                        |
+| Menu and cart             | Technical evidence passed; current content blocked | Earlier QA proved cart and trusted checkout totals. The current public menu correctly shows `Menu coming soon`; no real standard catalog is available for launch. See [Production Content and Admin Data Readiness](production-content-admin-data-readiness.md).                                                                                                                                                                               |
+| Guest pickup checkout     | Preflight pass                                     | Production card fields and pickup checkout rendered; retain any separately required owner rehearsal evidence.                                                                                                                                                                                                                                                                                                                                  |
+| Guest delivery checkout   | Pass                                               | Preflight passed, then the owner completed a real `$2.00` Square production delivery payment and full refund. See [Production Delivery Checkout Smoke Test](production-delivery-checkout-smoke-test.md).                                                                                                                                                                                                                                       |
+| Weekly meal-plan checkout | Technical preflight pass; content blocked          | Earlier preflight passed Breakfast eligibility, required selections, allergens, the `$0.50` upcharge, trusted totals, production `Pay with Card`, and approval-first `Submit for Approval`. The corrected package/offering names now exist, but the only weekly period is Draft, uses `$1.00` QA prices/test dates, and is already at capacity. See [Production Content and Admin Data Readiness](production-content-admin-data-readiness.md). |
+| Catering request          | Pass                                               | A clearly marked production QA request submitted successfully, reached the thank-you page, appeared accurately in the admin queue/detail, and delivered its customer confirmation email. See [Service Request Production Submission Evidence](service-request-production-submission-evidence.md).                                                                                                                                              |
+| Personal-chef request     | Pass                                               | A clearly marked production QA request submitted successfully, reached the thank-you page, appeared accurately in the admin queue/detail, and delivered its customer confirmation email. See [Service Request Production Submission Evidence](service-request-production-submission-evidence.md).                                                                                                                                              |
 
 ## Delivery payment and refund evidence
 
@@ -47,13 +47,13 @@ must never issue a second refund solely because provider completion is delayed.
 
 ## Admin flows
 
-| Flow | Result | Evidence |
-| --- | --- | --- |
-| Admin authentication | Pass | Authenticated admin pages were reachable; unauthenticated access remained protected. |
-| Orders and order detail | Pass | The production order and payment ledger details rendered. |
-| Payments and reconciliation | Pass | The completed delivery refund shows ledger `REFUNDED`, Square `COMPLETED`, populated refund timestamps, and no mismatch. |
-| Refund controls | Pass | The owner exercised one full production refund. No duplicate refund was issued. |
-| Catering/personal-chef admin | Pass | Both production QA records appeared with correct type, event, status, approval, and submitted-date labels. Type filters and detail pages worked; approval controls rendered; payment controls remained disabled before approval. |
+| Flow                         | Result | Evidence                                                                                                                                                                                                                         |
+| ---------------------------- | ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Admin authentication         | Pass   | Authenticated admin pages were reachable; unauthenticated access remained protected.                                                                                                                                             |
+| Orders and order detail      | Pass   | The production order and payment ledger details rendered.                                                                                                                                                                        |
+| Payments and reconciliation  | Pass   | The completed delivery refund shows ledger `REFUNDED`, Square `COMPLETED`, populated refund timestamps, and no mismatch.                                                                                                         |
+| Refund controls              | Pass   | The owner exercised one full production refund. No duplicate refund was issued.                                                                                                                                                  |
+| Catering/personal-chef admin | Pass   | Both production QA records appeared with correct type, event, status, approval, and submitted-date labels. Type filters and detail pages worked; approval controls rendered; payment controls remained disabled before approval. |
 
 ## Email evidence
 
@@ -69,6 +69,7 @@ separate admin notification email.
 - A pending refund is not permission to create another provider refund.
 - Verified webhooks and read-only provider status reconciliation must remain
   available during payment-creation rollback.
+- Durable admin image uploads are implemented but require production environment configuration and a controlled non-client-image rehearsal before being marked production-tested.
 
 ## Remaining launch blockers
 

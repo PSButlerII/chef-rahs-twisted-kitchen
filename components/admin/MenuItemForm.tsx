@@ -1,8 +1,8 @@
 "use client";
 
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
+import { AdminImageUploadField } from "@/components/admin/AdminImageUploadField";
 
 async function readError(response: Response, fallback: string) {
   const data = (await response.json().catch(() => null)) as {
@@ -15,24 +15,12 @@ async function readError(response: Response, fallback: string) {
 export function MenuItemForm() {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
-  const [preview, setPreview] = useState<string | null>(null);
-  const [fileName, setFileName] = useState("");
+  const [imageUrl, setImageUrl] = useState("");
+  const [uploading, setUploading] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-
-    if (!file) {
-      setPreview(null);
-      setFileName("");
-      return;
-    }
-
-    setPreview(URL.createObjectURL(file));
-    setFileName(file.name);
-  };
-
   async function handleSubmit(formData: FormData) {
+    if (uploading) return;
     setSaving(true);
 
     const response = await fetch("/api/admin/menu", {
@@ -48,8 +36,7 @@ export function MenuItemForm() {
     }
 
     formRef.current?.reset();
-    setPreview(null);
-    setFileName("");
+    setImageUrl("");
 
     router.refresh();
   }
@@ -59,49 +46,13 @@ export function MenuItemForm() {
       <h2 className="text-2xl font-black">Add Meal Plan / Menu Item</h2>
 
       <div className="mt-5 space-y-4">
-        <div className="space-y-3">
-          <label className="block text-sm font-bold">Menu Item Image</label>
-
-          <input
-            id="imageUpload"
-            type="file"
-            name="imageUpload"
-            accept="image/jpeg,image/png,image/webp"
-            onChange={handleImageChange}
-            className="hidden"
-          />
-
-          <label
-            htmlFor="imageUpload"
-            className="admin-button-primary cursor-pointer"
-          >
-            Select Image
-          </label>
-
-          {fileName && (
-            <p className="text-sm text-[#6b5a50]">Selected: {fileName}</p>
-          )}
-
-          {preview && (
-            <div className="relative h-48 w-full overflow-hidden rounded-xl border">
-              <Image
-                src={preview}
-                alt="Preview"
-                fill
-                sizes="(max-width: 768px) 100vw, 384px"
-                className="object-cover"
-                unoptimized
-              />
-            </div>
-          )}
-
-          <input
-            name="imageUrl"
-            type="text"
-            placeholder="Public image URL"
-            className="admin-input"
-          />
-        </div>
+        <AdminImageUploadField
+          label="Menu Item Image"
+          context="menu-item"
+          value={imageUrl}
+          onChange={setImageUrl}
+          onUploadingChange={setUploading}
+        />
 
         <input
           name="name"
@@ -191,7 +142,10 @@ export function MenuItemForm() {
           Allow customer instructions
         </label>
 
-        <button disabled={saving} className="admin-button-primary w-full">
+        <button
+          disabled={saving || uploading}
+          className="admin-button-primary w-full"
+        >
           {saving ? "Saving..." : "Create Offering"}
         </button>
       </div>

@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { AdminImageUploadField } from "@/components/admin/AdminImageUploadField";
 
 type Props = {
   choice: {
@@ -27,6 +28,8 @@ export function EditOptionChoiceForm({ choice }: Props) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [imageUrl, setImageUrl] = useState(choice.imageUrl ?? "");
+  const [uploading, setUploading] = useState(false);
 
   async function handleSubmit(formData: FormData) {
     setSaving(true);
@@ -86,11 +89,12 @@ export function EditOptionChoiceForm({ choice }: Props) {
         className="admin-input"
       />
 
-      <input
-        name="imageUrl"
-        defaultValue={choice.imageUrl ?? ""}
-        placeholder="Image URL, e.g. /gallery/chicken.jpg"
-        className="admin-input"
+      <AdminImageUploadField
+        label="Option Image"
+        context="option-choice"
+        value={imageUrl}
+        onChange={setImageUrl}
+        onUploadingChange={setUploading}
       />
 
       <input
@@ -112,7 +116,7 @@ export function EditOptionChoiceForm({ choice }: Props) {
       </label>
 
       <div className="flex flex-wrap gap-3">
-        <button disabled={saving} className="admin-button-primary">
+        <button disabled={saving || uploading} className="admin-button-primary">
           {saving ? "Saving..." : "Save"}
         </button>
 

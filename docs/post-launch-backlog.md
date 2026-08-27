@@ -17,10 +17,10 @@ This document preserves confirmed production findings and deferred work. It does
 - The confirmed public URL base is `https://rahstwistedkitchen.com/image_uploads`.
 - The temporary upload storage probe endpoint and its token/configuration were removed after the test.
 
-## B. Future Durable Uploads
+## B. Durable Uploads — Implemented, Production Configuration Pending
 
 - Direct filesystem uploads are viable on the current Hostinger deployment.
-- Use the following future configuration when the upload feature is implemented:
+- The admin-only filesystem upload implementation is complete. Configure production with:
 
   ```dotenv
   UPLOAD_STORAGE_DRIVER=filesystem
@@ -28,7 +28,10 @@ This document preserves confirmed production findings and deferred work. It does
   NEXT_PUBLIC_UPLOAD_BASE_URL=https://rahstwistedkitchen.com/image_uploads
   ```
 
-- Validate file type and file size before accepting any upload.
+- Uploads validate the 5 MB limit, MIME type, and JPEG/PNG/WebP magic bytes; SVG and unknown binaries are rejected.
+- Safe UUID filenames are generated and original filenames are never used as storage paths.
+- Menu item, weekly offering, option-choice edit, and gallery forms support uploads while retaining manual public URL entry.
+- Production upload QA is still required after the environment values are deployed; implementation validation used a temporary directory only.
 - Keep allowed image types limited to JPEG, PNG, and WebP unless requirements change.
 - Store public image paths or URLs in the database.
 - FTP/SFTP is not currently needed for app-controlled uploads.
@@ -56,7 +59,7 @@ This document preserves confirmed production findings and deferred work. It does
 
 ## E. Deferred Feature Enhancements
 
-- Durable admin image uploads.
+- Production rehearsal of durable admin image uploads and backup/restore verification.
 - Payment provider integration.
 - Payment webhooks and reconciliation.
 - Final-balance payment support inside the website.

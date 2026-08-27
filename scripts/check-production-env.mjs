@@ -1,4 +1,5 @@
 import "dotenv/config";
+import path from "node:path";
 
 const reportOnly = process.argv.includes("--report");
 const errors = [];
@@ -32,7 +33,9 @@ function requireValue(name, description) {
   const value = readEnv(name);
 
   if (isMissingOrPlaceholder(value)) {
-    addError(`${name} is missing or still using a placeholder (${description}).`);
+    addError(
+      `${name} is missing or still using a placeholder (${description}).`,
+    );
     return "";
   }
 
@@ -130,22 +133,45 @@ if (appUrl && nextAuthUrl && appUrl.origin !== nextAuthUrl.origin) {
   addError("NEXTAUTH_URL should use the same origin as NEXT_PUBLIC_APP_URL.");
 }
 
-requireValue("BUSINESS_TIME_ZONE", "business date and weekly menu calculations");
+requireValue(
+  "BUSINESS_TIME_ZONE",
+  "business date and weekly menu calculations",
+);
 
-const uploadFlag = readEnv("ALLOW_LOCAL_UPLOADS_IN_PRODUCTION");
+const uploadDriver = readEnv("UPLOAD_STORAGE_DRIVER");
+const uploadDirectory = readEnv("UPLOAD_FILESYSTEM_DIR");
+const uploadPublicBaseUrl = readEnv("NEXT_PUBLIC_UPLOAD_BASE_URL");
 
-if (!uploadFlag) {
-  addWarning(
-    'ALLOW_LOCAL_UPLOADS_IN_PRODUCTION is not set. The app defaults to blocking local production uploads.',
+if (uploadDriver !== "filesystem") {
+  addError(
+    'UPLOAD_STORAGE_DRIVER must be "filesystem" for durable admin uploads.',
   );
-} else if (uploadFlag === "true") {
-  addWarning(
-    'ALLOW_LOCAL_UPLOADS_IN_PRODUCTION=true is only safe if the host has durable, shared storage for public/uploads.',
+}
+
+if (!uploadDirectory) {
+  addError("UPLOAD_FILESYSTEM_DIR is required for durable admin uploads.");
+} else if (
+  !path.posix.isAbsolute(uploadDirectory) &&
+  !path.win32.isAbsolute(uploadDirectory)
+) {
+  addError("UPLOAD_FILESYSTEM_DIR must be an absolute path.");
+}
+
+if (!uploadPublicBaseUrl) {
+  addError(
+    "NEXT_PUBLIC_UPLOAD_BASE_URL is required for durable admin uploads.",
   );
-} else if (uploadFlag === "false") {
-  addPass("Local production uploads are blocked by default.");
 } else {
-  addError('ALLOW_LOCAL_UPLOADS_IN_PRODUCTION must be "true" or "false".');
+  try {
+    const uploadUrl = new URL(uploadPublicBaseUrl);
+    if (uploadUrl.protocol !== "https:") {
+      addError("NEXT_PUBLIC_UPLOAD_BASE_URL must use HTTPS in production.");
+    } else {
+      addPass("Durable admin upload storage is configured.");
+    }
+  } catch {
+    addError("NEXT_PUBLIC_UPLOAD_BASE_URL must be a valid URL.");
+  }
 }
 
 requireValue("RESEND_API_KEY", "production email provider key");

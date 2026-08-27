@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { AdminImageUploadField } from "@/components/admin/AdminImageUploadField";
 
 async function readError(response: Response, fallback: string) {
   const data = (await response.json().catch(() => null)) as {
@@ -30,6 +31,8 @@ export function MenuItemEditForm({ item }: Props) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [imageUrl, setImageUrl] = useState(item.imageUrl ?? "");
+  const [uploading, setUploading] = useState(false);
 
   async function handleSubmit(formData: FormData) {
     setSaving(true);
@@ -82,12 +85,12 @@ export function MenuItemEditForm({ item }: Props) {
         required
       />
 
-      <input
-        name="imageUrl"
-        type="text"
-        defaultValue={item.imageUrl ?? ""}
-        placeholder="Public image URL"
-        className="admin-input"
+      <AdminImageUploadField
+        label="Menu Item Image"
+        context="menu-item"
+        value={imageUrl}
+        onChange={setImageUrl}
+        onUploadingChange={setUploading}
       />
 
       <input
@@ -158,7 +161,10 @@ export function MenuItemEditForm({ item }: Props) {
       </label>
 
       <div className="flex gap-3">
-        <button disabled={saving} className="admin-button-primary px-4 py-2">
+        <button
+          disabled={saving || uploading}
+          className="admin-button-primary px-4 py-2"
+        >
           {saving ? "Saving..." : "Save"}
         </button>
 

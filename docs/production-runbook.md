@@ -110,21 +110,23 @@ TypeScript launch posture:
 
 Configure these variables in the production host before deploying:
 
-| Variable                            | Production value or note                                                                                                               |
-| ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| `DATABASE_URL`                      | Production MySQL/MariaDB connection string. The Prisma datasource is `provider = "mysql"` and the app uses the MariaDB Prisma adapter. |
-| `AUTH_SECRET`                       | Production-only Auth.js secret, at least 32 characters. Generate a new secret; do not reuse local values.                              |
-| `AUTH_URL`                          | `https://rahstwistedkitchen.com`                                                                                                       |
-| `NEXTAUTH_URL`                      | `https://rahstwistedkitchen.com`                                                                                                       |
-| `NEXT_PUBLIC_APP_URL`               | `https://rahstwistedkitchen.com`                                                                                                       |
-| `BUSINESS_TIME_ZONE`                | `America/New_York` unless the business confirms another timezone.                                                                      |
-| `RESEND_API_KEY`                    | Production Resend API key.                                                                                                             |
-| `EMAIL_FROM_ADDRESS`                | Verified production sender, such as `Chef Rah's Twisted Kitchen <orders@rahstwistedkitchen.com>`.                                      |
-| `EMAIL_DRY_RUN`                     | `false` only when ready for live customer email.                                                                                       |
-| `EMAIL_PREVIEW_FILES`               | `false` in production.                                                                                                                 |
-| `ALLOW_LOCAL_UPLOADS_IN_PRODUCTION` | `false` or unset. Keep local production uploads disabled for launch.                                                                   |
-| `ALLOW_MANUAL_PAYMENT_IN_CHECKOUT`  | `false` or unset in production. The development/test override is ignored in production.                                                |
-| `PAYMENT_JOBS_TOKEN`                | Permanent random secret of at least 32 characters for the pending-payment expiration scheduler.                                        |
+| Variable                           | Production value or note                                                                                                               |
+| ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`                     | Production MySQL/MariaDB connection string. The Prisma datasource is `provider = "mysql"` and the app uses the MariaDB Prisma adapter. |
+| `AUTH_SECRET`                      | Production-only Auth.js secret, at least 32 characters. Generate a new secret; do not reuse local values.                              |
+| `AUTH_URL`                         | `https://rahstwistedkitchen.com`                                                                                                       |
+| `NEXTAUTH_URL`                     | `https://rahstwistedkitchen.com`                                                                                                       |
+| `NEXT_PUBLIC_APP_URL`              | `https://rahstwistedkitchen.com`                                                                                                       |
+| `BUSINESS_TIME_ZONE`               | `America/New_York` unless the business confirms another timezone.                                                                      |
+| `RESEND_API_KEY`                   | Production Resend API key.                                                                                                             |
+| `EMAIL_FROM_ADDRESS`               | Verified production sender, such as `Chef Rah's Twisted Kitchen <orders@rahstwistedkitchen.com>`.                                      |
+| `EMAIL_DRY_RUN`                    | `false` only when ready for live customer email.                                                                                       |
+| `EMAIL_PREVIEW_FILES`              | `false` in production.                                                                                                                 |
+| `UPLOAD_STORAGE_DRIVER`            | `filesystem` enables the admin-only durable upload driver.                                                                             |
+| `UPLOAD_FILESYSTEM_DIR`            | `/home/u275661575/domains/rahstwistedkitchen.com/public_html/image_uploads`                                                            |
+| `NEXT_PUBLIC_UPLOAD_BASE_URL`      | `https://rahstwistedkitchen.com/image_uploads`                                                                                         |
+| `ALLOW_MANUAL_PAYMENT_IN_CHECKOUT` | `false` or unset in production. The development/test override is ignored in production.                                                |
+| `PAYMENT_JOBS_TOKEN`               | Permanent random secret of at least 32 characters for the pending-payment expiration scheduler.                                        |
 
 Workflow-specific variables:
 
@@ -399,18 +401,22 @@ Invoke-WebRequest -Uri "https://rahstwistedkitchen.com/menu" -UseBasicParsing
 
 ## 9. Upload And Storage Launch Posture
 
-Local production uploads must remain disabled for launch:
+Configure durable production uploads only after the Hostinger directory exists and is included in the backup plan:
 
 ```powershell
-$env:ALLOW_LOCAL_UPLOADS_IN_PRODUCTION = "false"
+$env:UPLOAD_STORAGE_DRIVER = "filesystem"
+$env:UPLOAD_FILESYSTEM_DIR = "/home/u275661575/domains/rahstwistedkitchen.com/public_html/image_uploads"
+$env:NEXT_PUBLIC_UPLOAD_BASE_URL = "https://rahstwistedkitchen.com/image_uploads"
 ```
 
 Launch posture:
 
-- Admins should use durable public image URLs for menu and gallery images.
+- Admins can upload durable menu, weekly-offering, option-choice, and gallery images or continue to enter a trusted public image URL.
 - Hostinger testing confirmed that the deployed Node/Next.js runtime can write, read, and publicly serve files from `public_html/image_uploads`.
-- The temporary storage probe has been removed, and no application upload feature is enabled for launch.
-- Defer direct filesystem upload implementation until after launch; see `docs/post-launch-backlog.md`.
+- The temporary storage probe remains removed. The admin-only upload feature is implemented and fails closed until all three durable upload variables are configured.
+- After deployment, test one non-client image in each required format and verify its returned URL is publicly readable; do not claim production validation before this rehearsal.
+- Back up `public_html/image_uploads` separately from database backups unless Hostinger confirms the directory is covered.
+- FTP/SFTP is not required. If introduced later, use a dedicated limited account rather than the main hosting account.
 
 ## 10. Payment Launch Posture
 
@@ -446,7 +452,7 @@ Launch posture:
 
 - Keep CSP intentionally minimal for launch.
 - Keep production preview routes blocked.
-- Keep local production uploads disabled.
+- Keep the upload driver fail-closed: configure all three upload variables together, restrict uploads to admins, and include the external upload directory in backups.
 - Use HTTPS-only production URLs.
 - Use a unique production `AUTH_SECRET`.
 - Do not expose `.env` values in logs, screenshots, tickets, or client messages.
@@ -524,7 +530,7 @@ Run immediately after launch:
 - `/admin` is accessible only to promoted admin/owner accounts.
 - Admin order approval sends the correct customer email.
 - Gallery images and menu images render.
-- Production uploads remain blocked when `ALLOW_LOCAL_UPLOADS_IN_PRODUCTION=false` or unset.
+- Admin uploads fail closed when the durable upload driver, absolute filesystem directory, or public URL base is missing or invalid.
 
 ## 14. Rollback Notes
 
@@ -557,7 +563,7 @@ If live email sends incorrectly:
 ## 15. Known Future Follow-Up Items
 
 - Implement automated Square/PayPal checkout in a dedicated future phase.
-- Choose durable production upload storage and wire direct admin uploads to it.
+- Complete the production upload rehearsal and verify backup/restore coverage for `public_html/image_uploads`.
 - Replace any remaining legacy Stripe env parsing or placeholders when the Square/PayPal phase begins.
 - Add exact business-approved manual payment wording to customer-facing content if needed.
 - Add host-specific deployment screenshots or Hostinger steps once the final hosting target and deployment mechanism are confirmed.

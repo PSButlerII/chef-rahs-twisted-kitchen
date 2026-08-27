@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
+import { AdminImageUploadField } from "@/components/admin/AdminImageUploadField";
 
 export type WeeklyMealPlanOfferingFormData = {
   id: string;
@@ -31,6 +32,8 @@ export function WeeklyMealPlanOfferingForm({ periodId, offering }: Props) {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
   const [saving, setSaving] = useState(false);
+  const [imageUrl, setImageUrl] = useState(offering?.imageUrl ?? "");
+  const [uploading, setUploading] = useState(false);
   const isEditing = Boolean(offering);
 
   async function handleSubmit(formData: FormData) {
@@ -124,15 +127,13 @@ export function WeeklyMealPlanOfferingForm({ periodId, offering }: Props) {
           />
         </label>
 
-        <label className="admin-label">
-          Image URL
-          <input
-            name="imageUrl"
-            defaultValue={offering?.imageUrl ?? ""}
-            className="admin-input"
-            placeholder="/uploads/menu/example.webp"
-          />
-        </label>
+        <AdminImageUploadField
+          label="Offering Image"
+          context="weekly-offering"
+          value={imageUrl}
+          onChange={setImageUrl}
+          onUploadingChange={setUploading}
+        />
       </div>
 
       <label className="admin-label">
@@ -157,7 +158,7 @@ export function WeeklyMealPlanOfferingForm({ periodId, offering }: Props) {
         Available for this weekly menu
       </label>
 
-      <button disabled={saving} className="admin-button-primary">
+      <button disabled={saving || uploading} className="admin-button-primary">
         {saving ? "Saving..." : isEditing ? "Save Offering" : "Add Offering"}
       </button>
     </form>
