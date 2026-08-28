@@ -277,6 +277,8 @@ Notes:
 
 Production testing confirmed that the deployed Node/Next.js runtime can write, read, and publicly serve files from Hostinger's `public_html/image_uploads` directory. The admin-only durable upload implementation validates size, MIME and magic bytes, generates UUID names, and returns public URLs without exposing the absolute path. Gallery uploads are stored below the public base as `/gallery/<uuid>`, while bundled files remain under `/gallery/webp`. A completely empty gallery table uses bundled metadata as a fallback; otherwise database rows are authoritative. `npm run gallery:import-built-ins -- --dry-run` previews the idempotent built-in import and `--apply` explicitly creates missing records. Imported static paths gain full admin CRUD without making bundled files eligible for filesystem deletion.
 
+`app/gallery/page.tsx` remains the server data-loading boundary and passes serializable gallery records to `components/gallery/ModernGallery.tsx`. The client component owns category state, nine-item incremental rendering, hover/focus overlays, and the accessible lightbox; it performs no client-side data fetch. Remote URLs continue using the existing unoptimized-image check, while root-relative built-in and durable public paths retain normal `next/image` behavior.
+
 Hostinger runs the fixed command `npm run build`. Before deployment, configure `DATABASE_URL` in the Hostinger environment and confirm it points to the production MySQL/MariaDB database that the build environment can reach with migration permissions.
 
 The expected deployment log order is:

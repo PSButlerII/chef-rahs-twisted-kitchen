@@ -713,6 +713,8 @@ Route: `/admin/gallery`
 
 Use the gallery manager to control database-backed public gallery images. Built-in site images are read-only only while awaiting the one-time import; after import they appear under Managed Images with normal edit, delete, and sort controls.
 
+The public gallery presents these records in a filterable image-first grid with Load More and a detail lightbox. That public presentation does not change the fields or controls in the admin manager.
+
 ### Adding a Gallery Image
 
 Fields:

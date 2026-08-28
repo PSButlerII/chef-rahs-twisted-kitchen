@@ -10,6 +10,12 @@ Last updated: August 28, 2026
 - Imported built-ins and uploaded images both support normal admin edit, sort, and delete operations.
 - Durable production uploads use `NEXT_PUBLIC_UPLOAD_BASE_URL/gallery/<uuid>`; with the production base this is `/image_uploads/gallery/<uuid>`.
 
+## Public Gallery Experience
+
+Public `/gallery` uses an image-first warm espresso layout. It renders nine images initially, offers category filter buttons, and reveals subsequent groups through Load More instead of mounting every record at once. Titles and categories stay off the default card surface; they appear on mouse hover, keyboard focus, or in the click/tap lightbox. The accessible lightbox includes details, close and previous/next controls, Escape/arrow-key support, focus containment, and background scroll locking.
+
+This presentation layer does not change database loading, built-in fallback/import behavior, durable upload storage, or admin gallery CRUD.
+
 ## Import Built-in Images
 
 The import is explicit, idempotent, and dry-run by default. It matches existing rows by exact `src`, never deletes rows, and appends missing built-ins after the current highest sort order.
