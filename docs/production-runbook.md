@@ -412,12 +412,22 @@ $env:NEXT_PUBLIC_UPLOAD_BASE_URL = "https://rahstwistedkitchen.com/image_uploads
 Launch posture:
 
 - Admins can upload durable menu, weekly-offering, option-choice, and gallery images or continue to enter a trusted public image URL.
-- Public `/gallery` combines read-only built-in `/gallery/webp` assets with database-backed uploads; uploaded records remain the only gallery images editable through admin.
+- Public `/gallery` uses `/gallery/webp` only as an empty-table fallback. After the explicit built-in import, database records are authoritative and built-in entries are fully manageable without deleting their bundled files.
 - Hostinger testing confirmed that the deployed Node/Next.js runtime can write, read, and publicly serve files from `public_html/image_uploads`.
 - The temporary storage probe remains removed. The admin-only upload feature is implemented and fails closed until all three durable upload variables are configured.
 - After deployment, test one non-client image in each required format and verify its returned URL is publicly readable. For gallery QA, confirm `/image_uploads/gallery/<uuid>` renders alongside built-in images and remains manageable in admin; do not claim production validation before this rehearsal.
 - Back up `public_html/image_uploads` separately from database backups unless Hostinger confirms the directory is covered.
 - FTP/SFTP is not required. If introduced later, use a dedicated limited account rather than the main hosting account.
+
+Built-in gallery handoff:
+
+1. Take a database backup/checkpoint and verify the target `DATABASE_URL`.
+2. Run `npm run gallery:import-built-ins -- --dry-run` and review every proposed path.
+3. With owner approval, run `npm run gallery:import-built-ins -- --apply` once; reruns safely skip existing `src` values.
+4. Confirm imported cards appear under Managed Images and the Awaiting Import section is empty.
+5. Confirm `/gallery` contains no duplicate built-in paths.
+
+The import never runs automatically during build, migration, or seed.
 
 ## 10. Payment Launch Posture
 

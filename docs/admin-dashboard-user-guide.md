@@ -711,7 +711,7 @@ Use Open Kitchen Board to move from weekly prep into active kitchen order manage
 
 Route: `/admin/gallery`
 
-Use the gallery manager to control uploaded, database-backed public gallery images and review the built-in site images. Built-in cards are marked read-only and do not offer edit or delete actions.
+Use the gallery manager to control database-backed public gallery images. Built-in site images are read-only only while awaiting the one-time import; after import they appear under Managed Images with normal edit, delete, and sort controls.
 
 ### Adding a Gallery Image
 
@@ -735,7 +735,7 @@ Images must be JPG, PNG, or WebP and 5 MB or smaller. WebP is preferred for publ
 
 Production uploads require the durable filesystem environment configuration. If it is missing, the admin upload control fails closed and a manually hosted public URL may still be used.
 
-The public gallery displays both sources. Built-in images live under `/gallery/webp`; uploaded production images use `/image_uploads/gallery/<uuid>`. If both sources use the same `src`, the database-backed record is shown once and takes precedence.
+An empty gallery table uses `/gallery/webp` as a safety fallback. Once database records exist, they are authoritative. An operator can run the documented idempotent built-in import after verifying `DATABASE_URL` and taking a backup. Uploaded production images use `/image_uploads/gallery/<uuid>`.
 
 ### Editing a Gallery Image
 
@@ -750,6 +750,8 @@ Use Edit on an image card to update:
 ### Deleting a Gallery Image
 
 Use Delete only when the image should be removed from the public gallery. The action asks for confirmation and cannot be undone through the dashboard.
+
+For an imported `/gallery/webp/...` record, Delete removes the database record but leaves the bundled static file intact. For a managed `/image_uploads/gallery/<uuid>` record, Delete also attempts safe filesystem cleanup.
 
 ## Customers
 

@@ -1,7 +1,8 @@
-import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { access, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import {
+  removeFilesystemImage,
   saveFilesystemImage,
   validateImageUpload,
 } from "@/lib/uploads/filesystem-storage";
@@ -65,8 +66,25 @@ async function main() {
       }
       if (!failed) throw new Error(`Expected rejection for ${file.name}.`);
     }
+
+    const staticAsset = path.join(directory, "static-gallery-asset.webp");
+    await writeFile(staticAsset, "static asset remains");
+    await removeFilesystemImage("/gallery/webp/IMG_1416.webp", "gallery");
+    await access(staticAsset);
+
+    const removable = await saveFilesystemImage(fixtures[2], "gallery");
+    const removablePath = path.join(directory, "gallery", removable.filename);
+    await removeFilesystemImage(removable.publicUrl, "gallery");
+    let uploadedFileRemoved = false;
+    try {
+      await access(removablePath);
+    } catch {
+      uploadedFileRemoved = true;
+    }
+    if (!uploadedFileRemoved)
+      throw new Error("Managed gallery upload was not removed.");
     console.log(
-      "Durable image upload QA passed: JPEG, PNG, WebP, SVG rejection, MIME/signature mismatch, size limit, safe names, and public URLs.",
+      "Durable image upload QA passed: formats, validation, safe names, public URLs, uploaded-file cleanup, and static-path protection.",
     );
   } finally {
     await rm(directory, { recursive: true, force: true });

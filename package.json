@@ -17,7 +17,8 @@
     "owner:promote": "tsx prisma/promote-admin.ts --owner",
     "admin:promote": "tsx prisma/promote-admin.ts",
     "db:seed": "tsx prisma/seed.ts",
-    "db:seed-demo": "tsx prisma/seed-demo-data.ts"
+    "db:seed-demo": "tsx prisma/seed-demo-data.ts",
+    "gallery:import-built-ins": "tsx scripts/import-built-in-gallery-images.ts"
   },
   "overrides": {
     "@prisma/config@7.9.1": {

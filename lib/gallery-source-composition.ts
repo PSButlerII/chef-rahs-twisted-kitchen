@@ -3,14 +3,9 @@ import {
   type GalleryImage,
 } from "@/data/gallery";
 
-export function mergeGalleryImages(
+export function selectGalleryImages(
   databaseImages: GalleryImage[],
   builtInImages: GalleryImage[] = builtInGalleryImages,
 ): GalleryImage[] {
-  const databaseSources = new Set(databaseImages.map((image) => image.src));
-
-  return [
-    ...databaseImages,
-    ...builtInImages.filter((image) => !databaseSources.has(image.src)),
-  ];
+  return databaseImages.length > 0 ? databaseImages : builtInImages;
 }

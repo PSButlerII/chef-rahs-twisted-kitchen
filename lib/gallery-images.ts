@@ -5,7 +5,7 @@ import {
   type GalleryImageCategory,
 } from "@/data/gallery";
 import { prisma } from "@/lib/prisma";
-import { mergeGalleryImages } from "@/lib/gallery-source-composition";
+import { selectGalleryImages } from "@/lib/gallery-source-composition";
 
 export { galleryCategoryOptions };
 export type { GalleryImage, GalleryImageCategory };
@@ -27,11 +27,17 @@ export function isGalleryImageCategory(
   return galleryCategoryOptions.includes(category as GalleryImageCategory);
 }
 
-export function getBuiltInGalleryImages(): BuiltInGalleryImage[] {
-  return fallbackGalleryImages.map((image) => ({
-    ...image,
-    source: "built-in",
-  }));
+export function getBuiltInGalleryImages(
+  managedSources: string[] = [],
+): BuiltInGalleryImage[] {
+  const managedSourceSet = new Set(managedSources);
+
+  return fallbackGalleryImages
+    .filter((image) => !managedSourceSet.has(image.src))
+    .map((image) => ({
+      ...image,
+      source: "built-in",
+    }));
 }
 
 export async function getPublicGalleryImages(): Promise<GalleryImage[]> {
@@ -47,7 +53,7 @@ export async function getPublicGalleryImages(): Promise<GalleryImage[]> {
       category: image.category as GalleryImageCategory,
     }));
 
-    return mergeGalleryImages(databaseImages);
+    return selectGalleryImages(databaseImages);
   } catch {
     return fallbackGalleryImages;
   }

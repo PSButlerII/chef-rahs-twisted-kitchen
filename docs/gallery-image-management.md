@@ -1,67 +1,47 @@
 # Gallery And Image Management
 
-Date: June 9, 2026
+Last updated: August 28, 2026
 
-This note captures the current image setup and the safest next direction. It is intentionally separate from weekly meal plan modeling.
+## Sources Of Truth
 
-## Current State
+- `data/gallery.ts` and `/gallery/webp/...` provide a safety fallback for a completely empty `GalleryImage` table.
+- Once at least one database gallery record exists, the database is the public gallery source of truth.
+- Built-in metadata can be imported as database records that continue to reference the existing `/gallery/webp/...` files.
+- Imported built-ins and uploaded images both support normal admin edit, sort, and delete operations.
+- Durable production uploads use `NEXT_PUBLIC_UPLOAD_BASE_URL/gallery/<uuid>`; with the production base this is `/image_uploads/gallery/<uuid>`.
 
-- Public `/gallery` combines database-backed `GalleryImage` records with the built-in images in `data/gallery.ts`.
-- Gallery images are served from files under `public/`.
-- `public/gallery` contains original HEIC source files.
-- `public/gallery/webp` contains optimized 1200x1600 WebP gallery images derived from the source files.
-- `data/gallery.ts` remains the built-in static image and category source. Its images live under `/gallery/webp` and are read-only in admin.
-- Admin `/admin/gallery` shows database-backed images with full CRUD and built-in images as read-only references.
-- Database-backed gallery images take precedence when their `src` matches a built-in image, so public output does not contain duplicates.
-- With durable production upload configuration, new gallery files use `NEXT_PUBLIC_UPLOAD_BASE_URL/gallery/<uuid>` (production: `/image_uploads/gallery/<uuid>`).
-- Gallery create/edit forms also accept public image URLs, so production records can point at externally hosted durable storage without uploading through the app.
-- Admin menu item creation supports uploading an image file to `public/uploads/menu`.
-- Admin menu item creation and editing support public image URLs for externally hosted durable storage.
-- The durable endpoint fails closed unless all filesystem upload variables are valid. This branch does not alter legacy upload flags or endpoint behavior.
-- Admin menu item editing does not currently replace an item image.
-- Option choice images are URL-based text fields.
-- Existing `MenuItem.imageUrl` and `MenuItemOptionChoice.imageUrl` fields are URL strings, which can support local paths or hosted image URLs.
+## Import Built-in Images
 
-## Recommendation
+The import is explicit, idempotent, and dry-run by default. It matches existing rows by exact `src`, never deletes rows, and appends missing built-ins after the current highest sort order.
 
-Keep the composed gallery approach:
+```powershell
+npm run gallery:import-built-ins -- --dry-run
+npm run gallery:import-built-ins -- --apply
+```
 
-- Use `/admin/gallery` to curate uploaded, database-backed images.
-- Keep `data/gallery.ts` as the source of built-in, read-only site images.
-- Use optimized WebP copies for selected public gallery images.
-- Keep original HEIC files as source material only.
-- Do not tie gallery management to weekly meal plan modeling.
+Always verify `DATABASE_URL` and take a database backup/checkpoint before the production apply command. The dry-run prints created/skipped counts and every proposed path. Rerunning after import skips existing `src` values.
 
-For menu item and option choice images:
+No import runs during build, migration, seed, or deployment. A fresh database continues to show the static fallback until an operator runs the import.
 
-- Keep URL string fields in the database.
-- Keep menu item upload as a local/demo convenience only, and use the public image URL field for production-hosted assets.
-- Keep option choice images URL-based until production image storage is decided.
-- Add image replacement/editing later only after the deployment target is confirmed.
+## Admin Behavior
 
-## Production Upload Concern
+- Imported built-ins appear under Managed Images with edit, delete, and sort controls.
+- Built-ins missing from the database appear in an “Awaiting Import” read-only section with instructions.
+- Deleting an imported `/gallery/webp/...` record removes only its database row. The bundled physical file remains in the repository/deployment.
+- Deleting or replacing a managed `/image_uploads/gallery/<uuid>` record also removes the durable uploaded file when storage is configured and the URL passes containment checks.
+- External URLs and root-relative static paths are never filesystem deletion targets.
 
-Writing uploads to `public/uploads` is acceptable for a local demo or a single persistent server, but it is usually unsafe for serverless or immutable deployments. On many platforms, files written at runtime can disappear on redeploy or may not be shared across instances.
-
-The durable upload endpoint is controlled by `UPLOAD_STORAGE_DRIVER`, `UPLOAD_FILESYSTEM_DIR`, and `NEXT_PUBLIC_UPLOAD_BASE_URL`; it does not use the legacy `ALLOW_LOCAL_UPLOADS_IN_PRODUCTION` flag. The built-in `/gallery/webp` assets remain separate from uploaded files.
-
-Before building a full admin upload workflow, confirm the production hosting target supports one of these:
-
-- persistent local disk storage, or
-- external object storage such as S3, Cloudflare R2, Supabase Storage, UploadThing, or the hosting provider's blob storage.
-
-The production-safe pattern is:
-
-1. Store the image in durable object storage, hosted media storage, or a confirmed persistent deployment volume.
-2. Save the returned public URL in `src` for gallery records or `imageUrl` for menu records.
-3. Menu cards, option choices, and gallery entries render that URL.
-4. Add direct object-storage uploads later only after the client confirms the production storage provider.
+Because a nonempty database is authoritative, deleting an imported built-in removes it from the public gallery instead of allowing the static fallback to resurrect it. If every database gallery row is removed, the empty-table safety fallback becomes visible again.
 
 ## Production Rehearsal
 
-After this gallery source fix is deployed:
+After deployment:
 
-- Upload a non-client QA image through `/admin/gallery`.
-- Confirm it appears alongside the built-in images on `/gallery`.
-- Confirm it is editable and deletable while built-in cards remain read-only.
-- Confirm the public URL is under `/image_uploads/gallery` and survives the expected deployment/restart cycle.
+1. Back up/checkpoint the production database and verify `DATABASE_URL`.
+2. Run the import dry-run and review created/skipped paths.
+3. Run `--apply` only with owner approval.
+4. Confirm imported cards have full admin controls and `/gallery` has no duplicates.
+5. Upload one non-client QA image and confirm its `/image_uploads/gallery/<uuid>` URL is public and durable.
+6. Confirm deleting a test uploaded record removes its uploaded file, while deleting an imported static-path test record does not remove the bundled asset.
+
+Do not use real client images for the rehearsal.
