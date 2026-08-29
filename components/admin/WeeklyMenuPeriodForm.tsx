@@ -90,7 +90,7 @@ export function WeeklyMenuPeriodForm({ period }: Props) {
             name="label"
             defaultValue={period?.label ?? ""}
             className="admin-input"
-            placeholder="June 17-23 Meal Prep"
+            placeholder="June 17-23 Meal Plan"
             required
           />
         </label>

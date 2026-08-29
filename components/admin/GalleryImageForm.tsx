@@ -73,7 +73,7 @@ export function GalleryImageForm() {
           <select
             name="category"
             className="admin-input mt-2"
-            defaultValue="Meal Prep"
+            defaultValue="Meal Plans"
             required
           >
             {galleryCategoryOptions.map((category) => (

@@ -19,7 +19,7 @@ export default async function GalleryPage() {
           </h1>
 
           <p className="mt-4 max-w-2xl text-base leading-7 text-[#cdbbad] sm:text-lg">
-            A taste of our meal prep, catering, and personal chef work. Choose a
+            A taste of our meal plans, catering, and personal chef work. Choose a
             collection or open any image to see the details.
           </p>
 

@@ -19,12 +19,12 @@ const experienceHighlights = [
 
 const services = [
   {
-    title: "Meal Prep",
+    title: "Meal Plans",
     description:
       "Chef-prepared weekly meals designed to bring bold flavor into busy schedules.",
     href: "/menu",
     cta: "View Meal Plans",
-    imageSrc: "/MEAL-PREP.jpg",
+    imageSrc: "/MEAL-PLAN.png",
   },
   {
     title: "Catering",
@@ -37,7 +37,7 @@ const services = [
   {
     title: "Private Chef",
     description:
-      "Custom dining support for private meals, events, meal prep, and personal food experiences.",
+      "Custom dining support for private meals, events, meal plans, and personal food experiences.",
     href: "/personal-chef",
     cta: "Plan an Experience",
     imageSrc: "/PERSONAL-CHEF.jpg",
@@ -233,7 +233,7 @@ export default function AboutPage() {
             </h2>
 
             <p className="mt-4 max-w-2xl leading-7 text-[#f3dcc4]">
-              Chef Rah&apos;s Twisted Kitchen offers meal prep, catering,
+              Chef Rah&apos;s Twisted Kitchen offers meal plans, catering,
               private chef service, food consultation, and more.
             </p>
           </div>

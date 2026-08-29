@@ -6,8 +6,8 @@ const serviceCards = [
     title: "Weekly Meal Plans",
     href: "/menu",
     cta: "View Meal Plans",
-    image: "/MEAL-PREP.jpg",
-    alt: "Prepared meal prep containers",
+    image: "/MEAL-PLAN.png",
+    alt: "Prepared meal plan containers",
     description:
       "Fixed weekly offerings with simple choices for spice level and allowed protein substitutions.",
   },
@@ -48,7 +48,7 @@ export default function HomePage() {
 
         <div className="brand-container relative z-10 pb-14 pt-28 text-white">
           <p className="text-sm font-bold uppercase text-[#f4c46f]">
-            Meal Prep / Catering / Personal Chef
+            Meal Plans / Catering / Personal Chef
           </p>
 
           <h1 className="mt-4 max-w-4xl font-script text-5xl leading-[0.95] sm:text-6xl lg:text-7xl">
@@ -79,7 +79,7 @@ export default function HomePage() {
           <div className="mt-10 grid max-w-3xl gap-3 text-sm text-[#f7dfc3] sm:grid-cols-3">
             <div className="border-l border-[#f4c46f] pl-4">
               <p className="font-bold text-white">Weekly ordering</p>
-              <p className="mt-1">Meal prep built for real schedules.</p>
+              <p className="mt-1">Meal plans built for real schedules.</p>
             </div>
             <div className="border-l border-[#f4c46f] pl-4">
               <p className="font-bold text-white">Service requests</p>
