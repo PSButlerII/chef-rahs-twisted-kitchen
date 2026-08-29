@@ -149,3 +149,83 @@ refund, webhook, authentication, or production-gate code changed.
 - `npm audit --omit=dev`: zero vulnerabilities.
 - Installed affected versions: `deepmerge-ts@8.0.2` and `nanoid@3.3.18`.
 - No vulnerable versions remain in the installed dependency graph.
+
+## MariaDB Connector/Node.js dependency remediation
+
+Date: August 29, 2026
+
+### Scope and dependency decision
+
+The original production dependency path was
+`@prisma/adapter-mariadb@7.8.0 -> mariadb@3.4.5`. That connector release was
+affected by `GHSA-cqhc-2h57-wpxf`, `GHSA-42r5-vhpq-m858`, and
+`GHSA-g5xc-5w98-jfvm`.
+
+Repository inspection found no direct import, require, dynamic import, type
+import, pool creation, or script usage of the root `mariadb` dependency. The
+unused root dependency was removed. A project-owned, adapter-scoped npm
+override now resolves only `@prisma/adapter-mariadb`'s connector dependency to
+`mariadb@3.5.3`:
+
+```json
+"@prisma/adapter-mariadb": {
+  "mariadb": "3.5.3"
+}
+```
+
+The configured official npm registry did not publish the expected `3.4.6`,
+`3.4.7`, or `3.5.4` versions when queried. Version `3.5.3` was the newest
+available official release, supports the active Node.js runtime, is outside
+all three vulnerable ranges, and passed clean-install and application
+compatibility checks. Prisma and the Prisma adapter were not upgraded or
+patched.
+
+Final resolved tree:
+
+```text
+@prisma/adapter-mariadb@7.8.0
+└── mariadb@3.5.3 overridden
+```
+
+### Database configuration review
+
+Runtime and maintenance clients initialize `PrismaMariaDb` from a parsed
+`DATABASE_URL`, passing host, port, user, password, and database only. Current
+production documentation and the environment example use `127.0.0.1`, so the
+documented Hostinger connection is local TCP rather than a remote database
+transport or Unix socket.
+
+- No explicit TLS, CA, client certificate, fingerprint,
+  `rejectUnauthorized`, or `sslMode` option is configured. TLS verification
+  was not disabled or weakened. If the database moves off-host, verified TLS
+  with operator-provided CA/server identity material must be designed and
+  tested before changing this configuration.
+- No PAM/dialog, `mysql_clear_password`, `restrictedAuth`, or other custom
+  authentication-plugin option is configured.
+- No legacy East Asian client character set is configured; in particular, no
+  `big5`, `gbk`, `sjis`, `cp932`, or `gb18030` setting was found.
+- The only application raw SQL uses Prisma tagged `$executeRaw` with string ID
+  parameters for atomic weekly-capacity counters. No unsafe raw-query variant,
+  direct connector query/execute call, or database Buffer parameter was found.
+  Buffer usage is limited to image-upload and upload-QA byte handling.
+- No `permitLocalInfile`, `permitSetMultiParamEntries`, or
+  `NO_BACKSLASH_ESCAPES` setting was found.
+
+No connection configuration was changed because the repository contains no
+explicit unsafe option and does not contain CA infrastructure that could be
+safely invented in this dependency-only pass.
+
+### Verification and maintenance
+
+`npm install` regenerated the lockfile, and `npm ci` reproduced the tree.
+`npm ls mariadb --all` and `npm explain mariadb` confirmed that `3.4.5` is
+absent. Full and production-only npm audits report zero vulnerabilities, so all
+three original advisory IDs are cleared. Prisma validation, client generation,
+lint, TypeScript, the Next.js production build, and lockfile/diff checks passed.
+The repository has no `test` script, so no unsupported test command was
+invented.
+
+This scoped override is temporary project-owned security policy. Reevaluate
+and remove it when `@prisma/adapter-mariadb` directly declares a sufficiently
+patched MariaDB connector version, after the normal clean-install and
+application validation suite passes without the override.

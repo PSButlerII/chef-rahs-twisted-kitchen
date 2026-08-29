@@ -33,7 +33,10 @@
       ".": "8.5.25",
       "nanoid": "3.3.18"
     },
-    "sharp": "0.35.3"
+    "sharp": "0.35.3",
+    "@prisma/adapter-mariadb": {
+      "mariadb": "3.5.3"
+    }
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.3",
@@ -43,7 +46,6 @@
     "clsx": "^2.1.1",
     "dotenv": "^17.4.2",
     "lucide-react": "^1.14.0",
-    "mariadb": "^3.5.3",
     "next": "^16.2.12",
     "next-auth": "^5.0.0-beta.32",
     "react": "19.2.4",

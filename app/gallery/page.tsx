@@ -14,7 +14,7 @@ export default async function GalleryPage() {
             From Our Kitchen
           </p>
 
-          <h1 className="mt-3 max-w-4xl text-4xl leading-[1.05] font-black tracking-tight text-[#fff4e7] sm:text-6xl lg:text-7xl">
+          <h1 className="mt-3 max-w-4xl text-4xl leading-[1.05] font-script font-black tracking-tight text-[#fff4e7] sm:text-6xl lg:text-7xl">
             Food worth a closer look.
           </h1>
 
