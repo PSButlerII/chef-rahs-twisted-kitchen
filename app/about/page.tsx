@@ -94,7 +94,7 @@ export default function AboutPage() {
           <div className="brand-card overflow-hidden">
             <div className="relative aspect-[4/5]">
               <Image
-                src="/placeholder.png"
+                src="/Placeholder.webp"
                 alt="Chef Rah's Twisted Kitchen food presentation"
                 fill
                 sizes="(max-width: 1024px) 80vw, 22vw"

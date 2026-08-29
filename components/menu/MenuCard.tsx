@@ -17,7 +17,7 @@ export function MenuCard({ item }: MenuCardProps) {
         aria-label={`View details for ${item.name}`}
       >
         <Image
-          src={item.imageUrl || "/placeholder.png"}
+          src={item.imageUrl || "/placeholder1.png"}
           alt={item.name}
           fill
           sizes="(max-width: 768px) 100vw, 33vw"

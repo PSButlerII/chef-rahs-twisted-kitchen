@@ -173,7 +173,7 @@ export function WeeklyMenuSection({ weeklyMenu }: Props) {
                 <div className="flex flex-col gap-4 sm:flex-row">
                   <div className="relative aspect-[4/3] w-full overflow-hidden rounded-lg border border-[#ead8c1] bg-[#f7ead7] sm:h-32 sm:w-32 sm:shrink-0">
                     <Image
-                      src={offering.imageUrl || "/placeholder.png"}
+                      src={offering.imageUrl || "/placeholder1.png"}
                       alt={offering.name}
                       fill
                       sizes="(max-width: 640px) 100vw, 112px"
