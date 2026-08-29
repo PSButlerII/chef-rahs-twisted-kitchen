@@ -32,7 +32,7 @@ Overall assessment: the repository is a credible launch-oriented modular monolit
 
 ## 2. Project Purpose
 
-**Confirmed.** The application provides a digital storefront and operations console for a food-service business. Public pages promote meal preparation, catering, and personal-chef services; `/menu`, `/cart`, and `/checkout` form the ordering funnel; `/catering` and `/personal-chef` collect service requests; `/account` exposes customer data; `/admin` exposes operational management. Evidence: `app/page.tsx`, `app/menu/page.tsx`, `app/cart/page.tsx`, `app/checkout/page.tsx`, `app/catering/page.tsx`, `app/personal-chef/page.tsx`, `app/account/page.tsx`, and `app/admin/page.tsx`.
+**Confirmed.** The application provides a digital storefront and operations console for a food-service business. Public pages promote meal plans, catering, and personal-chef services; `/menu`, `/cart`, and `/checkout` form the ordering funnel; `/catering` and `/personal-chef` collect service requests; `/account` exposes customer data; `/admin` exposes operational management. Evidence: `app/page.tsx`, `app/menu/page.tsx`, `app/cart/page.tsx`, `app/checkout/page.tsx`, `app/catering/page.tsx`, `app/personal-chef/page.tsx`, `app/account/page.tsx`, and `app/admin/page.tsx`.
 
 **Confirmed.** The system is not merely a brochure site. It persists users, orders, order line snapshots, weekly menu configuration, service requests, business rules, gallery content, allergen associations, status history, and administrative audit records. Evidence: `prisma/schema.prisma`.
 
@@ -308,18 +308,18 @@ Implementation history or the identity of decision makers is not inferred; repos
 
 ## 12. Design Tradeoffs
 
-| Choice | Benefit | Cost |
-|---|---|---|
-| Next.js modular monolith | Simple deployment and direct transactional access | UI/API/domain boundaries can blur; large route modules emerge |
-| Server Components query Prisma directly | Low ceremony and limited client data exposure | Page logic couples rendering to persistence and complicates isolated tests |
-| Zustand local cart | Guest-friendly, responsive, survives reload | Not cross-device; stale and user-editable; requires strong submission validation |
-| Snapshot order data | Historical and financial stability | More schema complexity and duplicate values |
-| JWT session plus DB role recheck | Fast identity transport with current authorization | Extra database query on protected access; session invalidation remains limited |
-| Manual payment tracking | Enables operations without gateway risk | Reconciliation is manual; no immediate payment guarantee |
-| Synchronous email after mutation | Simple implementation | Adds latency and lacks durable retry/outbox semantics |
-| In-memory rate limiting | No external dependency | Per-process only, restart-sensitive, proxy-header dependent |
-| Filesystem uploads | Easy local development | Unsuitable for ephemeral or multi-instance production hosts |
-| Application-managed settings singleton | Easy retrieval and evolution | Singleton invariant is not enforced by the database |
+| Choice                                  | Benefit                                            | Cost                                                                             |
+| --------------------------------------- | -------------------------------------------------- | -------------------------------------------------------------------------------- |
+| Next.js modular monolith                | Simple deployment and direct transactional access  | UI/API/domain boundaries can blur; large route modules emerge                    |
+| Server Components query Prisma directly | Low ceremony and limited client data exposure      | Page logic couples rendering to persistence and complicates isolated tests       |
+| Zustand local cart                      | Guest-friendly, responsive, survives reload        | Not cross-device; stale and user-editable; requires strong submission validation |
+| Snapshot order data                     | Historical and financial stability                 | More schema complexity and duplicate values                                      |
+| JWT session plus DB role recheck        | Fast identity transport with current authorization | Extra database query on protected access; session invalidation remains limited   |
+| Manual payment tracking                 | Enables operations without gateway risk            | Reconciliation is manual; no immediate payment guarantee                         |
+| Synchronous email after mutation        | Simple implementation                              | Adds latency and lacks durable retry/outbox semantics                            |
+| In-memory rate limiting                 | No external dependency                             | Per-process only, restart-sensitive, proxy-header dependent                      |
+| Filesystem uploads                      | Easy local development                             | Unsuitable for ephemeral or multi-instance production hosts                      |
+| Application-managed settings singleton  | Easy retrieval and evolution                       | Singleton invariant is not enforced by the database                              |
 
 ## 13. Technical Debt
 
@@ -455,13 +455,13 @@ Excluded from design inspection: `node_modules` implementation, `.next`, build o
 
 ## Verification Record
 
-| Check | Result |
-|---|---|
-| Reviewed commit | `9e2ca66703e903890e2a14de1f1e7a3f6bfbfba5` |
-| Working tree before documentation | Clean |
-| `npm run lint` | Passed with no ESLint warnings or errors |
-| `npm run build` | Passed; Prisma Client generated, all nine committed migrations were already applied, Next.js compiled, TypeScript completed, and 57 static pages were generated |
-| Deployment | Not performed |
+| Check                             | Result                                                                                                                                                          |
+| --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Reviewed commit                   | `9e2ca66703e903890e2a14de1f1e7a3f6bfbfba5`                                                                                                                      |
+| Working tree before documentation | Clean                                                                                                                                                           |
+| `npm run lint`                    | Passed with no ESLint warnings or errors                                                                                                                        |
+| `npm run build`                   | Passed; Prisma Client generated, all nine committed migrations were already applied, Next.js compiled, TypeScript completed, and 57 static pages were generated |
+| Deployment                        | Not performed                                                                                                                                                   |
 
 Build is expected to run the repository-defined `prebuild` hook, which generates Prisma Client and executes `prisma migrate deploy`. The recorded result must therefore be interpreted as validation against the configured review environment, not as proof that every future production environment is reachable or correctly configured.
 

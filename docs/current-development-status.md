@@ -1,7 +1,8 @@
 You are helping continue development on a Next.js/Prisma food service web app for Chef Rah's Twisted Kitchen.
 
 Current business model:
-- Meal Plans / Meal Prep and A La Carte items are purchased through cart checkout.
+
+- Meal Plans and A La Carte items are purchased through cart checkout.
 - Catering and Personal Chef are service request / quote workflows, not direct checkout purchases.
 - Meal plans are purchased through checkout but should be treated as fixed business-created offerings, not fully customizable meals.
 - Meal plan customer-facing choices should be limited to spice level and protein substitutions.
@@ -14,6 +15,7 @@ Current business model:
 - Admin order approvals and service request approvals should prevent duplicate final decisions.
 
 Important architecture notes:
+
 - Menu item `type` controls behavior, such as MEAL_PLAN, A_LA_CARTE, CATERING, PLATE, DESSERT, SIDE, OTHER.
 - Menu category controls display grouping, such as "Meal Plans", "A La Carte", "Desserts", "Sides".
 - Do not confuse category names with enum values.
@@ -27,6 +29,7 @@ Important architecture notes:
 Please inspect the codebase before making changes. Do not rename routes or database models unless explicitly asked. Avoid large rewrites. Prefer small safe changes with clear commits.
 
 Current next priorities:
+
 1. Verify checkout contact/profile flow:
    - account profile updates correctly
    - checkout preloads current user profile
@@ -50,11 +53,13 @@ Current next priorities:
 Start by auditing the checkout/profile/order flow and tell me what you find. Then propose the smallest safe patch.
 
 Progress update - July 9, 2026:
+
 - Added `docs/production-runbook.md` as the production deployment runbook for `https://rahstwistedkitchen.com`.
 - The runbook covers production environment variables, MySQL/MariaDB database setup, Prisma migration/deploy commands, foundation seed notes, first owner bootstrap and owner-managed admins, Resend setup, Hostinger/DNS notes, disabled local production uploads, manual Square/PayPal payment launch posture, security launch posture, QA, smoke tests, rollback, and future follow-up items.
 - This was a documentation-only pass. No application code, Prisma schema, checkout/order/payment behavior, auth logic, upload behavior, security headers, Resend sending behavior, or email templates were changed.
 
 Progress update - June 6, 2026:
+
 - Checkout/profile/order flow has been audited and patched:
   - Checkout contact details are reset before account profile preload.
   - Persisted checkout state no longer carries stale contact/delivery details across users.
@@ -248,6 +253,7 @@ Progress update - June 6, 2026:
   - Option edit forms surface validation messages returned by the API.
 
 Review notes from main branch inspection - June 8, 2026:
+
 - `package.json` exposes `dev`, `build`, `start`, `lint`, `typecheck`, `prisma:generate`, and `check` scripts.
 - Use `npm run typecheck` for standalone TypeScript validation, `npm run prisma:generate` when Prisma client output needs refreshing, and `npm run check` for the full local verification workflow.
 - Checkout is currently a client page with sectioned UI and profile hydration via `/api/account/profile`. It uses `resetContactDetails()` before loading the signed-in profile and uses `cache: "no-store"` when fetching profile data.
@@ -325,286 +331,324 @@ Next work items - June 8, 2026:
    - Remaining deployment decision: replace or back `public/uploads` with durable production storage before relying on admin image uploads in production.
 
 10. Production upload storage decision - safe interim completed June 12, 2026
-   - Local `public/uploads` writes are blocked by default in production.
-   - Set `ALLOW_LOCAL_UPLOADS_IN_PRODUCTION="true"` only after confirming the deployment target has durable, shared local storage.
-   - Gallery image create/edit and menu item create/edit now accept public image URLs for externally hosted durable assets.
-   - Remaining optional decision: implement direct object-storage uploads after the production storage provider is selected.
+
+- Local `public/uploads` writes are blocked by default in production.
+- Set `ALLOW_LOCAL_UPLOADS_IN_PRODUCTION="true"` only after confirming the deployment target has durable, shared local storage.
+- Gallery image create/edit and menu item create/edit now accept public image URLs for externally hosted durable assets.
+- Remaining optional decision: implement direct object-storage uploads after the production storage provider is selected.
 
 11. Meal plan fixed-offering alignment - completed June 12, 2026
-   - The existing admin meal plan template now creates spice level and protein substitution choices only.
-   - Removed stale meal-plan template entries that exposed meal count, vegetable, starch, or broad substitution choices.
-   - Public menu and item modal copy now describes fixed meal plan offerings with limited spice/protein substitution options.
+
+- The existing admin meal plan template now creates spice level and protein substitution choices only.
+- Removed stale meal-plan template entries that exposed meal count, vegetable, starch, or broad substitution choices.
+- Public menu and item modal copy now describes fixed meal plan offerings with limited spice/protein substitution options.
 
 12. Meal plan customer option enforcement - completed June 12, 2026
-   - Public meal plan cards expose only spice level and protein substitution option groups.
-   - Order creation rejects stale meal plan cart selections for older customer-facing option groups.
+
+- Public meal plan cards expose only spice level and protein substitution option groups.
+- Order creation rejects stale meal plan cart selections for older customer-facing option groups.
 
 13. Client cart persistence reset - completed June 12, 2026
-   - Bumped the persisted cart store version so older local browser carts are cleared on hydration.
-   - Keep the cart client-side for now; revisit database-backed carts only if the product needs cross-device cart continuity.
+
+- Bumped the persisted cart store version so older local browser carts are cleared on hydration.
+- Keep the cart client-side for now; revisit database-backed carts only if the product needs cross-device cart continuity.
 
 14. Admin allergen tagging hardening - completed June 12, 2026
-   - Admin menu allergen checkboxes preload the item's saved allergens.
-   - Invalid menu item or allergen IDs are rejected before replacing allergen tags.
-   - Allergen tag replacement now happens inside a transaction and revalidates `/menu` and `/admin/menu`.
+
+- Admin menu allergen checkboxes preload the item's saved allergens.
+- Invalid menu item or allergen IDs are rejected before replacing allergen tags.
+- Allergen tag replacement now happens inside a transaction and revalidates `/menu` and `/admin/menu`.
 
 15. Admin menu cache revalidation - completed June 12, 2026
-   - Added a shared menu revalidation helper for menu-related route handlers.
-   - Menu create, edit, delete, archive, restore, availability, option, allergen, template, and category mutations now invalidate the affected public/admin menu pages.
+
+- Added a shared menu revalidation helper for menu-related route handlers.
+- Menu create, edit, delete, archive, restore, availability, option, allergen, template, and category mutations now invalidate the affected public/admin menu pages.
 
 16. Admin option validation hardening - completed June 12, 2026
-   - Option group creation and option choice editing now validate choice names, non-negative price deltas, and public image URLs server-side.
-   - Admin option forms now show validation messages returned from the API.
+
+- Option group creation and option choice editing now validate choice names, non-negative price deltas, and public image URLs server-side.
+- Admin option forms now show validation messages returned from the API.
 
 17. Weekly meal plan business decisions - completed June 13, 2026
-   - Updated `docs/weekly-meal-plan-discovery.md` with the resolved weekly meal plan business decisions.
-   - Dedicated weekly menu models are now the recommended next direction, with current-week ordering, 10-order weekly capacity, cloning/rotation, fixed package prices, all-food allergen alerts, order/item allergen acknowledgement snapshots, and request-only approval for additional proteins.
-   - No schema migration has been applied yet.
+
+- Updated `docs/weekly-meal-plan-discovery.md` with the resolved weekly meal plan business decisions.
+- Dedicated weekly menu models are now the recommended next direction, with current-week ordering, 10-order weekly capacity, cloning/rotation, fixed package prices, all-food allergen alerts, order/item allergen acknowledgement snapshots, and request-only approval for additional proteins.
+- No schema migration has been applied yet.
 
 18. Weekly meal plan schema proposal - completed June 13, 2026
-   - Added `docs/weekly-meal-plan-schema-proposal.md`.
-   - The proposal keeps the existing `MenuItem` checkout flow stable and adds dedicated weekly period, package, offering, allowed-option, allergen, capacity, clone-source, and order snapshot models as the recommended first migration direction.
-   - The first migration should be additive only and should not rewrite existing menu items, historical orders, routes, or checkout behavior.
+
+- Added `docs/weekly-meal-plan-schema-proposal.md`.
+- The proposal keeps the existing `MenuItem` checkout flow stable and adds dedicated weekly period, package, offering, allowed-option, allergen, capacity, clone-source, and order snapshot models as the recommended first migration direction.
+- The first migration should be additive only and should not rewrite existing menu items, historical orders, routes, or checkout behavior.
 
 19. First weekly meal plan schema migration - completed June 13, 2026
-   - Added migration `20260613014948_add_weekly_meal_plan_models`.
-   - Added `WeeklyMenuStatus` and `WeeklyMealPlanOptionType`.
-   - Added weekly menu period, package, offering, allowed option, and weekly offering allergen models.
-   - Added `OrderWeeklyMealPlanSelection` for order item weekly meal plan snapshots.
-   - Added item-level allergen acknowledgement fields to `OrderItem`.
-   - Applied the migration to the configured local development database and confirmed `prisma migrate status` reports the database is up to date.
-   - `npm run check` passes after the schema migration.
+
+- Added migration `20260613014948_add_weekly_meal_plan_models`.
+- Added `WeeklyMenuStatus` and `WeeklyMealPlanOptionType`.
+- Added weekly menu period, package, offering, allowed option, and weekly offering allergen models.
+- Added `OrderWeeklyMealPlanSelection` for order item weekly meal plan snapshots.
+- Added item-level allergen acknowledgement fields to `OrderItem`.
+- Applied the migration to the configured local development database and confirmed `prisma migrate status` reports the database is up to date.
+- `npm run check` passes after the schema migration.
 
 20. Admin weekly menu management slice - completed June 13, 2026
-   - Added `/admin/menu/weekly` as a stable admin subroute from the existing Menu Manager.
-   - Admins can list, create, and edit weekly menu periods with label, date range, ordering cutoff, status, capacity, and fulfillment notes.
-   - Admins can add and edit weekly meal plan packages for each period.
-   - Package validation is limited to 5- or 7-day packages with 1 or 2 meals per day.
-   - Duplicate packages for the same weekly menu/day/meal count are blocked by API validation and the schema uniqueness rule.
-   - Published weekly menus cannot overlap another published weekly menu date range.
-   - This slice intentionally does not wire weekly offerings, allergens, cloning/rotation, public `/menu`, cart, checkout, kitchen prep, or emails yet.
+
+- Added `/admin/menu/weekly` as a stable admin subroute from the existing Menu Manager.
+- Admins can list, create, and edit weekly menu periods with label, date range, ordering cutoff, status, capacity, and fulfillment notes.
+- Admins can add and edit weekly meal plan packages for each period.
+- Package validation is limited to 5- or 7-day packages with 1 or 2 meals per day.
+- Duplicate packages for the same weekly menu/day/meal count are blocked by API validation and the schema uniqueness rule.
+- Published weekly menus cannot overlap another published weekly menu date range.
+- This slice intentionally does not wire weekly offerings, allergens, cloning/rotation, public `/menu`, cart, checkout, kitchen prep, or emails yet.
 
 21. Admin weekly offering/options management slice - completed June 13, 2026
-   - Extended `/admin/menu/weekly` so admins can create, edit, and delete fixed weekly meal offerings for each weekly period.
-   - Weekly offerings can be tagged with controlled allergen checkboxes using the shared allergen records.
-   - Admins can create, edit, and delete allowed spice level and protein substitution options for each offering.
-   - Weekly option validation only allows spice level and protein substitution option types.
-   - Request-only and chef approval flags are limited to protein substitutions, and request-only substitutions must require approval.
-   - Duplicate offering names per weekly menu and duplicate option type/name pairs per offering are blocked by API validation and schema uniqueness rules.
-   - This slice intentionally does not wire cloning/rotation, public `/menu`, cart, checkout, kitchen prep, or emails yet.
+
+- Extended `/admin/menu/weekly` so admins can create, edit, and delete fixed weekly meal offerings for each weekly period.
+- Weekly offerings can be tagged with controlled allergen checkboxes using the shared allergen records.
+- Admins can create, edit, and delete allowed spice level and protein substitution options for each offering.
+- Weekly option validation only allows spice level and protein substitution option types.
+- Request-only and chef approval flags are limited to protein substitutions, and request-only substitutions must require approval.
+- Duplicate offering names per weekly menu and duplicate option type/name pairs per offering are blocked by API validation and schema uniqueness rules.
+- This slice intentionally does not wire cloning/rotation, public `/menu`, cart, checkout, kitchen prep, or emails yet.
 
 22. Admin weekly menu cloning/rotation controls - completed June 13, 2026
-   - Added a clone action to `/admin/menu/weekly` for each weekly period.
-   - Cloning creates a new draft weekly period with fresh capacity usage and a `cloneSourceId` pointing back to the source period.
-   - The clone form defaults the new period one week after the source period and allows admins to adjust label, date range, cutoff, capacity, and fulfillment notes.
-   - Cloning copies packages, fixed offerings, offering allergen tags, and allowed spice/protein options.
-   - Cloning does not copy orders or order selections.
-   - This slice intentionally does not wire public `/menu`, cart, checkout, kitchen prep, or emails yet.
+
+- Added a clone action to `/admin/menu/weekly` for each weekly period.
+- Cloning creates a new draft weekly period with fresh capacity usage and a `cloneSourceId` pointing back to the source period.
+- The clone form defaults the new period one week after the source period and allows admins to adjust label, date range, cutoff, capacity, and fulfillment notes.
+- Cloning copies packages, fixed offerings, offering allergen tags, and allowed spice/protein options.
+- Cloning does not copy orders or order selections.
+- This slice intentionally does not wire public `/menu`, cart, checkout, kitchen prep, or emails yet.
 
 23. Public weekly meal plan display slice - completed June 13, 2026
-   - Public `/menu` now shows the current published weekly menu when today's date is inside the published weekly period.
-   - The weekly display includes available packages, fixed offerings, allergen labels, dietary info, and available spice/protein options.
-   - Weekly option price deltas and approval-required protein substitutions are visible as read-only public details.
-   - `/menu` is now rendered dynamically so the current-week display can roll over by date.
-   - Existing menu item category filtering now includes the weekly meal plan section when a current published weekly menu exists.
-   - This slice intentionally does not add weekly meal plans to cart, checkout, kitchen prep, or emails yet.
+
+- Public `/menu` now shows the current published weekly menu when today's date is inside the published weekly period.
+- The weekly display includes available packages, fixed offerings, allergen labels, dietary info, and available spice/protein options.
+- Weekly option price deltas and approval-required protein substitutions are visible as read-only public details.
+- `/menu` is now rendered dynamically so the current-week display can roll over by date.
+- Existing menu item category filtering now includes the weekly meal plan section when a current published weekly menu exists.
+- This slice intentionally does not add weekly meal plans to cart, checkout, kitchen prep, or emails yet.
 
 24. Weekly meal plan cart/checkout wiring slice - completed June 13, 2026
-   - Public `/menu` now lets customers add a current published weekly meal plan to cart by selecting package, fixed offering, spice level, and optional protein substitution.
-   - Weekly cart items preserve package, offering, spice, protein, price delta, request-only, approval-required, and allergen details in the client cart state.
-   - Cart and checkout allergen warnings include weekly offering allergens using the existing account allergen preference workflow.
-   - Order creation revalidates weekly selections from live weekly records before creating the order.
-   - Weekly checkout rejects stale carts when the weekly period is no longer current, no longer published, past cutoff, unavailable, at capacity, or has changed price/options.
-   - Weekly capacity increments once per order, not once per weekly meal plan item, matching the schema proposal.
-   - Order creation now writes `OrderWeeklyMealPlanSelection` snapshots and item-level allergen acknowledgement/conflict snapshots for weekly and regular menu items.
-   - This slice intentionally does not fully surface weekly snapshots in customer order detail, admin order detail, kitchen prep, or confirmation emails yet.
+
+- Public `/menu` now lets customers add a current published weekly meal plan to cart by selecting package, fixed offering, spice level, and optional protein substitution.
+- Weekly cart items preserve package, offering, spice, protein, price delta, request-only, approval-required, and allergen details in the client cart state.
+- Cart and checkout allergen warnings include weekly offering allergens using the existing account allergen preference workflow.
+- Order creation revalidates weekly selections from live weekly records before creating the order.
+- Weekly checkout rejects stale carts when the weekly period is no longer current, no longer published, past cutoff, unavailable, at capacity, or has changed price/options.
+- Weekly capacity increments once per order, not once per weekly meal plan item, matching the schema proposal.
+- Order creation now writes `OrderWeeklyMealPlanSelection` snapshots and item-level allergen acknowledgement/conflict snapshots for weekly and regular menu items.
+- This slice intentionally does not fully surface weekly snapshots in customer order detail, admin order detail, kitchen prep, or confirmation emails yet.
 
 25. Weekly meal plan order snapshot visibility slice - completed June 13, 2026
-   - Customer order detail pages now include saved weekly meal plan package, offering, spice, protein, price delta, request-only, and approval-required snapshot details.
-   - Admin order detail and printable kitchen ticket pages now include the same weekly snapshot details.
-   - The admin kitchen board now selects weekly order snapshots and passes only serializable values into the client kitchen card.
-   - Order confirmation emails now include weekly meal plan snapshot details for weekly order items.
-   - Order creation now includes `OrderWeeklyMealPlanSelection` records when building the immediate confirmation email payload.
-   - No route or data model changes were made.
+
+- Customer order detail pages now include saved weekly meal plan package, offering, spice, protein, price delta, request-only, and approval-required snapshot details.
+- Admin order detail and printable kitchen ticket pages now include the same weekly snapshot details.
+- The admin kitchen board now selects weekly order snapshots and passes only serializable values into the client kitchen card.
+- Order confirmation emails now include weekly meal plan snapshot details for weekly order items.
+- Order creation now includes `OrderWeeklyMealPlanSelection` records when building the immediate confirmation email payload.
+- No route or data model changes were made.
 
 26. Legacy cleanup later, not now
-   - Do not rename `/admin/catering`, `/account/catering`, or `CateringRequest` yet.
-   - Do not remove `OrderType.CATERING` until all historical data and route assumptions are reviewed.
-   - Do not remove `MenuItemType.PLATE` until the client confirms it is no longer needed and existing data is migrated or archived.
-   - Prefer user-facing label cleanup over model/route renames until production behavior is stable.
+
+- Do not rename `/admin/catering`, `/account/catering`, or `CateringRequest` yet.
+- Do not remove `OrderType.CATERING` until all historical data and route assumptions are reviewed.
+- Do not remove `MenuItemType.PLATE` until the client confirms it is no longer needed and existing data is migrated or archived.
+- Prefer user-facing label cleanup over model/route renames until production behavior is stable.
 
 27. Weekly meal plan reorder and list summary slice - completed June 13, 2026
-   - Historical weekly meal plan order items are now treated as display-only for generic reorder.
-   - The account reorder button skips weekly meal plan snapshots and explains that weekly meal plans must be ordered from the current weekly menu.
-   - Order creation rejects recovered/reorder submissions that point at a previous weekly meal plan snapshot, covering stale persisted carts and direct payloads.
-   - Account order history now includes weekly meal plan snapshot details for weekly items.
-   - Account dashboard, admin dashboard, admin order list, admin customer detail, and admin customer list views now show compact weekly meal plan indicators/counts.
-   - No route or data model changes were made.
+
+- Historical weekly meal plan order items are now treated as display-only for generic reorder.
+- The account reorder button skips weekly meal plan snapshots and explains that weekly meal plans must be ordered from the current weekly menu.
+- Order creation rejects recovered/reorder submissions that point at a previous weekly meal plan snapshot, covering stale persisted carts and direct payloads.
+- Account order history now includes weekly meal plan snapshot details for weekly items.
+- Account dashboard, admin dashboard, admin order list, admin customer detail, and admin customer list views now show compact weekly meal plan indicators/counts.
+- No route or data model changes were made.
 
 28. Weekly meal plan fulfillment prep and manual QA checklist - completed June 13, 2026
-   - Public weekly capacity was confirmed as visible on `/menu`, and checkout already blocks over-capacity weekly orders.
-   - Admin weekly menu periods now show clearer capacity used/remaining copy.
-   - `/admin/menu/weekly` now includes a read-only Weekly Fulfillment Prep summary for each period.
-   - Fulfillment prep groups active weekly selections by offering, package, spice level, and protein substitution.
-   - Fulfillment prep shows active weekly order counts plus request-only, approval-required, and allergen conflict counts.
-   - Fulfillment prep lists active weekly orders for the period with links back to the admin order detail/kitchen ticket.
-   - Added `docs/weekly-meal-plan-manual-qa.md` for local browser testing and repeatable weekly menu checks.
-   - No route or data model changes were made.
+
+- Public weekly capacity was confirmed as visible on `/menu`, and checkout already blocks over-capacity weekly orders.
+- Admin weekly menu periods now show clearer capacity used/remaining copy.
+- `/admin/menu/weekly` now includes a read-only Weekly Fulfillment Prep summary for each period.
+- Fulfillment prep groups active weekly selections by offering, package, spice level, and protein substitution.
+- Fulfillment prep shows active weekly order counts plus request-only, approval-required, and allergen conflict counts.
+- Fulfillment prep lists active weekly orders for the period with links back to the admin order detail/kitchen ticket.
+- Added `docs/weekly-meal-plan-manual-qa.md` for local browser testing and repeatable weekly menu checks.
+- No route or data model changes were made.
 
 29. Weekly admin form layout usability pass - completed June 13, 2026
-   - Weekly menu period, clone, package, offering, and option forms now avoid viewport-based multi-column grids inside nested admin cards.
-   - Expanded weekly offering editors now stack the offering edit form, image/delete controls, allergen editor, and option controls so fields do not collide or overflow.
-   - Treat weekly admin data-entry forms as human-readable working surfaces first; prefer stacked controls inside constrained cards over dense multi-column layouts.
-   - `npm run check` passes after the layout update.
-   - Browser verification confirmed the expanded weekly offering editor has no horizontal overflow at the default desktop viewport. A narrower viewport reload was blocked by the local Browser runtime URL policy, so mobile should still be checked manually.
+
+- Weekly menu period, clone, package, offering, and option forms now avoid viewport-based multi-column grids inside nested admin cards.
+- Expanded weekly offering editors now stack the offering edit form, image/delete controls, allergen editor, and option controls so fields do not collide or overflow.
+- Treat weekly admin data-entry forms as human-readable working surfaces first; prefer stacked controls inside constrained cards over dense multi-column layouts.
+- `npm run check` passes after the layout update.
+- Browser verification confirmed the expanded weekly offering editor has no horizontal overflow at the default desktop viewport. A narrower viewport reload was blocked by the local Browser runtime URL policy, so mobile should still be checked manually.
 
 30. Weekly menu date-only semantics and QA precondition audit - completed June 14, 2026
-   - Added a shared weekly menu date helper so weekly period start/end dates are treated as business date-only ranges instead of exact UTC instants.
-   - Admin weekly menu display now shows the selected start and end dates without shifting one day early in local time.
-   - Public `/menu` and checkout order validation now compare the current business date against the full selected weekly date range.
-   - Weekly menu creation and cloning now validate ordering cutoff against the full end date instead of midnight at the beginning of the end date.
-   - Added `BUSINESS_TIME_ZONE` to `.env.example`, defaulting weekly date checks to `America/New_York`.
-   - `npm run check` passes after the date semantics update.
-   - Manual QA preconditions were audited: the current local weekly menu starts June 15, 2026, has one 2-meal package, one offering, no spice/protein options, and no allergen tags. Full checkout submission was not run because `RESEND_API_KEY` is configured locally and submitting would create an order and send email.
+
+- Added a shared weekly menu date helper so weekly period start/end dates are treated as business date-only ranges instead of exact UTC instants.
+- Admin weekly menu display now shows the selected start and end dates without shifting one day early in local time.
+- Public `/menu` and checkout order validation now compare the current business date against the full selected weekly date range.
+- Weekly menu creation and cloning now validate ordering cutoff against the full end date instead of midnight at the beginning of the end date.
+- Added `BUSINESS_TIME_ZONE` to `.env.example`, defaulting weekly date checks to `America/New_York`.
+- `npm run check` passes after the date semantics update.
+- Manual QA preconditions were audited: the current local weekly menu starts June 15, 2026, has one 2-meal package, one offering, no spice/protein options, and no allergen tags. Full checkout submission was not run because `RESEND_API_KEY` is configured locally and submitting would create an order and send email.
 
 31. Email preview and weekly checkout QA pass - completed June 14, 2026
-   - Confirmed `EMAIL_DRY_RUN=true` and `EMAIL_PREVIEW_FILES=true` are present locally so checkout QA writes `.email-previews/*.eml` instead of sending real email.
-   - `npm run check` passes after the email preview commit.
-   - Completed weekly menu QA test data in the local development database: one 1-meal package, one 2-meal package, Mild/Spicy options, a Lamb request-only approval-required protein substitution, and a Wheat allergen tag matching the QA customer account.
-   - Browser verified `/menu`, cart, and checkout surfaces show weekly package/offering/spice/protein snapshots, Lamb approval-required messaging, customer profile prefill, per-item Wheat allergen warnings, and the required allergen acknowledgement blocker.
-   - The local Browser runtime did not dispatch the final checkout form submit reliably from the sticky review column, so the order creation path was verified with an authenticated local `/api/orders` request using the same weekly payload.
-   - The verified QA order `cmqekqa1i00004gtkv9i9v8c4` stored delivery/contact snapshots, order-level and item-level allergen acknowledgements, two weekly meal plan snapshots, and a pending approval status because of the Lamb substitution.
-   - Weekly capacity for the test period incremented once for the order, from 0 to 1, even though the order contained two weekly meal plan items.
-   - The generated email preview includes contact/delivery details, allergen acknowledgement copy, weekly meal plan snapshots, the Lamb approval-required details, and the correct $217.00 total.
+
+- Confirmed `EMAIL_DRY_RUN=true` and `EMAIL_PREVIEW_FILES=true` are present locally so checkout QA writes `.email-previews/*.eml` instead of sending real email.
+- `npm run check` passes after the email preview commit.
+- Completed weekly menu QA test data in the local development database: one 1-meal package, one 2-meal package, Mild/Spicy options, a Lamb request-only approval-required protein substitution, and a Wheat allergen tag matching the QA customer account.
+- Browser verified `/menu`, cart, and checkout surfaces show weekly package/offering/spice/protein snapshots, Lamb approval-required messaging, customer profile prefill, per-item Wheat allergen warnings, and the required allergen acknowledgement blocker.
+- The local Browser runtime did not dispatch the final checkout form submit reliably from the sticky review column, so the order creation path was verified with an authenticated local `/api/orders` request using the same weekly payload.
+- The verified QA order `cmqekqa1i00004gtkv9i9v8c4` stored delivery/contact snapshots, order-level and item-level allergen acknowledgements, two weekly meal plan snapshots, and a pending approval status because of the Lamb substitution.
+- Weekly capacity for the test period incremented once for the order, from 0 to 1, even though the order contained two weekly meal plan items.
+- The generated email preview includes contact/delivery details, allergen acknowledgement copy, weekly meal plan snapshots, the Lamb approval-required details, and the correct $217.00 total.
 
 32. Weekly meal plan admin fulfillment QA pass - completed June 15, 2026
-   - Browser verified `/admin/menu/weekly` fulfillment prep for the QA period shows capacity `1/10`, one active order, two weekly meal plan items, offering/package/spice/protein group counts, one request-only approval-required protein substitution, and two Wheat allergen flags.
-   - Browser verified `/admin/orders/cmqekqa1i00004gtkv9i9v8c4` shows the saved delivery/contact snapshot, both weekly meal plan snapshots, Lamb request-only approval-required details, and allergen acknowledgement.
-   - The printable kitchen ticket uses the admin order detail page, and the weekly snapshot sections are in the print-visible main content while admin action controls are hidden in print.
-   - Approved the QA order through the admin approval UI with email dry-run enabled; the order now has approval status `APPROVED`, order status `ACCEPTED`, and an approval email preview saved under `.email-previews`.
-   - Browser verified `/admin/kitchen` shows the approved QA order with both weekly snapshots, the Lamb approval-required detail, requested time, and a View / Print Ticket link.
-   - Fixed `UpdateOrderStatusForm` so its local status dropdown syncs when `router.refresh()` brings in a new server status after approval or status updates.
-   - `npm run check` passes after the admin fulfillment QA fix.
+
+- Browser verified `/admin/menu/weekly` fulfillment prep for the QA period shows capacity `1/10`, one active order, two weekly meal plan items, offering/package/spice/protein group counts, one request-only approval-required protein substitution, and two Wheat allergen flags.
+- Browser verified `/admin/orders/cmqekqa1i00004gtkv9i9v8c4` shows the saved delivery/contact snapshot, both weekly meal plan snapshots, Lamb request-only approval-required details, and allergen acknowledgement.
+- The printable kitchen ticket uses the admin order detail page, and the weekly snapshot sections are in the print-visible main content while admin action controls are hidden in print.
+- Approved the QA order through the admin approval UI with email dry-run enabled; the order now has approval status `APPROVED`, order status `ACCEPTED`, and an approval email preview saved under `.email-previews`.
+- Browser verified `/admin/kitchen` shows the approved QA order with both weekly snapshots, the Lamb approval-required detail, requested time, and a View / Print Ticket link.
+- Fixed `UpdateOrderStatusForm` so its local status dropdown syncs when `router.refresh()` brings in a new server status after approval or status updates.
+- `npm run check` passes after the admin fulfillment QA fix.
 
 33. Production readiness config/copy cleanup - completed June 15, 2026
-   - Added `.codex-next-dev*.log` to `.gitignore` so local Codex/dev-server log files stay out of commits.
-   - `.env.example` now calls out that local uploads are development-only by default and production should use durable object storage unless local uploads are explicitly allowed as a temporary exception.
-   - `.env.example` now documents that production email delivery requires both `RESEND_API_KEY` and `EMAIL_DRY_RUN=false`, while local QA should keep dry-run preview files enabled.
-   - The email helper now exposes an explicit delivery mode: live, preview files, dry-run, or disabled.
-   - `/admin/notifications` now reports email preview/dry-run/live/disabled status accurately instead of treating a configured Resend key as live delivery when dry-run is enabled.
-   - Checkout, customer order details, and customer service request details now use clearer manual payment copy for invoice, cash/offline payment, and deposit instructions.
-   - No route or data model changes were made.
+
+- Added `.codex-next-dev*.log` to `.gitignore` so local Codex/dev-server log files stay out of commits.
+- `.env.example` now calls out that local uploads are development-only by default and production should use durable object storage unless local uploads are explicitly allowed as a temporary exception.
+- `.env.example` now documents that production email delivery requires both `RESEND_API_KEY` and `EMAIL_DRY_RUN=false`, while local QA should keep dry-run preview files enabled.
+- The email helper now exposes an explicit delivery mode: live, preview files, dry-run, or disabled.
+- `/admin/notifications` now reports email preview/dry-run/live/disabled status accurately instead of treating a configured Resend key as live delivery when dry-run is enabled.
+- Checkout, customer order details, and customer service request details now use clearer manual payment copy for invoice, cash/offline payment, and deposit instructions.
+- No route or data model changes were made.
 
 34. Launch readiness checklist and environment guard - completed June 15, 2026
-   - Added `docs/launch-readiness-checklist.md` with production environment variables, durable upload storage posture, email live-send test steps, manual payment notes, browser smoke coverage, and database launch commands.
-   - Added `npm run env:check` using `scripts/check-production-env.mjs` to catch production blockers such as placeholder secrets, localhost URLs, non-HTTPS app URLs, dry-run email, invalid upload flags, and incomplete core launch settings.
-   - The checker does not print secret values.
-   - Verified the checker in report-only mode against the current local `.env`; it correctly reports the local development environment as not production-ready because it uses localhost URLs, dry-run email, and lacks some production launch settings.
-   - Direct production uploads still intentionally wait on the chosen durable storage provider; current safe posture is to keep local production uploads blocked and use public image URLs for production assets.
-   - Public `/gallery` now renders dynamically so gallery database records are read at request time instead of requiring database access during production build/prerender.
-   - No route or data model changes were made.
+
+- Added `docs/launch-readiness-checklist.md` with production environment variables, durable upload storage posture, email live-send test steps, manual payment notes, browser smoke coverage, and database launch commands.
+- Added `npm run env:check` using `scripts/check-production-env.mjs` to catch production blockers such as placeholder secrets, localhost URLs, non-HTTPS app URLs, dry-run email, invalid upload flags, and incomplete core launch settings.
+- The checker does not print secret values.
+- Verified the checker in report-only mode against the current local `.env`; it correctly reports the local development environment as not production-ready because it uses localhost URLs, dry-run email, and lacks some production launch settings.
+- Direct production uploads still intentionally wait on the chosen durable storage provider; current safe posture is to keep local production uploads blocked and use public image URLs for production assets.
+- Public `/gallery` now renders dynamically so gallery database records are read at request time instead of requiring database access during production build/prerender.
+- No route or data model changes were made.
 
 35. Final customer-facing smoke/copy pass - completed June 16, 2026
-   - Browser smoke-tested public home, `/menu`, cart, checkout, catering request, personal chef request, gallery, customer order detail, admin notifications, and admin payments on desktop.
-   - Browser smoke-tested the same customer-facing surfaces plus admin notification/payment pages at a compact mobile viewport.
-   - No route or workflow changes were made.
-   - Fixed mobile horizontal overflow caused by the shared header navigation by allowing the header/nav to wrap and making the cart count badge inline.
-   - Wrapped the admin payments table in its own horizontal scroll container so narrow screens do not force the whole page wider.
-   - Cleaned one home-page Personal Chef image alt text phrase.
-   - Browser verification after the fix confirmed no page-level horizontal overflow on the checked mobile pages and no console errors on the smoke-tested pages.
+
+- Browser smoke-tested public home, `/menu`, cart, checkout, catering request, personal chef request, gallery, customer order detail, admin notifications, and admin payments on desktop.
+- Browser smoke-tested the same customer-facing surfaces plus admin notification/payment pages at a compact mobile viewport.
+- No route or workflow changes were made.
+- Fixed mobile horizontal overflow caused by the shared header navigation by allowing the header/nav to wrap and making the cart count badge inline.
+- Wrapped the admin payments table in its own horizontal scroll container so narrow screens do not force the whole page wider.
+- Cleaned one home-page Personal Chef image alt text phrase.
+- Browser verification after the fix confirmed no page-level horizontal overflow on the checked mobile pages and no console errors on the smoke-tested pages.
 
 36. Final production-readiness review - completed June 16, 2026
-   - `npm run check` passes after the final smoke/copy polish commit.
-   - `prisma migrate status` reports 16 migrations and the configured local development database schema is up to date.
-   - `npm run env:check -- --report` runs without exposing secret values and correctly reports the current local `.env` as not production-ready.
-   - Updated `docs/launch-readiness-checklist.md` with the June 16 review status and remaining production blockers/warnings.
-   - Remaining blockers before launch are non-code deployment tasks: set production `https://` app/auth URLs, set `BUSINESS_TIME_ZONE`, disable email dry-run for the live-send test, decide/confirm durable upload storage posture, set `OWNER_EMAIL` before owner bootstrap, and execute the final manual QA checklist in the target environment.
+
+- `npm run check` passes after the final smoke/copy polish commit.
+- `prisma migrate status` reports 16 migrations and the configured local development database schema is up to date.
+- `npm run env:check -- --report` runs without exposing secret values and correctly reports the current local `.env` as not production-ready.
+- Updated `docs/launch-readiness-checklist.md` with the June 16 review status and remaining production blockers/warnings.
+- Remaining blockers before launch are non-code deployment tasks: set production `https://` app/auth URLs, set `BUSINESS_TIME_ZONE`, disable email dry-run for the live-send test, decide/confirm durable upload storage posture, set `OWNER_EMAIL` before owner bootstrap, and execute the final manual QA checklist in the target environment.
 
 37. Weekly capacity wording clarification - completed June 16, 2026
-   - Confirmed current weekly capacity behavior matches the resolved business rule: capacity counts submitted customer orders per weekly menu, not weekly meal plan item quantity or package count.
-   - Public weekly menu copy now says weekly order slots instead of generic spots.
-   - Admin weekly menu create/clone forms now label the field as Order Capacity and explain that it counts submitted customer orders, not meal plan item quantity.
-   - Admin weekly menu capacity displays now use weekly order/order slot wording.
-   - Weekly meal plan manual QA now explicitly checks that capacity increments once per customer order, even when a cart contains multiple weekly plan items or quantities.
-   - No transaction, route, or data model changes were made.
+
+- Confirmed current weekly capacity behavior matches the resolved business rule: capacity counts submitted customer orders per weekly menu, not weekly meal plan item quantity or package count.
+- Public weekly menu copy now says weekly order slots instead of generic spots.
+- Admin weekly menu create/clone forms now label the field as Order Capacity and explain that it counts submitted customer orders, not meal plan item quantity.
+- Admin weekly menu capacity displays now use weekly order/order slot wording.
+- Weekly meal plan manual QA now explicitly checks that capacity increments once per customer order, even when a cart contains multiple weekly plan items or quantities.
+- No transaction, route, or data model changes were made.
 
 38. Customer-facing visual refresh / brand polish pass - completed June 16, 2026
-   - Added a warm customer-facing brand system with shared page, container, card, button, eyebrow, focus, and selection styling.
-   - Refreshed the public home, menu, cart, checkout, catering request, personal chef request, gallery, login, register, customer account, customer orders, and customer service request detail/list pages.
-   - Refreshed shared customer-facing components including the site header/footer, menu cards, category filters, weekly menu section, weekly order builder, cart summary, add-to-cart controls, allergen warnings, account profile/allergen forms, profile modal, and reorder button.
-   - Used existing local logo/gallery imagery for the visual pass; final client-approved hero/service imagery and final social URLs are still needed before launch polish is considered complete.
-   - Fixed the `/menu` customization modal so it renders through a document body portal instead of being clipped by the menu card layout.
-   - Fixed mobile `/menu` horizontal overflow caused by long weekly meal plan select labels in the weekly order builder.
-   - Browser smoke-tested `/`, `/menu`, `/cart`, `/checkout`, `/catering`, `/personal-chef`, `/gallery`, `/login`, and `/register` on desktop and a compact mobile viewport with no page-level horizontal overflow or browser console errors.
-   - `npm run check` passes after the visual refresh and modal/mobile fixes.
-   - No database schema, route, checkout/order business logic, payment, scheduling, allergen, approval, or validation behavior was intentionally changed.
+
+- Added a warm customer-facing brand system with shared page, container, card, button, eyebrow, focus, and selection styling.
+- Refreshed the public home, menu, cart, checkout, catering request, personal chef request, gallery, login, register, customer account, customer orders, and customer service request detail/list pages.
+- Refreshed shared customer-facing components including the site header/footer, menu cards, category filters, weekly menu section, weekly order builder, cart summary, add-to-cart controls, allergen warnings, account profile/allergen forms, profile modal, and reorder button.
+- Used existing local logo/gallery imagery for the visual pass; final client-approved hero/service imagery and final social URLs are still needed before launch polish is considered complete.
+- Fixed the `/menu` customization modal so it renders through a document body portal instead of being clipped by the menu card layout.
+- Fixed mobile `/menu` horizontal overflow caused by long weekly meal plan select labels in the weekly order builder.
+- Browser smoke-tested `/`, `/menu`, `/cart`, `/checkout`, `/catering`, `/personal-chef`, `/gallery`, `/login`, and `/register` on desktop and a compact mobile viewport with no page-level horizontal overflow or browser console errors.
+- `npm run check` passes after the visual refresh and modal/mobile fixes.
+- No database schema, route, checkout/order business logic, payment, scheduling, allergen, approval, or validation behavior was intentionally changed.
 
 39. Admin dashboard refresh first slice - completed June 16, 2026
-   - Added a scoped admin visual system with admin page, container, card, filter chip, table, badge, action link, and back link styles.
-   - Refreshed `/admin` with stronger dashboard hierarchy, operational metric cards, quick actions, alert cards, business rule summaries, recent orders, and quick links.
-   - Refreshed `/admin/orders` with active filter chips, clearer status/approval/payment badges, result counts, and a horizontally contained admin table for smaller screens.
-   - Refreshed `/admin/catering` with separate request-type and workflow filter groups, active filter states, clearer service request badges, result counts, and a responsive table container.
-   - Refreshed `/admin/kitchen` and kitchen order cards for better prep scanability, weekly snapshot readability, allergy alerts, and stacked action controls on narrow screens.
-   - Lightly refreshed admin order and service request detail pages plus related approval, status, quote, and paid-action controls without changing workflow behavior.
-   - Browser smoke-tested `/admin`, `/admin/orders`, `/admin/catering`, `/admin/kitchen`, one admin order detail page, and one service request detail page on desktop and compact mobile viewports with no page-level horizontal overflow or browser console errors.
-   - `npm run check` passes after the admin refresh slice.
-   - No database schema, routes, approval guards, payment tracking, quote/deposit, allergen acknowledgement, or order/status workflow logic was intentionally changed.
+
+- Added a scoped admin visual system with admin page, container, card, filter chip, table, badge, action link, and back link styles.
+- Refreshed `/admin` with stronger dashboard hierarchy, operational metric cards, quick actions, alert cards, business rule summaries, recent orders, and quick links.
+- Refreshed `/admin/orders` with active filter chips, clearer status/approval/payment badges, result counts, and a horizontally contained admin table for smaller screens.
+- Refreshed `/admin/catering` with separate request-type and workflow filter groups, active filter states, clearer service request badges, result counts, and a responsive table container.
+- Refreshed `/admin/kitchen` and kitchen order cards for better prep scanability, weekly snapshot readability, allergy alerts, and stacked action controls on narrow screens.
+- Lightly refreshed admin order and service request detail pages plus related approval, status, quote, and paid-action controls without changing workflow behavior.
+- Browser smoke-tested `/admin`, `/admin/orders`, `/admin/catering`, `/admin/kitchen`, one admin order detail page, and one service request detail page on desktop and compact mobile viewports with no page-level horizontal overflow or browser console errors.
+- `npm run check` passes after the admin refresh slice.
+- No database schema, routes, approval guards, payment tracking, quote/deposit, allergen acknowledgement, or order/status workflow logic was intentionally changed.
 
 40. Admin dashboard refresh remaining management surfaces - completed June 17, 2026
-   - Extended the scoped admin visual system with shared admin input, label, primary/secondary/danger button, section heading, row-card, and disabled-state styles.
-   - Refreshed `/admin/menu`, `/admin/menu/weekly`, `/admin/gallery`, `/admin/customers`, `/admin/customers/[id]`, `/admin/payments`, `/admin/reports`, `/admin/notifications`, `/admin/settings`, `/admin/menu/categories`, and `/admin/menu/archived`.
-   - Polished dense menu, weekly menu, gallery, category, business settings, package, offering, option, allergen, and customization forms so controls stack cleanly and use consistent focus/hover states.
-   - Aligned recurring admin action controls for archive, delete, restore, availability, meal plan template application, weekly option/offering deletion, gallery deletion, and option choice editing.
-   - Browser smoke-tested the refreshed admin management routes on desktop, plus compact mobile checks for opened `/admin/menu` and `/admin/menu/weekly` detail panels, with no page-level horizontal overflow or browser console errors in the tested tab.
-   - `npm run check` passes after the remaining admin refresh. The then-existing `components/layout/SiteFooter.tsx` unused `Image` lint warning was unrelated to this admin work and was cleaned up in item 41.
-   - No database schema, routes, API behavior, approval guards, payment tracking, allergen acknowledgement, order workflow, menu workflow, or weekly capacity logic was intentionally changed.
+
+- Extended the scoped admin visual system with shared admin input, label, primary/secondary/danger button, section heading, row-card, and disabled-state styles.
+- Refreshed `/admin/menu`, `/admin/menu/weekly`, `/admin/gallery`, `/admin/customers`, `/admin/customers/[id]`, `/admin/payments`, `/admin/reports`, `/admin/notifications`, `/admin/settings`, `/admin/menu/categories`, and `/admin/menu/archived`.
+- Polished dense menu, weekly menu, gallery, category, business settings, package, offering, option, allergen, and customization forms so controls stack cleanly and use consistent focus/hover states.
+- Aligned recurring admin action controls for archive, delete, restore, availability, meal plan template application, weekly option/offering deletion, gallery deletion, and option choice editing.
+- Browser smoke-tested the refreshed admin management routes on desktop, plus compact mobile checks for opened `/admin/menu` and `/admin/menu/weekly` detail panels, with no page-level horizontal overflow or browser console errors in the tested tab.
+- `npm run check` passes after the remaining admin refresh. The then-existing `components/layout/SiteFooter.tsx` unused `Image` lint warning was unrelated to this admin work and was cleaned up in item 41.
+- No database schema, routes, API behavior, approval guards, payment tracking, allergen acknowledgement, order workflow, menu workflow, or weekly capacity logic was intentionally changed.
 
 41. Launch readiness validation refresh - completed June 18, 2026
-   - Re-ran the launch checklist validation commands after the About page commit.
-   - `npm run check` passes without lint warnings after removing an unused `next/image` import from the site footer.
-   - Prisma reports 16 migrations and the configured local development database schema is up to date.
-   - `npm run env:check -- --report` runs without printing secret values when invoked through the working npm path.
-   - Next patched `package-lock.json` with the missing SWC optional dependency entries during build; keep this lockfile update so future installs/builds do not repeat the warning.
-   - Current production URL target is `https://rahstwistedkitchen.com`; production env values for `NEXT_PUBLIC_APP_URL`, `AUTH_URL`, and `NEXTAUTH_URL` should use that origin. `EMAIL_DRY_RUN` must be `false` before live email sending.
-   - Remaining warnings are local production uploads not explicitly configured, email preview files enabled, online checkout intentionally disabled while Square/PayPal integration is future work, and `OWNER_EMAIL` not set for owner bootstrap.
-   - Updated `docs/launch-readiness-checklist.md` with the June 18 review status.
+
+- Re-ran the launch checklist validation commands after the About page commit.
+- `npm run check` passes without lint warnings after removing an unused `next/image` import from the site footer.
+- Prisma reports 16 migrations and the configured local development database schema is up to date.
+- `npm run env:check -- --report` runs without printing secret values when invoked through the working npm path.
+- Next patched `package-lock.json` with the missing SWC optional dependency entries during build; keep this lockfile update so future installs/builds do not repeat the warning.
+- Current production URL target is `https://rahstwistedkitchen.com`; production env values for `NEXT_PUBLIC_APP_URL`, `AUTH_URL`, and `NEXTAUTH_URL` should use that origin. `EMAIL_DRY_RUN` must be `false` before live email sending.
+- Remaining warnings are local production uploads not explicitly configured, email preview files enabled, online checkout intentionally disabled while Square/PayPal integration is future work, and `OWNER_EMAIL` not set for owner bootstrap.
+- Updated `docs/launch-readiness-checklist.md` with the June 18 review status.
 
 42. Admin dashboard user guide - completed June 18, 2026
-   - Added `docs/admin-dashboard-user-guide.md` as an in-depth operator guide for the admin dashboard.
-   - The guide covers admin access, daily operations, dashboard metrics, orders, kitchen workflow, service requests, menu management, weekly menus, gallery management, customer lookup, payments, reports, notifications, business settings, image uploads, allergens, approval safeguards, operating cadence, common mistakes, launch notes, and troubleshooting.
-   - The guide explicitly notes that `/admin/catering` is the shared Service Requests workflow for Catering and Personal Chef, and that menu category display names should not be confused with menu item type behavior.
-   - No app behavior, routes, schema, or business logic were changed.
+
+- Added `docs/admin-dashboard-user-guide.md` as an in-depth operator guide for the admin dashboard.
+- The guide covers admin access, daily operations, dashboard metrics, orders, kitchen workflow, service requests, menu management, weekly menus, gallery management, customer lookup, payments, reports, notifications, business settings, image uploads, allergens, approval safeguards, operating cadence, common mistakes, launch notes, and troubleshooting.
+- The guide explicitly notes that `/admin/catering` is the shared Service Requests workflow for Catering and Personal Chef, and that menu category display names should not be confused with menu item type behavior.
+- No app behavior, routes, schema, or business logic were changed.
 
 43. Admin reports Business Insights section - completed June 19, 2026
-   - Added an additive Business Insights section to `/admin/reports` while keeping the existing report cards, order breakdown, top ordered items, operational alerts, and revenue snapshot content in place.
-   - Added `lib/admin-report-metrics.ts` for server-side period aggregation of revenue, order count, average order value, pending approvals, manual-payment follow-up, service request counts, revenue trend, order status/type breakdowns, and top selling item quantity/revenue.
-   - Added reusable admin report components under `components/admin/reports` for KPI cards, empty chart states, responsive bar charts, revenue trend charts, top selling item summaries, and the composed Business Insights section.
-   - Business Insights supports 30-day, 90-day, and 12-month period filters and shows polished empty states when there is not enough data for a chart.
-   - `npm run check` passes after the reports enhancement.
-   - No database schema, checkout/order/payment, service request, approval, routing, or admin workflow behavior was changed.
+
+- Added an additive Business Insights section to `/admin/reports` while keeping the existing report cards, order breakdown, top ordered items, operational alerts, and revenue snapshot content in place.
+- Added `lib/admin-report-metrics.ts` for server-side period aggregation of revenue, order count, average order value, pending approvals, manual-payment follow-up, service request counts, revenue trend, order status/type breakdowns, and top selling item quantity/revenue.
+- Added reusable admin report components under `components/admin/reports` for KPI cards, empty chart states, responsive bar charts, revenue trend charts, top selling item summaries, and the composed Business Insights section.
+- Business Insights supports 30-day, 90-day, and 12-month period filters and shows polished empty states when there is not enough data for a chart.
+- `npm run check` passes after the reports enhancement.
+- No database schema, checkout/order/payment, service request, approval, routing, or admin workflow behavior was changed.
 
 44. Pre-launch QA runbook and client launch information list - completed June 19, 2026
-   - Added `docs/pre-launch-qa-runbook.md` with a practical end-to-end QA process for public pages, account/profile/allergen flows, menu/cart/checkout, order details, email previews, admin orders, kitchen, service requests, weekly menus, gallery/menu management, reports, notifications, settings, accessibility, mobile, and production smoke testing.
-   - Added `docs/client-launch-information-needed.md` with launch-blocking production details, email requirements, upload/storage decisions, business settings, launch menu data, payment policy, legal/customer policy copy, brand/content assets, QA approvers, and a suggested client message.
-   - The new docs are launch-support documentation only; no app source, schema, route, workflow, checkout, payment, approval, or email behavior was changed.
+
+- Added `docs/pre-launch-qa-runbook.md` with a practical end-to-end QA process for public pages, account/profile/allergen flows, menu/cart/checkout, order details, email previews, admin orders, kitchen, service requests, weekly menus, gallery/menu management, reports, notifications, settings, accessibility, mobile, and production smoke testing.
+- Added `docs/client-launch-information-needed.md` with launch-blocking production details, email requirements, upload/storage decisions, business settings, launch menu data, payment policy, legal/customer policy copy, brand/content assets, QA approvers, and a suggested client message.
+- The new docs are launch-support documentation only; no app source, schema, route, workflow, checkout, payment, approval, or email behavior was changed.
 
 45. Suggested next Codex prompt
-   - Pause code changes until production environment values, durable upload storage, admin account promotion, and the first live email test environment are ready; then run the launch checklist end to end and fix only issues found during that final deployment QA.
+
+- Pause code changes until production environment values, durable upload storage, admin account promotion, and the first live email test environment are ready; then run the launch checklist end to end and fix only issues found during that final deployment QA.
 
 46. Customer ownership/security review fixes - completed June 27, 2026
-   - Fixed the legacy `/api/profile` update route so it returns only non-sensitive profile fields, matching the safer `/api/account/profile` response shape.
-   - Restored admin mark-paid behavior in `/api/orders/[id]/mark-paid` so admin-gated payment updates are not incorrectly filtered by the admin user's customer email.
-   - Updated `/orders/[id]` to query by order ID plus the signed-in user's email so the customer detail page does not load another customer's order before authorization.
-   - Cleaned account profile route formatting around the existing safe selected-field response.
-   - `npm run check` passes after these fixes.
+
+- Fixed the legacy `/api/profile` update route so it returns only non-sensitive profile fields, matching the safer `/api/account/profile` response shape.
+- Restored admin mark-paid behavior in `/api/orders/[id]/mark-paid` so admin-gated payment updates are not incorrectly filtered by the admin user's customer email.
+- Updated `/orders/[id]` to query by order ID plus the signed-in user's email so the customer detail page does not load another customer's order before authorization.
+- Cleaned account profile route formatting around the existing safe selected-field response.
+- `npm run check` passes after these fixes.
 
 47. Admin audit logging review - completed June 27, 2026
-   - Reviewed the existing `AdminAuditLog` model, `writeAdminAuditLog` helper, and all admin mutation routes under `/api/admin`.
-   - Confirmed existing audit coverage for order approvals, order status/payment changes, service request approvals/status/quote/deposit changes, gallery image changes, menu item create/update/archive/restore/delete/availability changes, and weekly menu period/offering/package/option changes.
-   - Added missing additive audit logs for menu item allergen assignment, meal plan template application, menu option group create/delete, menu option choice updates, menu category updates, weekly offering allergen assignment, and business settings updates.
-   - Left the admin order allergen/options snapshot routes unlogged because they return `410` unsupported-operation responses and do not mutate data.
-   - No Prisma schema, route, UI, checkout, payment, menu, weekly meal plan, gallery, order, or service request business logic changes were made.
-   - `npm run check`, `npm run build`, and `git diff --check` pass after the audit logging additions.
+
+- Reviewed the existing `AdminAuditLog` model, `writeAdminAuditLog` helper, and all admin mutation routes under `/api/admin`.
+- Confirmed existing audit coverage for order approvals, order status/payment changes, service request approvals/status/quote/deposit changes, gallery image changes, menu item create/update/archive/restore/delete/availability changes, and weekly menu period/offering/package/option changes.
+- Added missing additive audit logs for menu item allergen assignment, meal plan template application, menu option group create/delete, menu option choice updates, menu category updates, weekly offering allergen assignment, and business settings updates.
+- Left the admin order allergen/options snapshot routes unlogged because they return `410` unsupported-operation responses and do not mutate data.
+- No Prisma schema, route, UI, checkout, payment, menu, weekly meal plan, gallery, order, or service request business logic changes were made.
+- `npm run check`, `npm run build`, and `git diff --check` pass after the audit logging additions.
 
 Next work items - June 16, 2026:
 
@@ -620,29 +664,29 @@ Create a modern, responsive, polished customer experience for Chef Rah’s Twist
 
 ### Priority pages
 
-* Home page
-* Menu / Meal Plans page
-* Cart page
-* Checkout page
-* Customer account order/request pages
-* Shared customer-facing UI components
+- Home page
+- Menu / Meal Plans page
+- Cart page
+- Checkout page
+- Customer account order/request pages
+- Shared customer-facing UI components
 
 Admin pages are lower priority unless shared components affect both admin and customer experiences.
 
 ### Design direction
 
-* Warm, premium-but-approachable food-service brand
-* Strong hero sections and conversion-focused CTAs
-* Clear customer pathways:
+- Warm, premium-but-approachable food-service brand
+- Strong hero sections and conversion-focused CTAs
+- Clear customer pathways:
+  - View Meal Plans
+  - Start an Order
+  - Request Catering
+  - Request Personal Chef Service
 
-  * View Meal Plans
-  * Start an Order
-  * Request Catering
-  * Request Personal Chef Service
-* Improved typography scale and section spacing
-* Polished cards, badges, alerts, buttons, and empty states
-* Subtle microinteractions using Tailwind hover/focus/transition states
-* Accessible contrast and keyboard-friendly focus states
+- Improved typography scale and section spacing
+- Polished cards, badges, alerts, buttons, and empty states
+- Subtle microinteractions using Tailwind hover/focus/transition states
+- Accessible contrast and keyboard-friendly focus states
 
 ### Image/performance notes
 
@@ -650,18 +694,18 @@ Use existing local/gallery images where possible. Avoid adding large unoptimized
 
 ### Constraints
 
-* Do not change database schema for this pass.
-* Do not alter checkout/order business logic.
-* Do not remove validation, approval, allergen, payment, or scheduling behavior.
-* Do not break existing routes.
-* Run npm run check before completion.
+- Do not change database schema for this pass.
+- Do not alter checkout/order business logic.
+- Do not remove validation, approval, allergen, payment, or scheduling behavior.
+- Do not break existing routes.
+- Run npm run check before completion.
 
 ### Expected output
 
 The branch should include a summary of changed pages/components, any remaining client image/content needs, and validation results.
 
-
 ## Admin Dashboard Refresh
+
 First slice completed June 16, 2026 and recorded above in item 39. Remaining management-surface polish completed June 17, 2026 and recorded above in item 40. The original scope is retained below as a design record.
 
 ### Goal
@@ -670,31 +714,29 @@ Modernize the admin experience without changing business logic. The admin dashbo
 
 ### Priority admin areas
 
-* Admin dashboard overview
-* Orders list and order detail pages
-* Catering / personal chef request management
-* Menu and weekly meal plan management
-* Gallery/image management
-* Business settings
-* Customer/account lookup areas if present
+- Admin dashboard overview
+- Orders list and order detail pages
+- Catering / personal chef request management
+- Menu and weekly meal plan management
+- Gallery/image management
+- Business settings
+- Customer/account lookup areas if present
 
 ### Design direction
 
-* Clear dashboard hierarchy with key metrics and status cards
-* Better visual separation between pending, approved, denied, paid, unpaid, and completed records
-* Improved table readability and responsive behavior
-* More consistent admin buttons, badges, filters, forms, and empty states
-* Clear action areas for approve, deny, update payment, archive, and edit workflows
-* Subtle microinteractions for hover/focus/loading states
-* Accessible contrast and keyboard-friendly focus states
-* Keep admin pages practical and workflow-focused rather than overly decorative
+- Clear dashboard hierarchy with key metrics and status cards
+- Better visual separation between pending, approved, denied, paid, unpaid, and completed records
+- Improved table readability and responsive behavior
+- More consistent admin buttons, badges, filters, forms, and empty states
+- Clear action areas for approve, deny, update payment, archive, and edit workflows
+- Subtle microinteractions for hover/focus/loading states
+- Accessible contrast and keyboard-friendly focus states
+- Keep admin pages practical and workflow-focused rather than overly decorative
 
 ### Constraints
 
-* Do not change database schema unless specifically approved.
-* Do not alter order approval, payment tracking, allergen acknowledgement, or request workflows.
-* Do not remove existing admin functionality.
-* Avoid redesigning customer-facing pages in this branch.
-* Run npm run check before completion.
-
-
+- Do not change database schema unless specifically approved.
+- Do not alter order approval, payment tracking, allergen acknowledgement, or request workflows.
+- Do not remove existing admin functionality.
+- Avoid redesigning customer-facing pages in this branch.
+- Run npm run check before completion.

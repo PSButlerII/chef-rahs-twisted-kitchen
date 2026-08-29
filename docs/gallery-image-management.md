@@ -9,6 +9,18 @@ Last updated: August 28, 2026
 - Built-in metadata can be imported as database records that continue to reference the existing `/gallery/webp/...` files.
 - Imported built-ins and uploaded images both support normal admin edit, sort, and delete operations.
 - Durable production uploads use `NEXT_PUBLIC_UPLOAD_BASE_URL/gallery/<uuid>`; with the production base this is `/image_uploads/gallery/<uuid>`.
+- **Meal Plans** is the required current terminology and gallery category. The retired category is normalized for display and is not available in admin category selectors.
+
+## Retired Category Cleanup
+
+Existing database rows imported before the terminology update may still store the retired category. The cleanup command is explicit, idempotent, and dry-run by default:
+
+```powershell
+npm run gallery:rename-meal-prep-category -- --dry-run
+npm run gallery:rename-meal-prep-category -- --apply
+```
+
+Verify `DATABASE_URL` before either command and take a backup/checkpoint before apply. The script matches the retired category exactly and changes only `GalleryImage.category` to `Meal Plans`; it does not modify IDs, titles, alt text, paths, sort order, or files. The application normalizes legacy title/alt/category terminology at read time so public and admin views use current language before cleanup is applied.
 
 ## Public Gallery Experience
 
@@ -45,9 +57,10 @@ After deployment:
 
 1. Back up/checkpoint the production database and verify `DATABASE_URL`.
 2. Run the import dry-run and review created/skipped paths.
-3. Run `--apply` only with owner approval.
-4. Confirm imported cards have full admin controls and `/gallery` has no duplicates.
-5. Upload one non-client QA image and confirm its `/image_uploads/gallery/<uuid>` URL is public and durable.
-6. Confirm deleting a test uploaded record removes its uploaded file, while deleting an imported static-path test record does not remove the bundled asset.
+3. Run the retired-category cleanup dry-run and review matched IDs/titles.
+4. Run either `--apply` command only with owner approval.
+5. Confirm imported cards have full admin controls, use Meal Plans, and `/gallery` has no duplicates or retired labels.
+6. Upload one non-client QA image and confirm its `/image_uploads/gallery/<uuid>` URL is public and durable.
+7. Confirm deleting a test uploaded record removes its uploaded file, while deleting an imported static-path test record does not remove the bundled asset.
 
 Do not use real client images for the rehearsal.

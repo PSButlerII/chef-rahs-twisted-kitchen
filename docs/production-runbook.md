@@ -427,6 +427,15 @@ Built-in gallery handoff:
 4. Confirm imported cards appear under Managed Images and the Awaiting Import section is empty.
 5. Confirm `/gallery` contains no duplicate built-in paths.
 
+Gallery terminology cleanup:
+
+1. Confirm `DATABASE_URL` targets the intended database and take a backup/checkpoint.
+2. Run `npm run gallery:rename-meal-prep-category -- --dry-run` and review the count plus sampled IDs/titles.
+3. With owner approval, run the same command with `--apply`.
+4. Rerun dry-run and confirm zero matches, then confirm public/admin filters show Meal Plans only.
+
+The cleanup is idempotent and changes only the gallery category value. It never changes image metadata, ordering, paths, or files.
+
 The import never runs automatically during build, migration, or seed.
 
 ## 10. Payment Launch Posture

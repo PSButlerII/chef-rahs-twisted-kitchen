@@ -14,7 +14,9 @@ async function main() {
     `${apply ? "Apply" : "Dry run"}: ${plan.rowsToCreate.length} built-in gallery image(s) to create; ${plan.skippedCount} already present.`,
   );
   for (const row of plan.rowsToCreate) {
-    console.log(`- ${row.src} -> sort order ${row.sortOrder}`);
+    console.log(
+      `- ${row.src} [${row.category}] -> sort order ${row.sortOrder}`,
+    );
   }
 
   if (!apply) {

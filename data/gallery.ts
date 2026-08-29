@@ -1,5 +1,4 @@
 export const galleryCategoryOptions = [
-  "Meal Prep",
   "Meal Plans",
   "Catering",
   "Personal Chef",
@@ -18,15 +17,15 @@ export type GalleryImage = {
 export const galleryImages: GalleryImage[] = [
   {
     src: "/gallery/webp/IMG_1416.webp",
-    alt: "Chicken and broccoli meal prep with scallions",
-    title: "Chicken and Broccoli Meal Prep",
-    category: "Meal Prep",
+    alt: "Chicken and broccoli with scallions",
+    title: "Chicken and Broccoli Meal Plan",
+    category: "Meal Plans",
   },
   {
     src: "/gallery/webp/IMG_1417.webp",
-    alt: "Tomato braised meal prep with herbs and cheese",
-    title: "Tomato Braised Meal Prep",
-    category: "Meal Prep",
+    alt: "Tomato braised dish with herbs and cheese",
+    title: "Tomato Braised Meal Plan",
+    category: "Meal Plans",
   },
   {
     src: "/gallery/webp/IMG_1420.webp",
@@ -54,15 +53,15 @@ export const galleryImages: GalleryImage[] = [
   },
   {
     src: "/gallery/webp/IMG_1469.webp",
-    alt: "Salmon meal prep over rice and vegetables",
+    alt: "Salmon over rice and vegetables",
     title: "Salmon Rice Bowl",
-    category: "Meal Prep",
+    category: "Meal Plans",
   },
   {
     src: "/gallery/webp/IMG_1471.webp",
-    alt: "Savory meal prep with rice, jalapenos, and sauce",
+    alt: "Savory rice dish with jalapenos and sauce",
     title: "Savory Rice Meal",
-    category: "Meal Prep",
+    category: "Meal Plans",
   },
   {
     src: "/gallery/webp/IMG_1478.webp",
@@ -84,14 +83,14 @@ export const galleryImages: GalleryImage[] = [
   },
   {
     src: "/gallery/webp/IMG_1490.webp",
-    alt: "Barbecue chicken meal prep with vegetables",
-    title: "Barbecue Chicken Meal Prep",
-    category: "Meal Prep",
+    alt: "Barbecue chicken with vegetables",
+    title: "Barbecue Chicken Meal Plan",
+    category: "Meal Plans",
   },
   {
     src: "/gallery/webp/IMG_1491.webp",
-    alt: "Meal prep plate with rice and a pastry",
-    title: "Seasonal Meal Prep Plate",
+    alt: "Seasonal plate with rice and a pastry",
+    title: "Seasonal Meal Plan Plate",
     category: "Meal Plans",
   },
   {
@@ -110,13 +109,12 @@ export const galleryImages: GalleryImage[] = [
     src: "/gallery/webp/IMG_1546.webp",
     alt: "Rice bowl with chicken, chickpeas, and herbs",
     title: "Chicken Rice Bowl",
-    category: "Meal Prep",
+    category: "Meal Plans",
   },
   {
     src: "/gallery/webp/IMG_1550.webp",
-    alt: "Meal prep plate with beans, rice, and lime",
-    title: "Rice and Bean Meal Prep",
-    category: "Meal Prep",
+    alt: "Plate with beans, rice, and lime",
+    title: "Rice and Bean Meal Plan",
+    category: "Meal Plans",
   },
 ];
-

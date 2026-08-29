@@ -279,6 +279,8 @@ Production testing confirmed that the deployed Node/Next.js runtime can write, r
 
 `app/gallery/page.tsx` remains the server data-loading boundary and passes serializable gallery records to `components/gallery/ModernGallery.tsx`. The client component owns category state, nine-item incremental rendering, hover/focus overlays, and the accessible lightbox; it performs no client-side data fetch. Remote URLs continue using the existing unoptimized-image check, while root-relative built-in and durable public paths retain normal `next/image` behavior.
 
+Meal Plans is the active site and gallery taxonomy. `lib/gallery-terminology.ts` normalizes legacy database display values without writing them. `npm run gallery:rename-meal-prep-category -- --dry-run` reports exact legacy-category matches, while `--apply` updates only the category column. The built-in import now creates only Meal Plans records.
+
 Hostinger runs the fixed command `npm run build`. Before deployment, configure `DATABASE_URL` in the Hostinger environment and confirm it points to the production MySQL/MariaDB database that the build environment can reach with migration permissions.
 
 The expected deployment log order is:

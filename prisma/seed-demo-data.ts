@@ -123,8 +123,7 @@ async function upsertMenuItem(input: {
         imageUrl: input.imageUrl,
         seasonal: input.seasonal ?? false,
         requiresApproval: input.requiresApproval ?? false,
-        customerInstructionsEnabled:
-          input.customerInstructionsEnabled ?? true,
+        customerInstructionsEnabled: input.customerInstructionsEnabled ?? true,
       },
     });
   }
@@ -146,7 +145,10 @@ async function upsertMenuItem(input: {
   });
 }
 
-async function syncMenuItemAllergens(menuItemId: string, allergenNames: string[]) {
+async function syncMenuItemAllergens(
+  menuItemId: string,
+  allergenNames: string[],
+) {
   await prisma.menuItemAllergen.deleteMany({
     where: {
       menuItemId,
@@ -238,7 +240,7 @@ async function seedDemoMenuItems() {
     stirFry: "/gallery/webp/IMG_1416.webp",
     stuffedPeppers: "/gallery/webp/IMG_1428.webp",
     soulBowl: "/gallery/webp/IMG_1471.webp",
-    mealPrep: "/gallery/webp/IMG_1535.webp",
+    mealPlan: "/gallery/webp/IMG_1535.webp",
     catering: "/gallery/webp/IMG_1546.webp",
     dessert: "/gallery/webp/IMG_1491.webp",
   };
@@ -250,7 +252,7 @@ async function seedDemoMenuItems() {
     price: "165.00",
     type: "MEAL_PLAN",
     categoryId: mealPlans.id,
-    imageUrl: images.mealPrep,
+    imageUrl: images.mealPlan,
     customerInstructionsEnabled: true,
   });
 
@@ -476,7 +478,11 @@ async function seedDemoMenuItems() {
     required: true,
     choices: [
       { name: "House Remoulade", description: "Creamy, tangy, lightly spicy." },
-      { name: "Hot Honey", description: "Sweet heat finish.", priceDelta: "1.00" },
+      {
+        name: "Hot Honey",
+        description: "Sweet heat finish.",
+        priceDelta: "1.00",
+      },
       { name: "No Sauce" },
     ],
   });
@@ -540,11 +546,7 @@ async function seedDemoMenuItems() {
     menuItemId: jerkChicken.id,
     name: "Heat Level",
     required: true,
-    choices: [
-      { name: "Mild" },
-      { name: "Medium" },
-      { name: "Hot" },
-    ],
+    choices: [{ name: "Mild" }, { name: "Medium" }, { name: "Hot" }],
   });
 
   const turkeyBowl = await upsertMenuItem({
@@ -642,7 +644,7 @@ async function seedDemoMenuItems() {
     price: "275.00",
     type: "CATERING",
     categoryId: catering.id,
-    imageUrl: images.mealPrep,
+    imageUrl: images.mealPlan,
     requiresApproval: true,
     customerInstructionsEnabled: true,
   });
@@ -834,7 +836,7 @@ async function seedDemoMenuItems() {
   const sauceFlight = await upsertMenuItem({
     name: "Sauce Flight",
     description:
-      "Three house sauces packaged as an add-on for plates, sides, or meal prep.",
+      "Three house sauces packaged as an add-on for plates, sides, or meal plans.",
     price: "9.00",
     type: "OTHER",
     categoryId: other.id,
@@ -862,7 +864,7 @@ async function seedDemoMenuItems() {
     price: "45.00",
     type: "OTHER",
     categoryId: other.id,
-    imageUrl: images.mealPrep,
+    imageUrl: images.mealPlan,
     requiresApproval: true,
     customerInstructionsEnabled: true,
   });
@@ -1091,7 +1093,8 @@ async function seedWeeklyMealPlans() {
         requiresChefApproval: true,
         mealSlotLabels: ["Breakfast", "Lunch", "Dinner"],
         displayOrder: 2,
-        notes: "Fifteen meals total. Includes Breakfast, Lunch, and Dinner slots.",
+        notes:
+          "Fifteen meals total. Includes Breakfast, Lunch, and Dinner slots.",
       },
       {
         periodId: period.id,
@@ -1110,7 +1113,7 @@ async function seedWeeklyMealPlans() {
 
   const offerings = [
     {
-      name: "Island Chicken Meal Prep",
+      name: "Island Chicken Meal Plan",
       description:
         "Jerk-inspired chicken with vegetables and rice or sweet potato.",
       dietaryInfo: "Dairy-free option available.",
@@ -1118,7 +1121,7 @@ async function seedWeeklyMealPlans() {
       breakfastOnly: false,
     },
     {
-      name: "Salmon Wellness Meal Prep",
+      name: "Salmon Wellness Meal Plan",
       description:
         "Salmon-focused weekly prep with vegetables and healthy starches.",
       dietaryInfo: "Pescatarian-friendly.",

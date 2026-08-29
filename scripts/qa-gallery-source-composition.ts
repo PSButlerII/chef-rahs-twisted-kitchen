@@ -6,7 +6,7 @@ const uploaded = {
   src: "https://example.test/image_uploads/gallery/qa.webp",
   alt: "QA uploaded gallery image",
   title: "QA Upload",
-  category: "Meal Prep" as const,
+  category: "Meal Plans" as const,
 };
 
 const emptyDatabaseResult = selectGalleryImages([]);

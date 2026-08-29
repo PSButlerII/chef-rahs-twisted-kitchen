@@ -727,11 +727,12 @@ Fields:
 
 Gallery categories:
 
-- Meal Prep
 - Meal Plans
 - Catering
 - Personal Chef
 - Behind the Scenes
+
+Meal Plans is the required business terminology. The retired category is no longer available in add/edit dropdowns; older records are normalized when displayed and should be cleaned with the documented dry-run/apply script during production handoff.
 
 Images must be JPG, PNG, or WebP and 5 MB or smaller. WebP is preferred for public performance.
 

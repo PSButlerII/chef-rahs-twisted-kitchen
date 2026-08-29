@@ -32,6 +32,7 @@ This document preserves confirmed production findings and deferred work. It does
 - Safe UUID filenames are generated and original filenames are never used as storage paths.
 - Menu item, weekly offering, option-choice edit, and gallery forms support uploads while retaining manual public URL entry.
 - The idempotent built-in gallery import makes `/gallery/webp` entries fully manageable database records. Production dry-run/apply and upload cleanup rehearsal remain deployment handoff steps.
+- Meal Plans is the current gallery terminology. Run the documented category rename dry-run/apply during production handoff for records imported before the terminology update.
 - Production upload QA is still required after the environment values are deployed; implementation validation used a temporary directory only.
 - Keep allowed image types limited to JPEG, PNG, and WebP unless requirements change.
 - Store public image paths or URLs in the database.

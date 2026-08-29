@@ -18,7 +18,8 @@
     "admin:promote": "tsx prisma/promote-admin.ts",
     "db:seed": "tsx prisma/seed.ts",
     "db:seed-demo": "tsx prisma/seed-demo-data.ts",
-    "gallery:import-built-ins": "tsx scripts/import-built-in-gallery-images.ts"
+    "gallery:import-built-ins": "tsx scripts/import-built-in-gallery-images.ts",
+    "gallery:rename-meal-prep-category": "tsx scripts/rename-meal-prep-gallery-category.ts"
   },
   "overrides": {
     "@prisma/config@7.9.1": {
