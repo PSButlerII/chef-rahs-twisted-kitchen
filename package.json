@@ -19,7 +19,8 @@
     "db:seed": "tsx prisma/seed.ts",
     "db:seed-demo": "tsx prisma/seed-demo-data.ts",
     "gallery:import-built-ins": "tsx scripts/import-built-in-gallery-images.ts",
-    "gallery:rename-meal-prep-category": "tsx scripts/rename-meal-prep-gallery-category.ts"
+    "gallery:rename-meal-prep-category": "tsx scripts/rename-meal-prep-gallery-category.ts",
+    "gallery:qa-ordering": "tsx scripts/qa-gallery-ordering.ts"
   },
   "overrides": {
     "@prisma/config@7.9.1": {
@@ -40,6 +41,9 @@
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.3",
+    "@dnd-kit/core": "6.3.1",
+    "@dnd-kit/sortable": "10.0.0",
+    "@dnd-kit/utilities": "3.2.2",
     "@prisma/adapter-mariadb": "^7.8.0",
     "@prisma/client": "^7.8.0",
     "bcryptjs": "^3.0.3",

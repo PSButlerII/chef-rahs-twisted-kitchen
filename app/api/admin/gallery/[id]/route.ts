@@ -6,12 +6,11 @@ import {
   isGalleryImageCategory,
   type GalleryImageCategory,
 } from "@/lib/gallery-images";
+import { getGalleryCategoryScopeValues } from "@/lib/gallery-ordering";
+import { normalizeGalleryCategory } from "@/lib/gallery-terminology";
 import { parsePublicImageUrl } from "@/lib/image-urls";
 import { prisma } from "@/lib/prisma";
-import {
-  removePublicUpload,
-  savePublicImageUpload,
-} from "@/lib/public-upload";
+import { removePublicUpload, savePublicImageUpload } from "@/lib/public-upload";
 
 type RouteContext = {
   params: Promise<{
@@ -23,21 +22,15 @@ function parseGalleryFields(formData: FormData) {
   const title = String(formData.get("title") ?? "").trim();
   const alt = String(formData.get("alt") ?? "").trim();
   const category = String(formData.get("category") ?? "").trim();
-  const sortOrderValue = Number(formData.get("sortOrder") ?? 0);
 
   if (!title || !alt || !isGalleryImageCategory(category)) {
     throw new Error("Title, alt text, and a valid category are required.");
-  }
-
-  if (!Number.isInteger(sortOrderValue) || sortOrderValue < 0) {
-    throw new Error("Sort order must be a whole number.");
   }
 
   return {
     title,
     alt,
     category: category as GalleryImageCategory,
-    sortOrder: sortOrderValue,
   };
 }
 
@@ -65,14 +58,30 @@ export async function PATCH(request: Request, context: RouteContext) {
     const src =
       image && image.size > 0
         ? await savePublicImageUpload(image, "gallery")
-        : imageUrl ?? existing.src;
+        : (imageUrl ?? existing.src);
 
-    const updated = await prisma.galleryImage.update({
-      where: { id },
-      data: {
-        ...fields,
-        src,
-      },
+    const categoryChanged =
+      normalizeGalleryCategory(existing.category) !== fields.category;
+    const updated = await prisma.$transaction(async (transaction) => {
+      let sortOrder = existing.sortOrder;
+      if (categoryChanged) {
+        const aggregate = await transaction.galleryImage.aggregate({
+          where: {
+            category: { in: getGalleryCategoryScopeValues(fields.category) },
+          },
+          _max: { sortOrder: true },
+        });
+        sortOrder = (aggregate._max.sortOrder ?? -1) + 1;
+      }
+
+      return transaction.galleryImage.update({
+        where: { id },
+        data: {
+          ...fields,
+          src,
+          sortOrder,
+        },
+      });
     });
 
     if (src !== existing.src) {
@@ -93,7 +102,9 @@ export async function PATCH(request: Request, context: RouteContext) {
     return NextResponse.json(updated);
   } catch (error) {
     const message =
-      error instanceof Error ? error.message : "Failed to update gallery image.";
+      error instanceof Error
+        ? error.message
+        : "Failed to update gallery image.";
 
     return NextResponse.json({ error: message }, { status: 400 });
   }

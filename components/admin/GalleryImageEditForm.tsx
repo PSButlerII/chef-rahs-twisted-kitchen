@@ -15,7 +15,6 @@ type Props = {
     alt: string;
     title: string;
     category: GalleryImageCategory;
-    sortOrder: number;
   };
 };
 
@@ -105,16 +104,6 @@ export function GalleryImageEditForm({ image }: Props) {
           </option>
         ))}
       </select>
-
-      <input
-        name="sortOrder"
-        type="number"
-        min="0"
-        step="1"
-        defaultValue={image.sortOrder}
-        className="admin-input"
-        required
-      />
 
       <div className="flex flex-wrap gap-3">
         <button

@@ -6,7 +6,7 @@ const apply = process.argv.includes("--apply");
 
 async function main() {
   const existingRecords = await prisma.galleryImage.findMany({
-    select: { src: true, sortOrder: true },
+    select: { src: true, category: true, sortOrder: true },
   });
   const plan = planBuiltInGalleryImport(existingRecords);
 

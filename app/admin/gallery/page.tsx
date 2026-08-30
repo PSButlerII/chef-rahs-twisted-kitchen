@@ -1,14 +1,12 @@
 import Image from "next/image";
 import Link from "next/link";
-import { DeleteGalleryImageButton } from "@/components/admin/DeleteGalleryImageButton";
-import { GalleryImageEditForm } from "@/components/admin/GalleryImageEditForm";
 import { GalleryImageForm } from "@/components/admin/GalleryImageForm";
+import { GallerySortableManager } from "@/components/admin/GallerySortableManager";
 import { requireAdminPage } from "@/lib/auth-guards";
 import {
   getAdminGalleryImages,
   getBuiltInGalleryImages,
 } from "@/lib/gallery-images";
-import { isRemoteImageUrl } from "@/lib/image-urls";
 
 export default async function AdminGalleryPage() {
   await requireAdminPage();
@@ -45,87 +43,22 @@ export default async function AdminGalleryPage() {
           </aside>
 
           <section className="space-y-5">
-            <div className="admin-card p-6">
-              <div className="flex flex-wrap items-end justify-between gap-3">
-                <div>
-                  <h2 className="text-2xl font-black">Managed Images</h2>
-
-                  <p className="mt-1 text-sm text-[#6b5a50]">
-                    {images.length} database-backed image
-                    {images.length === 1 ? "" : "s"}. New uploads appear here
-                    and can be edited, reordered, or deleted.
-                  </p>
-                </div>
-
-                <Link href="/gallery" className="admin-button-secondary">
-                  View Public Gallery
-                </Link>
-              </div>
+            <div className="flex justify-end">
+              <Link href="/gallery" className="admin-button-secondary">
+                View Public Gallery
+              </Link>
             </div>
 
-            <div className="grid gap-5 lg:grid-cols-2">
-              {images.map((image) => (
-                <article key={image.id} className="admin-card overflow-hidden">
-                  <div className="relative aspect-[4/3]">
-                    <Image
-                      src={image.src}
-                      alt={image.alt}
-                      fill
-                      sizes="(min-width: 1024px) 50vw, 100vw"
-                      className="object-cover"
-                      unoptimized={isRemoteImageUrl(image.src)}
-                    />
-                  </div>
-
-                  <div className="space-y-4 p-5">
-                    <div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <h3 className="text-lg font-black">{image.title}</h3>
-
-                        <span className="admin-badge admin-badge-neutral">
-                          {image.category}
-                        </span>
-                      </div>
-
-                      <p className="mt-2 text-sm text-[#6b5a50]">{image.alt}</p>
-
-                      <p className="mt-2 text-xs text-[#6b5a50]">
-                        Sort order: {image.sortOrder}
-                      </p>
-                    </div>
-
-                    <div className="flex flex-wrap gap-3">
-                      <GalleryImageEditForm
-                        image={{
-                          id: image.id,
-                          src: image.src,
-                          alt: image.alt,
-                          title: image.title,
-                          category: image.category,
-                          sortOrder: image.sortOrder,
-                        }}
-                      />
-
-                      <DeleteGalleryImageButton
-                        imageId={image.id}
-                        title={image.title}
-                      />
-                    </div>
-                  </div>
-                </article>
-              ))}
-            </div>
-
-            {images.length === 0 && (
-              <div className="admin-card p-8 text-center">
-                <p className="font-bold">No managed gallery images yet.</p>
-
-                <p className="mt-2 text-sm text-[#6b5a50]">
-                  Built-in images remain visible below and on the public
-                  gallery. Add an image to create a manageable database record.
-                </p>
-              </div>
-            )}
+            <GallerySortableManager
+              images={images.map((image) => ({
+                id: image.id,
+                src: image.src,
+                alt: image.alt,
+                title: image.title,
+                category: image.category,
+                sortOrder: image.sortOrder,
+              }))}
+            />
 
             {builtInImages.length > 0 && (
               <div className="admin-card p-6">

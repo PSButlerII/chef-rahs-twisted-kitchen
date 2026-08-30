@@ -6,6 +6,7 @@ import {
 } from "@/data/gallery";
 import { prisma } from "@/lib/prisma";
 import { selectGalleryImages } from "@/lib/gallery-source-composition";
+import { orderGalleryRecords } from "@/lib/gallery-ordering";
 import {
   normalizeGalleryCategory,
   normalizeGalleryImageTerminology,
@@ -49,10 +50,10 @@ export function getBuiltInGalleryImages(
 export async function getPublicGalleryImages(): Promise<GalleryImage[]> {
   try {
     const images = await prisma.galleryImage.findMany({
-      orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+      orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }, { id: "asc" }],
     });
 
-    const databaseImages = images.map((image) =>
+    const databaseImages = orderGalleryRecords(images).map((image) =>
       normalizeGalleryImageTerminology({
         src: image.src,
         alt: image.alt,
@@ -69,10 +70,10 @@ export async function getPublicGalleryImages(): Promise<GalleryImage[]> {
 
 export async function getAdminGalleryImages(): Promise<AdminGalleryImage[]> {
   const images = await prisma.galleryImage.findMany({
-    orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+    orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }, { id: "asc" }],
   });
 
-  return images.map((image) => ({
+  return orderGalleryRecords(images).map((image) => ({
     id: image.id,
     src: image.src,
     alt: normalizeGalleryText(image.alt),

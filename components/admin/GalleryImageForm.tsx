@@ -84,23 +84,10 @@ export function GalleryImageForm() {
           </select>
         </div>
 
-        <div>
-          <label className="block text-sm font-bold">Sort Order</label>
-
-          <input
-            name="sortOrder"
-            type="number"
-            min="0"
-            step="1"
-            defaultValue="0"
-            className="admin-input mt-2"
-            required
-          />
-        </div>
-
         <p className="text-xs text-[#6b5a50]">
           Upload JPG, PNG, or WebP images up to 5 MB, or use a public image URL.
-          WebP is preferred for the public gallery.
+          WebP is preferred for the public gallery. New images are placed at the
+          end of their category.
         </p>
 
         <button

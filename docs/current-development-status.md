@@ -650,6 +650,14 @@ Next work items - June 8, 2026:
 - No Prisma schema, route, UI, checkout, payment, menu, weekly meal plan, gallery, order, or service request business logic changes were made.
 - `npm run check`, `npm run build`, and `git diff --check` pass after the audit logging additions.
 
+48. Category-scoped gallery drag-and-drop ordering - completed August 30, 2026
+
+- Added an accessible sortable Gallery Manager that keeps All Images read-only and enables deliberate Save Order and local Reset Order actions only for a complete selected category.
+- Reused the existing `GalleryImage.sortOrder` field with no schema migration. Meal Prep and Meal Plans records share one normalized scope; database-backed public All ordering follows configured category order with deterministic sort-order, creation-time, and ID tie-breakers.
+- Added an admin-protected, complete-set-validated transactional reorder endpoint with cache revalidation and one audit event per saved category order.
+- New images and category changes append to their destination category, while deletion gaps remain safe until the next reorder. Built-in import planning now appends independently within each normalized category.
+- Added focused ordering QA while preserving gallery fallback authority, durable upload/file cleanup protections, payments, orders, Prisma/MariaDB configuration, and the scoped MariaDB security override.
+
 Next work items - June 16, 2026:
 
 ## Completed Visual Refresh / Brand Polish Pass

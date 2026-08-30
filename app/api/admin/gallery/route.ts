@@ -6,6 +6,7 @@ import {
   isGalleryImageCategory,
   type GalleryImageCategory,
 } from "@/lib/gallery-images";
+import { getGalleryCategoryScopeValues } from "@/lib/gallery-ordering";
 import { parsePublicImageUrl } from "@/lib/image-urls";
 import { prisma } from "@/lib/prisma";
 import { savePublicImageUpload } from "@/lib/public-upload";
@@ -14,21 +15,15 @@ function parseGalleryFields(formData: FormData) {
   const title = String(formData.get("title") ?? "").trim();
   const alt = String(formData.get("alt") ?? "").trim();
   const category = String(formData.get("category") ?? "").trim();
-  const sortOrderValue = Number(formData.get("sortOrder") ?? 0);
 
   if (!title || !alt || !isGalleryImageCategory(category)) {
     throw new Error("Title, alt text, and a valid category are required.");
-  }
-
-  if (!Number.isInteger(sortOrderValue) || sortOrderValue < 0) {
-    throw new Error("Sort order must be a whole number.");
   }
 
   return {
     title,
     alt,
     category: category as GalleryImageCategory,
-    sortOrder: sortOrderValue,
   };
 }
 
@@ -54,11 +49,21 @@ export async function POST(request: Request) {
         ? await savePublicImageUpload(image, "gallery")
         : imageUrl;
 
-    const created = await prisma.galleryImage.create({
-      data: {
-        ...fields,
-        src: src ?? "",
-      },
+    const created = await prisma.$transaction(async (transaction) => {
+      const aggregate = await transaction.galleryImage.aggregate({
+        where: {
+          category: { in: getGalleryCategoryScopeValues(fields.category) },
+        },
+        _max: { sortOrder: true },
+      });
+
+      return transaction.galleryImage.create({
+        data: {
+          ...fields,
+          src: src ?? "",
+          sortOrder: (aggregate._max.sortOrder ?? -1) + 1,
+        },
+      });
     });
 
     revalidatePath("/gallery");
@@ -75,7 +80,9 @@ export async function POST(request: Request) {
     return NextResponse.json(created);
   } catch (error) {
     const message =
-      error instanceof Error ? error.message : "Failed to create gallery image.";
+      error instanceof Error
+        ? error.message
+        : "Failed to create gallery image.";
 
     return NextResponse.json({ error: message }, { status: 400 });
   }
