@@ -7,20 +7,22 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
+  type Announcements,
   type DragEndEvent,
+  type DragStartEvent,
+  type KeyboardCoordinateGetter,
 } from "@dnd-kit/core";
 import {
   arrayMove,
   rectSortingStrategy,
   SortableContext,
-  sortableKeyboardCoordinates,
   useSortable,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { GripVertical } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   galleryCategoryOptions,
   type GalleryImageCategory,
@@ -30,6 +32,7 @@ import { GalleryImageEditForm } from "@/components/admin/GalleryImageEditForm";
 import { isRemoteImageUrl } from "@/lib/image-urls";
 
 const ALL_IMAGES = "All Images" as const;
+const KEYBOARD_INSTRUCTIONS_ID = "gallery-ordering-keyboard-instructions";
 type GalleryView = typeof ALL_IMAGES | GalleryImageCategory;
 
 export type SortableAdminGalleryImage = {
@@ -42,6 +45,13 @@ export type SortableAdminGalleryImage = {
 };
 
 type OrderByCategory = Record<GalleryImageCategory, string[]>;
+
+const keyboardArrowCodes = new Set([
+  "ArrowDown",
+  "ArrowLeft",
+  "ArrowRight",
+  "ArrowUp",
+]);
 
 function getOrderByCategory(
   images: readonly SortableAdminGalleryImage[],
@@ -132,6 +142,7 @@ function SortableGalleryCard({
                 className="touch-none rounded-lg border border-[#d8c1aa] bg-white p-2 text-[#5d4638] transition hover:bg-[#f8eee3] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#9d4f2d]"
                 {...attributes}
                 {...listeners}
+                aria-describedby={`${attributes["aria-describedby"]} ${KEYBOARD_INSTRUCTIONS_ID}`}
               >
                 <GripVertical aria-hidden="true" size={20} />
               </button>
@@ -169,12 +180,8 @@ export function GallerySortableManager({
   const savedOrdersRef = useRef(savedOrders);
   const [saving, setSaving] = useState(false);
   const [feedback, setFeedback] = useState("");
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    }),
-  );
+  const keyboardPositionRef = useRef<number | null>(null);
+  const keyboardDragRef = useRef(false);
 
   useEffect(() => {
     const nextSavedOrders = getOrderByCategory(images);
@@ -195,8 +202,10 @@ export function GallerySortableManager({
     () => new Map(images.map((image) => [image.id, image])),
     [images],
   );
-  const selectedIds =
-    selectedView === ALL_IMAGES ? [] : workingOrders[selectedView];
+  const selectedIds = useMemo(
+    () => (selectedView === ALL_IMAGES ? [] : workingOrders[selectedView]),
+    [selectedView, workingOrders],
+  );
   const savedIds = selectedView === ALL_IMAGES ? [] : savedOrders[selectedView];
   const dirty =
     selectedView !== ALL_IMAGES && !sameOrder(selectedIds, savedIds);
@@ -213,6 +222,118 @@ export function GallerySortableManager({
   const canSort =
     selectedView !== ALL_IMAGES && displayedImages.length > 1 && completeScope;
   const canSave = canSort && dirty && !saving;
+  const galleryKeyboardCoordinates = useCallback<KeyboardCoordinateGetter>(
+    (event, { context, currentCoordinates }) => {
+      if (!keyboardArrowCodes.has(event.code)) return;
+
+      const sortable = context.active?.data.current?.sortable as
+        | { items?: string[] }
+        | undefined;
+      const items = sortable?.items;
+      const currentIndex = keyboardPositionRef.current;
+      if (!items || currentIndex === null) return;
+
+      event.preventDefault();
+      const currentId = items[currentIndex];
+      const currentRect = context.droppableRects.get(currentId);
+      if (!currentRect) return currentCoordinates;
+
+      const candidates = items
+        .map((id, index) => ({
+          id,
+          index,
+          rect: context.droppableRects.get(id),
+        }))
+        .filter(
+          (candidate): candidate is {
+            id: string;
+            index: number;
+            rect: NonNullable<typeof candidate.rect>;
+          } => Boolean(candidate.rect) && candidate.index !== currentIndex,
+        );
+      const sameRowTolerance = 2;
+      let eligible = candidates.filter((candidate) => {
+        switch (event.code) {
+          case "ArrowLeft":
+            return (
+              Math.abs(candidate.rect.top - currentRect.top) <=
+                sameRowTolerance && candidate.rect.left < currentRect.left
+            );
+          case "ArrowRight":
+            return (
+              Math.abs(candidate.rect.top - currentRect.top) <=
+                sameRowTolerance && candidate.rect.left > currentRect.left
+            );
+          case "ArrowUp":
+            return candidate.rect.top < currentRect.top - sameRowTolerance;
+          case "ArrowDown":
+            return candidate.rect.top > currentRect.top + sameRowTolerance;
+          default:
+            return false;
+        }
+      });
+
+      eligible = eligible.sort((left, right) => {
+        const leftRowDistance = Math.abs(left.rect.top - currentRect.top);
+        const rightRowDistance = Math.abs(right.rect.top - currentRect.top);
+        if (leftRowDistance !== rightRowDistance) {
+          return leftRowDistance - rightRowDistance;
+        }
+        return (
+          Math.abs(left.rect.left - currentRect.left) -
+          Math.abs(right.rect.left - currentRect.left)
+        );
+      });
+
+      const target = eligible[0];
+      if (!target) return currentCoordinates;
+
+      keyboardPositionRef.current = target.index;
+      return {
+        x: currentCoordinates.x + target.rect.left - currentRect.left,
+        y: currentCoordinates.y + target.rect.top - currentRect.top,
+      };
+    },
+    [],
+  );
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: galleryKeyboardCoordinates,
+    }),
+  );
+  const announcements = useMemo<Announcements>(() => {
+    const imageTitle = (id: string) => imageById.get(id)?.title ?? "Image";
+    const positionFor = (overId: string | undefined) => {
+      const index = keyboardDragRef.current
+        ? keyboardPositionRef.current
+        : overId
+          ? selectedIds.indexOf(overId)
+          : -1;
+      return index !== null && index >= 0 ? index + 1 : null;
+    };
+
+    return {
+      onDragStart({ active }) {
+        return `Picked up ${imageTitle(String(active.id))}.`;
+      },
+      onDragOver({ active, over }) {
+        const position = positionFor(over ? String(over.id) : undefined);
+        return position
+          ? `${imageTitle(String(active.id))} moved to position ${position} of ${selectedIds.length}.`
+          : undefined;
+      },
+      onDragEnd({ active, over }) {
+        const position = positionFor(over ? String(over.id) : undefined);
+        return position
+          ? `${imageTitle(String(active.id))} was dropped at position ${position} of ${selectedIds.length}.`
+          : `${imageTitle(String(active.id))} was dropped.`;
+      },
+      onDragCancel({ active }) {
+        return `Moving ${imageTitle(String(active.id))} was cancelled.`;
+      },
+    };
+  }, [imageById, selectedIds]);
 
   function selectView(nextView: GalleryView) {
     if (nextView === selectedView) return;
@@ -236,20 +357,36 @@ export function GallerySortableManager({
   }
 
   function handleDragEnd(event: DragEndEvent) {
-    if (selectedView === ALL_IMAGES || !event.over) return;
+    const keyboardTargetIndex =
+      keyboardDragRef.current ? keyboardPositionRef.current : null;
+    if (selectedView === ALL_IMAGES) return;
     const activeId = String(event.active.id);
-    const overId = String(event.over.id);
-    if (activeId === overId) return;
-    if (!selectedIds.includes(activeId) || !selectedIds.includes(overId))
-      return;
-
     const oldIndex = selectedIds.indexOf(activeId);
-    const newIndex = selectedIds.indexOf(overId);
+    const newIndex =
+      keyboardTargetIndex ??
+      (event.over ? selectedIds.indexOf(String(event.over.id)) : -1);
+    if (oldIndex < 0 || newIndex < 0 || oldIndex === newIndex) return;
     setWorkingOrders((current) => ({
       ...current,
       [selectedView]: arrayMove(current[selectedView], oldIndex, newIndex),
     }));
     setFeedback("Order changed. Save when the arrangement is ready.");
+  }
+
+  function handleDragStart(event: DragStartEvent) {
+    keyboardDragRef.current = event.activatorEvent instanceof KeyboardEvent;
+    keyboardPositionRef.current = selectedIds.indexOf(String(event.active.id));
+    const image = imageById.get(String(event.active.id));
+    setFeedback(
+      image
+        ? `Picked up ${image.title}. Use the arrow keys to move it, then press Space or Enter to drop.`
+        : "Image picked up. Use the arrow keys to move it, then press Space or Enter to drop.",
+    );
+  }
+
+  function handleDragCancel() {
+    keyboardPositionRef.current = null;
+    setFeedback("Move cancelled. The image returned to its previous position.");
   }
 
   function resetOrder() {
@@ -368,6 +505,16 @@ export function GallerySortableManager({
               ? "Use each card’s move handle, then save the complete category order."
               : "This category needs at least two managed images before it can be reordered."}
         </p>
+        {canSort && (
+          <p
+            id={KEYBOARD_INSTRUCTIONS_ID}
+            className="mt-2 text-sm text-[#6b5a50]"
+          >
+            Keyboard: focus a move handle, press Space or Enter to pick up,
+            use the arrow keys to move, then press Space or Enter to drop.
+            Press Escape to cancel.
+          </p>
+        )}
         {!completeScope && selectedView !== ALL_IMAGES && (
           <p className="mt-2 text-sm font-bold text-[#9d2f24]">
             The category changed while you were working. Reset or refresh before
@@ -385,6 +532,15 @@ export function GallerySortableManager({
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
+        accessibility={{
+          announcements,
+          screenReaderInstructions: {
+            draggable:
+              "To pick up an image, press Space or Enter. Use the arrow keys to move it. Press Space or Enter to drop, or Escape to cancel.",
+          },
+        }}
+        onDragStart={handleDragStart}
+        onDragCancel={handleDragCancel}
         onDragEnd={handleDragEnd}
       >
         <SortableContext

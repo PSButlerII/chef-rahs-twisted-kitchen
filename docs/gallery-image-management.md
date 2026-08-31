@@ -57,6 +57,7 @@ The client-requested Gallery Manager ordering workflow uses the existing zero-ba
 
 - **All Images** is a read-only review view. Select one existing gallery category to enable ordering.
 - Each sortable card has a dedicated, labeled move handle. Pointer, touch, and keyboard sorting are supported without turning Edit, Delete, or the entire card into drag activators.
+- Keyboard sorting requires an activation step: focus the move handle, press Space or Enter to pick up the card, use an arrow key to move it, then press Space or Enter to drop. Escape cancels the active move. These instructions are visible beside the ordering controls and associated with each handle for assistive technology.
 - Dragging changes only the local working order. **Save Order** makes one deliberate request; **Reset Order** restores the last server-provided order without a request.
 - Switching views with unsaved changes requires confirmation before the working arrangement is discarded.
 - Save is disabled when unchanged, while saving, for All Images, for fewer than two images, or when the current IDs no longer represent the complete category.
@@ -79,13 +80,15 @@ For database-backed public data, categories are grouped in `galleryCategoryOptio
 
 ## Verification And Post-Deployment Checks
 
-The focused gallery ordering QA covers configured category ranking, sort-order placement, deterministic timestamp/ID tie-breaking, the combined legacy/current Meal Plans scope, duplicate/missing/extra ID rejection, complete-set acceptance, independent per-category import positions, and import idempotency. Existing built-in import, source-composition, and terminology QA remain part of this feature's verification.
+The focused gallery ordering QA covers configured category ranking, sort-order placement, deterministic timestamp/ID tie-breaking, the combined legacy/current Meal Plans scope, duplicate/missing/extra ID rejection, complete-set acceptance, independent per-category import positions, and import idempotency. Authenticated browser QA on August 30, 2026 additionally exercised Space and Enter activation/drop, four-direction arrow movement, Escape cancellation, pointer movement, reset, authenticated save, refresh persistence, public ordering, category isolation, failed-save rollback, and stale complete-set handling in desktop two-column and narrow single-column layouts. Existing built-in import, source-composition, and terminology QA remain part of this feature's verification.
+
+The owner-reported keyboard issue had two rendered-only causes. The manager did not explain that Space or Enter must activate a focused handle before arrow keys work, and dnd-kit's geometry-based `sortableKeyboardCoordinates` selected incorrect off-screen targets when the variable-height responsive grid scrolled during keyboard focus. Static sensor/configuration checks and pure ordering-helper QA could not exercise either interaction. The correction uses a gallery-scoped keyboard coordinate getter that chooses the nearest card in the requested visual direction, tracks that logical target through drop, adds accurate title/position announcements, and adds visible handle-associated instructions plus pickup/cancel feedback. Pointer ordering, server ordering rules, and package versions are unchanged.
 
 After deployment, use an admin-controlled test category with multiple images:
 
 1. Reorder with the pointer and save; refresh both admin and public gallery views and confirm persistence.
 2. Reorder again and reset without saving; confirm the persisted arrangement returns.
-3. Focus a move handle and verify keyboard sorting, visible focus, and clear accessible labeling.
+3. Focus a move handle, press Space or Enter to pick up, move with an arrow key, and press Space or Enter to drop. Verify visible focus, status feedback, and clear accessible labeling; repeat with Escape to confirm cancellation.
 4. Confirm Edit and Delete still work without beginning a drag.
 5. Add an image and confirm it appears at the category end; move an image to another category and confirm destination append behavior.
 6. Confirm All Images is read-only, other categories remain unchanged, and public All groups categories in the configured order.

@@ -657,6 +657,7 @@ Next work items - June 8, 2026:
 - Added an admin-protected, complete-set-validated transactional reorder endpoint with cache revalidation and one audit event per saved category order.
 - New images and category changes append to their destination category, while deletion gaps remain safe until the next reorder. Built-in import planning now appends independently within each normalized category.
 - Added focused ordering QA while preserving gallery fallback authority, durable upload/file cleanup protections, payments, orders, Prisma/MariaDB configuration, and the scoped MariaDB security override.
+- Closed the authenticated keyboard-QA gap on August 30, 2026. The rendered failure combined missing Space/Enter activation guidance with dnd-kit's geometry-based keyboard coordinate getter choosing incorrect off-screen cards as the variable-height grid scrolled. The Gallery Manager now uses a responsive-grid-specific directional getter, applies the tracked logical target on drop, announces image titles and positions accurately, and provides visible handle-associated instructions plus pickup/cancel feedback. Authenticated desktop and narrow-layout checks covered Space/Enter, all arrow directions, Escape, pointer, reset, save/refresh/public persistence, category isolation, failed-save rollback, and stale-scope handling.
 
 Next work items - June 16, 2026:
 
