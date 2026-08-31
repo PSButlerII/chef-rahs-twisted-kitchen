@@ -498,13 +498,22 @@ export function GallerySortableManager({
           ))}
         </div>
 
-        <p className="mt-4 text-sm text-[#6b5a50]">
+        <div
+          className={[
+            "mt-4 rounded-lg border px-4 py-3 text-sm font-medium shadow-sm",
+            selectedView === ALL_IMAGES
+              ? "border-[#d6a85f] bg-[#fff7e8] text-[#6b3f16]"
+              : canSort
+                ? "border-[#b98b5f] bg-[#fffaf4] text-[#5a3928]"
+                : "border-red-300 bg-red-50 text-red-800",
+          ].join(" ")}
+        >
           {selectedView === ALL_IMAGES
             ? "Select a category to rearrange its images."
             : canSort
               ? "Use each card’s move handle, then save the complete category order."
               : "This category needs at least two managed images before it can be reordered."}
-        </p>
+        </div>
         {canSort && (
           <p
             id={KEYBOARD_INSTRUCTIONS_ID}
