@@ -229,3 +229,84 @@ This scoped override is temporary project-owned security policy. Reevaluate
 and remove it when `@prisma/adapter-mariadb` directly declares a sufficiently
 patched MariaDB connector version, after the normal clean-install and
 application validation suite passes without the override.
+
+## Browserslist and Prisma MySQL2 remediation
+
+Date: September 1, 2026
+
+### Original findings and exposure
+
+- `browserslist@4.28.2` was installed through the development-only path
+  `eslint-config-next@16.2.6 -> eslint-plugin-react-hooks@7.1.1 ->
+  @babel/core@7.29.6 -> @babel/helper-compilation-targets@7.28.6 ->
+  browserslist@4.28.2`. The application does not import Browserslist directly.
+  The full audit reported `GHSA-c83g-rgw3-j3cx` and
+  `GHSA-73wf-gq98-2v4g`; the production-only audit did not include this
+  development path.
+- `mysql2@3.15.3` was installed only through `prisma@7.9.1 ->
+  mysql2@3.15.3`. There was no root MySQL2 dependency or application import.
+  Hosted application database access continues to use
+  `@prisma/adapter-mariadb`, while Prisma CLI migration work in build/deploy
+  can exercise MySQL2. Both full and production-only audit accounting reported
+  `GHSA-3f6p-5ww8-9rcr` through Prisma.
+
+NPM's proposed force remediation would downgrade Prisma to `6.19.3`. That was
+rejected because it would cross the active Prisma toolchain boundary and was
+not required to obtain patched transitive packages. The non-force audit-fix
+dry run was also not accepted because it proposed a broader Prisma `7.10.0`
+upgrade and would have reverted the existing patched `deepmerge-ts` resolution.
+Registry inspection confirmed that stable Prisma `7.10.0` still directly
+declared vulnerable `mysql2@3.15.3`.
+
+### Remediation
+
+Browserslist was updated normally through its compatible parent range and the
+lockfile now resolves `browserslist@4.28.8`. No direct dependency or override
+was added. Its related compatible data packages were refreshed by the targeted
+update. Because there is no project override to remove, future normal lockfile
+maintenance may supersede this version as long as the resolved release remains
+outside the vulnerable range.
+
+Prisma remains `7.9.1`. A parent-scoped override changes only Prisma's MySQL2
+child dependency:
+
+```json
+"prisma": {
+  "mysql2": "3.24.2"
+}
+```
+
+The official stable `mysql2@3.24.2` release supports the project's Node
+runtime and is newer than the patched floor of `3.22.0`. The existing
+`@prisma/adapter-mariadb -> mariadb@3.5.3` override remains unchanged. Remove
+the Prisma/MySQL2 override only when a stable supported Prisma release directly
+declares a patched MySQL2 version and the complete clean-install,
+Prisma/MariaDB migration, seed, application-read, build, and audit suite passes
+without the override.
+
+### Isolated verification and result
+
+Verification used Node.js `26.4.0`, which satisfies Prisma's Node `>=24.0`
+engine range and the production runbook's Node 24-or-newer requirement. A
+portable MariaDB Community Server `11.4.10` instance was bound only to
+`127.0.0.1:33307` with a fresh `chef_security_qa` database. All 10 committed
+migrations applied, the foundation seed created 10 baseline allergens, a
+second migration deploy reported no pending migrations, and an application
+Prisma read returned the 10 seeded records. The exact `npm run build`
+prebuild/migration/build lifecycle also passed against this disposable
+database. The server was then shut down; no production or shared database was
+contacted or modified.
+
+`npm install` and an isolated `npm ci` reproduced the resolved dependency
+tree. The workspace clean install was initially blocked because a running
+Next process held the Windows SWC binary open, so lockfile reproducibility was
+verified in a fresh temporary directory instead of terminating an
+owner-controlled process. Lint, TypeScript, focused gallery-ordering and
+late-fee QA, direct `next build`, the exact build lifecycle, and diff checks
+passed. The existing Node `module.register()` deprecation warning remained;
+no new dependency warning or Prisma/MySQL2 connection error appeared.
+
+Final resolutions are `browserslist@4.28.8` and overridden
+`prisma@7.9.1 -> mysql2@3.24.2`. Full and production-only npm audits report
+zero vulnerabilities, clearing `GHSA-c83g-rgw3-j3cx`,
+`GHSA-73wf-gq98-2v4g`, and `GHSA-3f6p-5ww8-9rcr` with no unrelated findings.
