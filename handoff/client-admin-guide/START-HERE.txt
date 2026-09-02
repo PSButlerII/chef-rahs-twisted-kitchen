@@ -1,0 +1,31 @@
+CHEF RAH'S TWISTED KITCHEN — CLIENT ADMIN GUIDE
+Version 1.0 | September 2026
+
+OPEN THIS FIRST
+
+Chef-Rahs-Twisted-Kitchen-Admin-Handbook-v1.0.pdf
+
+This PDF is the official client-facing handbook. It explains normal Admin
+Dashboard tasks in plain language and is suitable for reading or printing.
+
+OTHER FILES
+
+Chef-Rahs-Twisted-Kitchen-Admin-Handbook-v1.0.docx
+Editable Microsoft Word version of the full handbook.
+
+Chef-Rahs-Twisted-Kitchen-Admin-Quick-Reference-v1.0.pdf
+Two-page daily checklist and safety reminder for use near the admin workstation.
+
+Chef-Rahs-Twisted-Kitchen-Admin-Quick-Reference-v1.0.docx
+Editable Microsoft Word version of the quick reference.
+
+The Markdown guide at docs/admin-dashboard-user-guide.md is the detailed
+technical and operational reference. It is not required for normal website
+administration.
+
+The screenshots folder contains source images captured from the real rendered
+application in an isolated local training environment. All people, orders,
+requests, payment references, and contact details shown are fictional example
+data. No production customer data or credentials are included.
+
+Prepared by Recon Dev LLC.

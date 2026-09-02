@@ -1,5 +1,15 @@
 You are helping continue development on a Next.js/Prisma food service web app for Chef Rah's Twisted Kitchen.
 
+## September 2, 2026 — Client admin handoff package
+
+- Created a rewritten, nontechnical Client Admin Handbook in editable DOCX and client-facing PDF formats.
+- Created a two-page Daily Admin Quick Reference in DOCX and PDF.
+- Captured sanitized screenshots from the rendered application using fictional local training data.
+- Retained the existing Markdown admin guide as the detailed technical and operational reference.
+- Completed document structure, metadata, accessibility, link, file-integrity, and full-page visual QA.
+- No application behavior, package dependency, Prisma schema, migration, payment, authentication, upload, or production setting changed.
+- Work is isolated on branch `docs/client-admin-handbook-2026-09-02` under commit subject `docs(handoff): add client admin handbook`.
+
 Current business model:
 
 - Meal Plans and A La Carte items are purchased through cart checkout.

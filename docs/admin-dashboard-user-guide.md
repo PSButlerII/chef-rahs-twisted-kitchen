@@ -2,6 +2,8 @@
 
 Last updated: August 27, 2026
 
+> **Audience note:** This Markdown guide is the detailed technical and operational reference. General business administrators should start with the client-facing [PDF handbook](../handoff/client-admin-guide/Chef-Rahs-Twisted-Kitchen-Admin-Handbook-v1.0.pdf) or its [editable DOCX version](../handoff/client-admin-guide/Chef-Rahs-Twisted-Kitchen-Admin-Handbook-v1.0.docx). The printable [Daily Admin Quick Reference](../handoff/client-admin-guide/Chef-Rahs-Twisted-Kitchen-Admin-Quick-Reference-v1.0.pdf) is also available.
+
 This guide explains how to use the admin dashboard for daily operations, menu management, service requests, weekly meal plans, gallery updates, customer lookup, payments, reports, notifications, and business settings.
 
 The dashboard is the operating center for paid pickup/delivery orders, weekly and approval-required orders, Square reconciliation, Catering and Personal Chef requests, catalog publication, and launch-hold controls. During the current content hold, admins control new purchasing through menu and weekly publication while continuing to monitor existing orders, service leads, and active payment links.
