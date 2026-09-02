@@ -205,6 +205,7 @@ export default async function AdminPage() {
     { label: "Payment Settings", href: "/admin/payments" },
     { label: "Notifications", href: "/admin/notifications" },
     { label: "Audit Log", href: "/admin/audit" },
+    { label: "Help & Guide", href: "/admin/help" },
     ...(session.user.role === "OWNER"
       ? [{ label: "Role Manager", href: "/admin/role-manager" }]
       : []),
@@ -239,6 +240,9 @@ export default async function AdminPage() {
               className="brand-button-secondary px-5 py-3 text-sm"
             >
               Kitchen View
+            </Link>
+            <Link href="/admin/help" className="brand-button-secondary px-5 py-3 text-sm">
+              Help &amp; Guide
             </Link>
           </div>
         </div>

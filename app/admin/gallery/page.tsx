@@ -3,6 +3,8 @@ import Link from "next/link";
 import { GalleryImageForm } from "@/components/admin/GalleryImageForm";
 import { GallerySortableManager } from "@/components/admin/GallerySortableManager";
 import { requireAdminPage } from "@/lib/auth-guards";
+import { AdminPageHelpLink } from "@/components/admin/AdminPageHelpLink";
+import { AdminHelpPopover } from "@/components/admin/AdminHelpPopover";
 import {
   getAdminGalleryImages,
   getBuiltInGalleryImages,
@@ -35,6 +37,7 @@ export default async function AdminGalleryPage() {
             images remain fallback-only until they are imported into the
             database.
           </p>
+          <div className="mt-4 flex items-center gap-3"><AdminPageHelpLink section="gallery" /><span className="text-sm font-bold">Ordering <AdminHelpPopover title="Gallery ordering" summary="All Images is for review. Choose one category, arrange its images, then select Save Order." section="gallery" /></span></div>
         </div>
 
         <div className="grid gap-8 xl:grid-cols-[380px_1fr]">

@@ -2,6 +2,8 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { requireAdminPage } from "@/lib/auth-guards";
 import { MenuItemForm } from "@/components/admin/MenuItemForm";
+import { AdminPageHelpLink } from "@/components/admin/AdminPageHelpLink";
+import { AdminHelpPopover } from "@/components/admin/AdminHelpPopover";
 import { MenuItemCustomizationEditor } from "@/components/admin/MenuItemCustomizationEditor";
 import { MenuAvailabilityToggle } from "@/components/admin/MenuAvailabilityToggle";
 import { MenuItemEditForm } from "@/components/admin/MenuItemEditForm";
@@ -144,6 +146,7 @@ export default async function AdminMenuPage({ searchParams }: PageProps) {
           <h1 className="mt-3 text-4xl font-black tracking-tight md:text-5xl">
             Menu Manager
           </h1>
+          <div className="mt-4 flex items-center gap-3"><AdminPageHelpLink section="standard-menu" /><span className="text-sm font-bold">Types and categories <AdminHelpPopover title="Item Type and Category" summary="Item Type controls behavior; Category controls where the item is grouped for customers." section="standard-menu" /></span></div>
 
           <p className="mt-3 max-w-3xl text-[#6b5a50]">
             Manage weekly meal plans, a la carte items, customer-facing options,

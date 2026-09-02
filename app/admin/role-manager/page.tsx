@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AdminPageHelpLink } from "@/components/admin/AdminPageHelpLink";
 import {
   UserRoleManager,
   type RoleManagerUser,
@@ -45,6 +46,7 @@ export default async function AdminRoleManagerPage() {
           <h1 className="mt-3 text-4xl font-black tracking-tight md:text-5xl">
             Role Manager
           </h1>
+          <div className="mt-4"><AdminPageHelpLink section="roles" /></div>
           <p className="mt-3 max-w-2xl text-[#6b5a50]">
             Assign customer, admin, and owner access to registered users.
             Accounts must register normally before their role can be changed.

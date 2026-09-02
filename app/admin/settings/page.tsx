@@ -2,6 +2,8 @@ import { requireAdminPage } from "@/lib/auth-guards";
 import { BusinessSettingsForm } from "@/components/admin/BusinessSettingsForm";
 import Link from "next/link";
 import { getBusinessSettings } from "@/lib/business-settings";
+import { AdminPageHelpLink } from "@/components/admin/AdminPageHelpLink";
+import { AdminHelpPopover } from "@/components/admin/AdminHelpPopover";
 
 export default async function AdminSettingsPage() {
   await requireAdminPage();
@@ -25,6 +27,8 @@ export default async function AdminSettingsPage() {
             Manage order rules, delivery fees, late fees, service request
             deposits, and operating preferences.
           </p>
+          <div className="mt-4 flex items-center gap-3"><AdminPageHelpLink section="business-settings" /><span className="text-sm font-bold">Setting impact <AdminHelpPopover title="Business Settings impact" summary="These settings can change customer prices, deadlines, and instructions. Review owner-approved changes before saving." section="business-settings" /></span></div>
+          <p className="mt-4 rounded-xl border border-amber-300 bg-amber-50 p-4 font-bold">Important: Business Settings can change customer-facing prices, deadlines, and instructions. Review changes before saving.</p>
         </div>
 
         <BusinessSettingsForm settings={settings} />

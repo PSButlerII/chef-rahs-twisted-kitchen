@@ -4,6 +4,7 @@ import { requireAdminPage } from "@/lib/auth-guards";
 import { UpdateOrderStatusForm } from "@/components/admin/UpdateOrderStatusForm";
 import { MarkOrderPaidButton } from "@/components/admin/MarkOrderPaidButton";
 import { OrderApprovalForm } from "@/components/admin/OrderApprovalForm";
+import { AdminPageHelpLink } from "@/components/admin/AdminPageHelpLink";
 import Link from "next/link";
 import { PrintButton } from "@/components/admin/PrintButton";
 import {
@@ -217,6 +218,7 @@ export default async function AdminOrderDetailsPage({ params }: PageProps) {
           <h1 className="mt-3 text-4xl font-black tracking-tight md:text-5xl">
             Order Details
           </h1>
+          <div className="mt-4"><AdminPageHelpLink section="orders" /></div>
           <p className="mt-3 break-all text-sm text-[#6b5a50]">{order.id}</p>
         </div>
         <div className="mt-4 print:hidden">

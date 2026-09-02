@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { AdminPageHelpLink } from "@/components/admin/AdminPageHelpLink";
+import { AdminHelpPopover } from "@/components/admin/AdminHelpPopover";
 import { DeleteWeeklyMealPlanOfferingButton } from "@/components/admin/DeleteWeeklyMealPlanOfferingButton";
 import { DeleteWeeklyMealPlanOptionButton } from "@/components/admin/DeleteWeeklyMealPlanOptionButton";
 import {
@@ -431,6 +433,8 @@ export default async function AdminWeeklyMenuPage() {
           <h1 className="mt-3 text-4xl font-black tracking-tight md:text-5xl">
             Weekly Menu Manager
           </h1>
+          <div className="mt-4 flex items-center gap-3"><AdminPageHelpLink section="weekly-menu" /><span className="text-sm font-bold">Weekly capacity <AdminHelpPopover title="Weekly Capacity" summary="This is the maximum number of weekly orders accepted for the period, not the number of individual meals." section="weekly-menu" /></span></div>
+          <p className="mt-4 rounded-xl border border-amber-300 bg-amber-50 p-4 font-bold">Before publishing, confirm prices, capacity, offerings, allergens, options, and customer-facing dates.</p>
 
           <p className="mt-3 max-w-3xl text-[#6b5a50]">
             Draft and maintain weekly meal plan periods and fixed-price 1- or

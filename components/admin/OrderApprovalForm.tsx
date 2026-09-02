@@ -75,6 +75,7 @@ export function OrderApprovalForm({ orderId, currentApprovalStatus }: Props) {
         Approve the order to move it into the kitchen workflow, or deny it if
         the selected options cannot be fulfilled.
       </p>
+      <p className="mt-4 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm font-bold">Approval or denial is a final decision in normal operation. Review the order before confirming.</p>
 
       <textarea
         value={approvalNote}

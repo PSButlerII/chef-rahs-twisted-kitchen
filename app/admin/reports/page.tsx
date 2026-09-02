@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAdminPage } from "@/lib/auth-guards";
 import Link from "next/link";
 import { BusinessInsightsSection } from "@/components/admin/reports/BusinessInsightsSection";
+import { AdminPageHelpLink } from "@/components/admin/AdminPageHelpLink";
 import { getBusinessInsightsMetrics } from "@/lib/admin-report-metrics";
 
 type TopOrderedItem = {
@@ -210,6 +211,7 @@ export default async function AdminReportsPage({ searchParams }: PageProps) {
           <h1 className="mt-3 text-4xl font-black tracking-tight md:text-5xl">
             Business Insights
           </h1>
+          <div className="mt-4"><AdminPageHelpLink section="reports-notifications" /></div>
 
           <p className="mt-3 max-w-2xl text-[#6b5a50]">
             Monitor revenue, customer activity, kitchen operations, service

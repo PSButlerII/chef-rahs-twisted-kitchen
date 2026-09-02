@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAdminPage } from "@/lib/auth-guards";
 import { getEmailDeliveryMode } from "@/lib/email";
 import Link from "next/link";
+import { AdminPageHelpLink } from "@/components/admin/AdminPageHelpLink";
 
 export default async function AdminNotificationsPage() {
   await requireAdminPage();
@@ -108,6 +109,7 @@ export default async function AdminNotificationsPage() {
           <h1 className="mt-3 text-4xl font-black tracking-tight md:text-5xl">
             Notifications
           </h1>
+          <div className="mt-4"><AdminPageHelpLink section="reports-notifications" /></div>
 
           <p className="mt-3 max-w-2xl text-[#6b5a50]">
             Track notification needs for customer orders, payment reminders,

@@ -76,6 +76,7 @@ export function RefundPaymentButton({
 
   return (
     <div className="mt-4 border-t border-[#ead8c1] pt-4">
+      <p className="mb-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs font-bold">Do not issue a second refund while the first refund remains pending.</p>
       <label
         className="block text-xs font-bold"
         htmlFor={`refund-${paymentAttemptId}`}

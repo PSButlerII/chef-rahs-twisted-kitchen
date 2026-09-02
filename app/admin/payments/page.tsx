@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { AdminPageHelpLink } from "@/components/admin/AdminPageHelpLink";
+import { AdminHelpPopover } from "@/components/admin/AdminHelpPopover";
 import { prisma } from "@/lib/prisma";
 import { requireAdminPage } from "@/lib/auth-guards";
 import { MarkOrderPaidButton } from "@/components/admin/MarkOrderPaidButton";
@@ -205,6 +207,8 @@ export default async function AdminPaymentsPage() {
             Monitor manual invoices, offline payments, deposits, and future
             online payment integrations.
           </p>
+          <div className="mt-4 flex items-center gap-3"><AdminPageHelpLink section="payments" /><span className="text-sm font-bold">Pending payments <AdminHelpPopover title="Payment Pending" summary="Square is still processing. Do not create another charge while the payment remains pending." section="payments" /></span></div>
+          <p className="mt-4 rounded-xl border border-amber-300 bg-amber-50 p-4 font-bold">If the website and Square do not agree, do not repeat a payment or refund action. Review the details and contact support.</p>
         </div>
 
         <section className="grid gap-5 md:grid-cols-3">

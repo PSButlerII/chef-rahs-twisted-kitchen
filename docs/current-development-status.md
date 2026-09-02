@@ -1,5 +1,10 @@
 You are helping continue development on a Next.js/Prisma food service web app for Chef Rah's Twisted Kitchen.
 
+## September 2, 2026 — In-app admin guidance
+
+- Added an authenticated, searchable Help & Guide center from the admin dashboard.
+- Added direct page-help links, accessible contextual help, visible safety warnings, and protected access to the handbook and quick reference.
+
 ## September 2, 2026 — Client admin handoff package
 
 - Created a rewritten, nontechnical Client Admin Handbook in editable DOCX and client-facing PDF formats.

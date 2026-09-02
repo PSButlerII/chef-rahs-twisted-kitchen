@@ -1,5 +1,9 @@
 # Chef Rah's Twisted Kitchen Developer User Guide
 
+## Maintaining admin help
+
+The authenticated help center is implemented at `/admin/help`; its structured content and page mappings live in `data/admin-help.ts`. Reuse `AdminPageHelpLink` for page guidance and `AdminHelpPopover` for short contextual explanations. Keep irreversible-action and payment warnings visible in the primary interface. Protected PDFs are served through an explicit allowlist in `lib/admin-help-documents.ts`; never accept a request path or expose these documents through a public static route. See `docs/admin-help-system.md` and run `node --import tsx scripts/qa-admin-help.ts` after updates.
+
 ## Square readiness controls
 
 Local and Sandbox work uses `SQUARE_ENVIRONMENT=sandbox`,

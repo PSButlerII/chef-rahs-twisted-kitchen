@@ -1,6 +1,11 @@
 CHEF RAH'S TWISTED KITCHEN — CLIENT ADMIN GUIDE
 Version 1.0 | September 2026
 
+IN-APP HELP
+
+Open Admin Dashboard > Help & Guide for searchable guidance, page-specific help
+links, and protected copies of the handbook and quick reference.
+
 OPEN THIS FIRST
 
 Chef-Rahs-Twisted-Kitchen-Admin-Handbook-v1.0.pdf

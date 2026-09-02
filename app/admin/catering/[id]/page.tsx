@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { requireAdminPage } from "@/lib/auth-guards";
 import { UpdateCateringStatusForm } from "@/components/admin/UpdateCateringStatusForm";
 import { CateringApprovalForm } from "@/components/admin/CateringApprovalForm";
+import { AdminPageHelpLink } from "@/components/admin/AdminPageHelpLink";
+import { AdminHelpPopover } from "@/components/admin/AdminHelpPopover";
 import Link from "next/link";
 import { CateringQuoteForm } from "@/components/admin/CateringQuoteForm";
 import { MarkDepositPaidButton } from "@/components/admin/MarkDepositPaidButton";
@@ -232,6 +234,8 @@ export default async function AdminCateringDetailsPage({ params }: PageProps) {
           <h1 className="mt-3 text-4xl font-black tracking-tight md:text-5xl">
             {request.name}
           </h1>
+          <div className="mt-4 flex items-center gap-3"><AdminPageHelpLink section="service-requests" /><span className="text-sm font-bold">Payment and completion <AdminHelpPopover title="Payment versus completion" summary="A paid deposit or final balance does not mean the event or service is finished." section="service-requests" /></span></div>
+          <p className="mt-4 rounded-xl border border-amber-300 bg-amber-50 p-4 font-bold">Receiving a deposit or final balance does not complete the service. Mark Completed only after the event or service has finished.</p>
 
           <p className="mt-3 break-all text-sm text-[#6b5a50]">{request.id}</p>
         </div>
