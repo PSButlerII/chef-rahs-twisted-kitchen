@@ -1,5 +1,69 @@
 # Dependency Security Advisory Triage
 
+## September 2, 2026 — Fast URI transitive dependency remediation
+
+### Baseline and exposure
+
+Base: `e07f3c1c972b0e558afd06d478985c748fe21e88`, synchronized with `origin/main` before creating `fix/fast-uri-advisories-2026-09-02` from a clean working tree.
+
+Both baseline audit commands reported one high-severity vulnerable package, `fast-uri@3.1.5`, with four distinct advisories:
+
+| Advisory | Affected installed 3.x range | Issue | Final result |
+| --- | --- | --- | --- |
+| [GHSA-5jgf-p345-68v8](https://github.com/advisories/GHSA-5jgf-p345-68v8) | `>=3.1.3 <3.1.6` | Scheme-relative IDN host confusion | Cleared |
+| [GHSA-f65p-4m7j-42xc](https://github.com/advisories/GHSA-f65p-4m7j-42xc) | `>=3.0.0 <3.1.6` | Malformed IPv6 normalization | Cleared |
+| [GHSA-fph4-wmhf-6fwf](https://github.com/advisories/GHSA-fph4-wmhf-6fwf) | `>=3.1.2 <3.1.6` | Repeated hostname percent-decoding | Cleared |
+| [GHSA-jqff-g426-hqxp](https://github.com/advisories/GHSA-jqff-g426-hqxp) | `>=3.0.0 <3.1.6` | Percent-encoded scheme confusion | Cleared |
+
+There was one deduplicated fast-uri instance, reached through these paths:
+
+```text
+react-email@6.4.0 (production dependency)
+└─ conf@15.1.0
+   ├─ ajv@8.20.0 → fast-uri
+   └─ ajv-formats@3.0.1 → ajv@8.20.0 → fast-uri
+prisma@7.9.1 (development CLI dependency)
+└─ @prisma/dev@0.24.17
+   └─ @prisma/streams-local@0.1.11 → ajv@8.20.0 → fast-uri
+```
+
+All three AJV copies declare `fast-uri: ^3.0.1`; none pins 3.1.5. ESLint's separate `ajv@6.15.0` uses uri-js, not fast-uri. The production audit includes fast-uri through React Email/conf. Inspection locates conf in React Email's CLI, not its public rendering entry point: installed production dependency presence is not proof of a remotely reachable application request path. Repository source searches found no direct fast-uri or AJV imports. Current application URL-policy helpers use native `URL`; `resolve()` matches are filesystem paths or Promise callbacks, not fast-uri calls. No application-level exploit path was established, but the vulnerable installed dependency was removed.
+
+### Decision and final resolution
+
+The configured registry was `https://registry.npmjs.org/`. Registry metadata confirmed 3.1.6 exists and is outside every baseline vulnerable range. It has no declared Node engine restriction and satisfies every parent. At execution time the registry's `three` tag had advanced to **3.1.7** (latest overall: 4.1.4). The supported `npm update fast-uri` command selected **3.1.7**, changing only the version, resolved tarball URL, and integrity of the existing lockfile node. Retaining the newer compatible patch avoids an unnecessary override or artificial downgrade to the minimum patched release. 3.1.7 likewise has no declared engine restriction and is outside all four ranges. No 4.x upgrade was needed.
+
+No project-owned fast-uri override was added. The patched version is maintained through normal parent semver ranges and the lockfile.
+
+Every path above now deduplicates to `fast-uri@3.1.7`; no older or 4.x instance, invalid node, or extraneous node was reported by the focused dependency checks. `package.json` is unchanged, including all prior overrides. No direct fast-uri, mysql2, or mariadb dependency was added. Existing overrides remain effective:
+
+```text
+prisma@7.9.1 → mysql2@3.24.2 overridden
+@prisma/adapter-mariadb@7.8.0 → mariadb@3.5.3 overridden
+```
+
+### Verification
+
+Runtime: Node.js **v26.4.0**, npm **12.0.2**, Windows. No existing nvm/fnm installation or Node 24 runtime was found through the available runtime-manager checks. System tooling was not installed or changed; Node 24 LTS release parity remains an owner/deployment check.
+
+- `npm install` and `npm ci` passed; clean install reproduced only fast-uri 3.1.7, with no SWC lock issue.
+- React Email resolved/loaded, and `node node_modules/react-email/dist/cli/index.mjs --help` passed, exercising its conf/AJV imports.
+- `node --import tsx -e ...` rendered all eight existing `emailPreviews` from `lib/dev-email-preview-data.ts` through `react-email.render`: order submitted/approved/denied, payment received, catering/personal-chef submitted, catering approved, and deposit paid. Each produced HTML. Delivery wrappers were not invoked; no email was sent.
+- Direct conf schema checks in a disposable OS temporary directory accepted a string and rejected a number. All three actual AJV 8.20.0 copies accepted a valid object and rejected an invalid type.
+- Native assertion checks exercised ordinary relative resolution, scheme-relative IDN canonicalization, malformed IPv6 rejection, nested encoded host preservation, invalid encoded-scheme rejection, and valid encoded HTTPS normalization. All passed. An initial test-harness import used a non-exported conf package subpath; rerunning through the exact installed filesystem paths passed without changing dependencies or source.
+- `npx prisma validate` and `npm run prisma:generate` passed. Prisma loaded configuration without AJV/fast-uri errors.
+- A fresh, disposable `chef_fast_uri_qa_20260902` database used MariaDB 11.4.10 bound only to `127.0.0.1:33307`. Initial `prisma migrate status` correctly reported ten unapplied migrations (expected nonzero on an empty database). `prisma migrate deploy` applied all ten committed migrations; `npm run db:seed` created ten baseline allergens; a second deploy reported no pending migrations; final status was up to date. A normal read through `lib/prisma.ts` returned all ten allergens. Only fictional local QA data was created.
+- `npm run lint`, `npm run typecheck`, `npm run gallery:qa-ordering`, and `node --import tsx scripts/qa-admin-help.ts` passed.
+- `npx next build` and the full `npm run build` lifecycle both passed. The latter explicitly targeted the disposable database; its prebuild generation and migration deploy passed. The existing Node 26 `module.register()` deprecation warning appeared, with no new AJV/fast-uri/driver error.
+- Built-server HTTP verification remains **blocked**: the execution environment rejected both the initial and simplified localhost `npm run start -- --hostname 127.0.0.1 --port 3013` launch commands before execution. No alternative launch mechanism was used to bypass that restriction. Public-page, Prisma-backed-page, and authenticated Admin Help HTTP smoke requests against the built application were therefore not performed. The separate direct Prisma read and both builds passed, but they do not replace the requested startup checks. Complete these checks before committing/integrating this remediation.
+- `npm audit --json`, `npm audit --omit=dev --json`, `npm audit --audit-level=high`, and `npm audit --omit=dev --audit-level=high` all exited successfully with **zero vulnerabilities**. All four baseline advisories are absent; no unrelated finding remains. No audit suppression, exception, or npm configuration change was added.
+
+Baseline/final dependency commands: `npm ls fast-uri --all`, `npm explain fast-uri`, `npm ls ajv conf react-email prisma --all`, `npm ls mysql2 mariadb --all`, `npm explain mysql2`, and `npm explain mariadb`. Registry checks covered `npm view fast-uri version dist-tags --json`, exact fast-uri 3.1.5/3.1.6/3.1.7/4.1.3 metadata, `npm view ajv version`, `npm view ajv@8 dependencies`, `npm view conf version dependencies`, `npm view react-email version dependencies`, and `npm view prisma@7.9.1 dependencies`, alongside the exact installed manifests.
+
+Independent read-only compatibility investigation and candidate review found no surviving vulnerable path or concrete regression in this narrow dependency diff. No override removal condition is needed. No application, payment, Square, authentication, upload, gallery, help, schema, migration, or client-document behavior was changed. Production services and databases were not contacted for QA.
+
+Verification outcome: dependency advisories are cleared, but release verification is blocked on the built-server smoke checks above. The two-file patch remains uncommitted pending those checks; no push, pull request, or merge was performed.
+
 Date: August 3, 2026
 
 Scope: six open high-severity GitHub Dependabot alerts on the default branch,
