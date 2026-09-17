@@ -1,5 +1,106 @@
 # Dependency Security Advisory Triage
 
+## September 17, 2026 — Next.js, Sharp, and js-yaml remediation
+
+### Baseline and exposure
+
+The clean baseline at `701e2115da6112d63117b0de57293b4ae0d9da77` resolved
+`next@16.2.12`, `sharp@0.35.3`, and `js-yaml@4.3.1`. The registry audit
+reported three vulnerable packages (two high and one critical):
+
+| Package | Advisory | Dependency path and exposure |
+| --- | --- | --- |
+| Next.js | `GHSA-p293-qw3h-jr36` | Root production dependency; Windows-hosted unauthenticated RCE affected `>=16.0.0 <16.3.3`. |
+| Next.js | `GHSA-2xp9-vwfh-vxw4` | Root production dependency; AVIF image-optimization RCE affected `>=16.0.0 <16.3.3`. AVIF was not enabled in `next.config.ts`, but the vulnerable framework version was installed. |
+| Sharp | `GHSA-rgj7-g3m4-5g8c` | `next -> sharp`; production image-optimization path, affected `<0.35.4` because of bundled libheif issues. |
+| js-yaml | `GHSA-2883-xcg3-v3hh` | `eslint -> @eslint/eslintrc -> js-yaml`; development/lint tooling only, affected `>=4.0.0 <4.3.2`. |
+
+Repository source did not import Sharp or js-yaml directly. The application uses
+Next's image optimizer with trusted local images. No custom image loader, AVIF
+format, remote image pattern, or unoptimized image setting is configured.
+
+### Remediation decision
+
+Official npm registry metadata showed stable `next@16.3.5`, matching
+`eslint-config-next@16.3.5`, `sharp@0.35.4`, and `js-yaml@4.3.2` as compatible
+patched releases. React and React DOM remain `19.2.4`, satisfying Next's peer
+requirements. Next and its ESLint config were aligned to avoid framework-rule
+drift. No canary, release candidate, major upgrade, or source compatibility
+change was needed.
+
+The project-owned Sharp override and install-script allowlist moved from
+`0.35.3` to `0.35.4`. The lockfile records matching Sharp 0.35.4 packages for
+Windows x64/arm64/ia32, Linux x64/arm/arm64/ppc64/riscv64/s390x, Linux musl,
+macOS x64/arm64, and WebAssembly, together with libvips 1.3.3 packages. This
+preserves Linux production and Windows workstation installs without forcing
+all optional binaries onto one platform.
+
+js-yaml moved normally through `@eslint/eslintrc@3.3.6`'s compatible
+`^4.3.0` range. No project-owned js-yaml override was added. The patched
+release is maintained through normal parent semver ranges and the lockfile.
+
+All earlier security policy remains in place: `deepmerge-ts@8.0.2` under
+`@prisma/config@7.9.1`, `mysql2@3.24.2` under Prisma, `mariadb@3.5.3` under
+the Prisma MariaDB adapter, PostCSS/Nano ID, minimatch/brace-expansion,
+`@babel/core`, `@hono/node-server`, and the locked `fast-uri@3.1.7`. No audit
+suppression or npm configuration change was added.
+
+### Image, framework, and tooling verification
+
+Verification ran on Windows with Node.js 26.4.0 and npm 12.0.2. This satisfies
+the selected packages' Node `>=20.9.0` requirement, although the production
+runbook's preferred release-parity runtime remains Node 24 LTS. The existing
+Node 26 `module.register()` deprecation warning remained during builds; it is
+not a new framework failure. The aligned ESLint config also reports one
+non-blocking `no-location-assign-relative-destination` warning in the existing
+account password form; lint still exits successfully, and changing that
+unrelated application behavior is outside this dependency-only remediation.
+
+- `npm ci`, lint, type generation/TypeScript, the exact `npm run build`
+  lifecycle, and a separate Next production build passed.
+- The built Next 16.3.5 server started normally. `/`, `/about`, `/gallery`,
+  `/menu`, `/catering`, `/personal-chef`, and `/login` returned 200. The
+  requested `/sign-in` path returned the expected 404 because this application
+  configures `/login`. Unauthenticated `/admin` and `/admin/help` redirected to
+  login, and the protected Admin Help API returned 401.
+- Browser QA rendered the public pages without a Server Component, hydration,
+  route-handler, proxy, or database failure. Disposable Admin and Owner users
+  both loaded Admin Help; search filtered its topics; the handbook PDF route
+  opened; and a disposable Customer received the intentional not-found denial.
+- Sharp 0.35.4 loaded with libvips 8.18.6 on Windows. It decoded and resized a
+  trusted local PNG and produced an in-memory WebP buffer. Invalid bytes raised
+  a controlled error without terminating the process.
+- The built `/_next/image` endpoint returned a nonempty WebP response for a
+  trusted local image, including a repeat request. Invalid width and quality,
+  a non-image resource, a missing image, traversal input, and an unapproved
+  external URL all returned controlled 400 responses; the server remained
+  alive. AVIF is not configured and was not enabled for this remediation.
+- js-yaml 4.3.2 parsed a normal document and a normal merge-key document;
+  malformed YAML raised a controlled parse exception. ESLint and build tooling
+  loaded successfully, confirming no removed API expectation.
+- Focused Admin Help, gallery ordering, late-fee, Square refund-status,
+  built-in gallery import dry-run, and gallery terminology cleanup dry-run
+  checks passed. No provider payment/refund call or email delivery was made.
+
+### Disposable database and audit result
+
+A fresh MariaDB 11.4.10 instance was bound only to `127.0.0.1:33308`, using
+database `chef_next_sharp_qa_20260917`. All 10 committed migrations applied;
+the foundation seed created 10 allergens; a second deploy reported no pending
+migrations; final status was current; and a Prisma-backed read returned all 10
+rows. The exact prebuild migration lifecycle also passed. Only fictional local
+Admin, Owner, and Customer records were added for access-control browser QA.
+No shared or production database was contacted.
+
+Final resolutions are `next@16.3.5`, `eslint-config-next@16.3.5`,
+`sharp@0.35.4`, and `js-yaml@4.3.2`. Full, production-only, and high-severity
+audit gates report zero vulnerabilities, clearing every baseline advisory with
+no unrelated finding. Remove the Sharp override only after a supported Next
+release directly guarantees a sufficiently patched Sharp version and the full
+clean-install, image-optimizer, database, build, browser, and audit suite passes
+without it. No removal condition applies to js-yaml because no override was
+introduced.
+
 ## September 2, 2026 — Fast URI transitive dependency remediation
 
 ### Baseline and exposure
