@@ -133,36 +133,48 @@ export default function AboutPage() {
         </div>
       </section>
 
-      <section className="brand-container py-16">
-        <div className="max-w-3xl">
-          <p className="brand-eyebrow">The Twisted Kitchen</p>
+      <section className="border-y border-[#ead8c1] bg-[#fff3e4]">
+        <div className="brand-container grid gap-10 py-16 lg:grid-cols-[1.15fr_0.85fr] lg:items-center">
+          <div>
+            <p className="brand-eyebrow">The Twisted Kitchen</p>
 
-          <h2 className="mt-3 text-4xl font-black leading-tight">
-            The twist is the experience.
-          </h2>
+            <h2 className="mt-3 text-4xl font-black leading-tight">
+              The twist is the experience.
+            </h2>
 
-          <div className="mt-6 space-y-5 text-base leading-8 text-[#6b5a50]">
-            <p>
-              I created Chef Rah&apos;s Twisted Kitchen from my love of taking
-              familiar flavors and giving them an unexpected twist. Whether
-              I&apos;m preparing weekly meal plans, catering a special
-              celebration, or creating a personal dining experience, I want
-              every menu to feel thoughtful, flavorful, and made with genuine
-              care.
-            </p>
+            <div className="mt-6 space-y-5 text-base leading-8 text-[#6b5a50]">
+              <p>
+                I created Chef Rah&apos;s Twisted Kitchen from my love of taking
+                familiar flavors and giving them an unexpected twist. Whether
+                I&apos;m preparing weekly meal plans, catering a special
+                celebration, or creating a personal dining experience, I want
+                every menu to feel thoughtful, flavorful, and made with genuine
+                care.
+              </p>
 
-            <p>
-              Chef Rah&apos;s Twisted Kitchen is personal to me. There is real
-              care behind every menu, every meal, and every experience.
-            </p>
+              <p>
+                Chef Rah&apos;s Twisted Kitchen is personal to me. There is real
+                care behind every menu, every meal, and every experience.
+              </p>
+            </div>
           </div>
-        </div>
 
+          <aside className="rounded-3xl border border-[#e4c9a7] bg-white/75 p-7 shadow-sm">
+            <p className="brand-eyebrow">What guides every menu</p>
+
+            <ul className="mt-5 space-y-4 text-lg font-bold text-[#24130f]">
+              <li>Familiar flavors</li>
+              <li>Creative twists</li>
+              <li>Thoughtful preparation</li>
+              <li>Genuine care</li>
+            </ul>
+          </aside>
+        </div>
       </section>
 
-      <section className="border-y border-[#ead8c1] bg-white/70">
-        <div className="brand-container py-16">
-          <div className="max-w-3xl">
+      <section className="border-y border-[#ead8c1] bg-gradient-to-br from-[#eef8f7] via-white to-[#fff3e4]">
+        <div className="brand-container grid gap-10 py-16 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
+          <div>
             <p className="brand-eyebrow">
               Food, Wellness, and What Comes Next
             </p>
@@ -180,7 +192,7 @@ export default function AboutPage() {
             </p>
           </div>
 
-          <blockquote className="mt-10 max-w-3xl border-l-4 border-[#d99426] bg-[#fff8ee] px-6 py-5 text-[#24130f]">
+          <blockquote className="rounded-r-3xl border-l-4 border-[#d99426] bg-[#fff8ee]/90 px-7 py-8 text-[#24130f] shadow-sm">
             <p className="font-script text-3xl leading-snug">
               Welcome to my kitchen. I&apos;m glad you&apos;re here.
             </p>
