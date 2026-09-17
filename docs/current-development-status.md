@@ -1,5 +1,12 @@
 You are helping continue development on a Next.js/Prisma food service web app for Chef Rah's Twisted Kitchen.
 
+## September 17, 2026 — Client-approved About biography
+
+- Refreshed the public About page in a warm first-person voice using the client-approved biography direction: more than 20 years of culinary experience, South Florida roots, an Atlanta culinary career, and weekly meal-plan terminology.
+- Added the approved Health Science education language and accurately framed becoming an occupational therapist as a long-term goal, without presenting medical, nutrition, or Occupational Therapy credentials or services.
+- Verified the public About page copy, metadata, responsive layout, accessibility structure, image loading, and service links locally. No unmistakably approved Chef Rah portrait was available, so the existing culinary-professionals illustration remains with accurate alt text.
+- No application workflow, dependency, database, payment, authentication, admin, or gallery behavior changed. Work is isolated on branch `feature/about-page-biography-refresh-2026-09-17` under commit subject `feat(about): refresh Chef Rah biography`.
+
 ## September 2, 2026 — In-app admin guidance
 
 - Added an authenticated, searchable Help & Guide center from the admin dashboard.

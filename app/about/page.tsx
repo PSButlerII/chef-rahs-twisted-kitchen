@@ -5,7 +5,7 @@ import Link from "next/link";
 export const metadata: Metadata = {
   title: "About | Chef Rah's Twisted Kitchen",
   description:
-    "Learn about Chef Robin, also known as Chef Rah, and the story behind Chef Rah's Twisted Kitchen.",
+    "Meet Chef Rah, the creative force behind Chef Rah's Twisted Kitchen, and learn about her more than 20 years of culinary experience, South Florida roots, Atlanta career, and growing focus on food and wellness.",
 };
 
 const experienceHighlights = [
@@ -69,9 +69,10 @@ export default function AboutPage() {
           </h1>
 
           <p className="mt-6 max-w-2xl text-lg leading-8 text-[#fff1df]">
-            Chef Robin, also known as Chef Rah, brings more than 15 years of
-            culinary experience, creativity, and passion to every service
-            offered through Chef Rah&apos;s Twisted Kitchen.
+            I&apos;m Chef Robin—pronounced Rah-bin, though most people know me
+            as Chef Rah. I bring more than 20 years of culinary experience,
+            creativity, and care to every service offered through Chef
+            Rah&apos;s Twisted Kitchen.
           </p>
 
           <div className="mt-8 flex flex-wrap gap-3">
@@ -95,7 +96,7 @@ export default function AboutPage() {
             <div className="relative aspect-[4/5]">
               <Image
                 src="/Placeholder.webp"
-                alt="Chef Rah's Twisted Kitchen food presentation"
+                alt="Black-and-white illustration of culinary professionals walking in a line"
                 fill
                 sizes="(max-width: 1024px) 80vw, 22vw"
                 className="object-cover"
@@ -104,7 +105,7 @@ export default function AboutPage() {
           </div>
 
           <div>
-            <p className="brand-eyebrow">Her Story</p>
+            <p className="brand-eyebrow">My Story</p>
 
             <h2 className="mt-3 text-4xl font-black leading-tight">
               From South Florida roots to Atlanta kitchens.
@@ -112,23 +113,23 @@ export default function AboutPage() {
 
             <div className="mt-6 space-y-5 text-base leading-8 text-[#6b5a50]">
               <p>
-                Chef Robin, pronounced Rah-bin, is a South Florida native who
-                has been living in the Atlanta area for the last 15 years. She
-                began her culinary career in 2005 while working at one of the
-                busiest hotels in Atlanta and attending Le Cordon Bleu, where
-                she later graduated in 2007.
+                My love for cooking began when I was nine years old, watching
+                and helping my mother in the kitchen. Originally from South
+                Florida, I later built my professional culinary career in the
+                Atlanta area.
               </p>
 
               <p>
-                Throughout her 15+ year career, Chef Rah has worked in a wide
-                range of culinary settings, including hotels, restaurants,
-                private schools, senior living facilities, and more.
+                That career began in 2005 while I was working at one of the
+                busiest hotels in Atlanta and attending Le Cordon Bleu. I
+                graduated in 2007 and have spent more than 20 years continuing
+                to learn, lead, and develop my own creative style.
               </p>
 
               <p>
-                She began cooking at the age of 9 while watching and helping her
-                mother in the kitchen. As a naturally creative person, that
-                creativity spills over into her passion for food.
+                I&apos;m the chef and creative force behind Chef Rah&apos;s
+                Twisted Kitchen LLC, a Georgia-based culinary business offering
+                weekly meal plans, catering, and personalized chef experiences.
               </p>
             </div>
           </div>
@@ -142,14 +143,18 @@ export default function AboutPage() {
               <p className="brand-eyebrow">Experience</p>
 
               <h2 className="mt-3 text-4xl font-black leading-tight">
-                A well-rounded chef with a creative palate.
+                Professional experience, personal care.
               </h2>
 
               <p className="mt-5 leading-8 text-[#6b5a50]">
-                Chef Rah has a diverse knowledge of different cuisines, helping
-                her expand the flavors and ideas behind the food she creates. In
-                addition to being a well-rounded chef, she is also a skilled
-                pastry chef.
+                Throughout my career, I have worked in hotels, restaurants,
+                private schools, senior living, high-volume food service,
+                pastry, catering, and private dining. My background also
+                includes kitchen leadership, menu development, food safety,
+                staff training, and customized meal preparation. Those
+                experiences taught me that memorable food requires more than
+                great flavor. It also takes consistency, quality, presentation,
+                preparation, and an understanding of the people you are serving.
               </p>
             </div>
 
@@ -177,15 +182,17 @@ export default function AboutPage() {
 
           <div className="mt-6 space-y-5 text-base leading-8 text-[#6b5a50]">
             <p>
-              The idea behind Chef Rah&apos;s Twisted Kitchen was born from her
-              creative talent for giving familiar foods an unexpected twist that
-              leaves you wanting more.
+              I created Chef Rah&apos;s Twisted Kitchen from my love of taking
+              familiar flavors and giving them an unexpected twist. Whether
+              I&apos;m preparing weekly meal plans, catering a special
+              celebration, or creating a personal dining experience, I want
+              every menu to feel thoughtful, flavorful, and made with genuine
+              care.
             </p>
 
             <p>
-              You can taste the passion and love in each bite. Her mission is to
-              provide the best experience with every service while opening your
-              mind and expanding your palate to something different.
+              Chef Rah&apos;s Twisted Kitchen is personal to me. There is real
+              care behind every menu, every meal, and every experience.
             </p>
           </div>
         </div>
@@ -196,9 +203,8 @@ export default function AboutPage() {
               key={service.href}
               href={service.href}
               className="brand-card group p-6 transition hover:-translate-y-1 hover:shadow-2xl"
-
             >
-                <div className="relative aspect-square mb-5 overflow-hidden rounded-3xl">
+              <div className="relative mb-5 aspect-square overflow-hidden rounded-3xl">
                 <Image
                   src={service.imageSrc}
                   alt={service.title}
@@ -218,6 +224,37 @@ export default function AboutPage() {
               </span>
             </Link>
           ))}
+        </div>
+      </section>
+
+      <section className="border-y border-[#ead8c1] bg-white/70">
+        <div className="brand-container py-16">
+          <div className="max-w-3xl">
+            <p className="brand-eyebrow">
+              Food, Wellness, and What Comes Next
+            </p>
+            <h2 className="mt-3 text-4xl font-black leading-tight">
+              Flavor with purpose.
+            </h2>
+            <p className="mt-6 text-base leading-8 text-[#6b5a50]">
+              As I continue my education in Health Science, with the long-term
+              goal of becoming an occupational therapist, I&apos;m also
+              deepening my interest in nutrition, wellness, and healthy living.
+              I&apos;m excited to explore how food, movement, and everyday
+              routines can work together to support overall well-being—and to
+              create flavorful options that help my clients pursue their goals
+              without taking the enjoyment out of eating.
+            </p>
+          </div>
+
+          <blockquote className="mt-10 max-w-3xl border-l-4 border-[#d99426] bg-[#fff8ee] px-6 py-5 text-[#24130f]">
+            <p className="font-script text-3xl leading-snug">
+              Welcome to my kitchen. I&apos;m glad you&apos;re here.
+            </p>
+            <footer className="mt-3 text-sm font-bold uppercase tracking-[0.18em] text-[#9f2f18]">
+              <span aria-hidden="true">— </span>Chef Rah
+            </footer>
+          </blockquote>
         </div>
       </section>
 

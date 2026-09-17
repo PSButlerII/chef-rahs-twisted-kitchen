@@ -128,7 +128,7 @@ These items may not block launch, but they improve quality and client confidence
 
 ### Public Page Content
 
-- Final About page approval.
+- Final About page copy approval — complete September 17, 2026.
 - Final home page headline and service descriptions.
 - Final Catering description.
 - Final Personal Chef description.
@@ -139,6 +139,7 @@ These items may not block launch, but they improve quality and client confidence
 
 ### Image Assets
 
+- Approved Chef Rah portrait for the About page.
 - Hero image for the home page.
 - Service image for Catering.
 - Service image for Personal Chef.
