@@ -17,33 +17,6 @@ const experienceHighlights = [
   "Private dining",
 ];
 
-const services = [
-  {
-    title: "Meal Plans",
-    description:
-      "Chef-prepared weekly meals designed to bring bold flavor into busy schedules.",
-    href: "/menu",
-    cta: "View Meal Plans",
-    imageSrc: "/MEAL-PLAN.png",
-  },
-  {
-    title: "Catering",
-    description:
-      "Food for events, gatherings, office meals, and special occasions with a creative twist.",
-    href: "/catering",
-    cta: "Request Catering",
-    imageSrc: "/CATERING.jpg",
-  },
-  {
-    title: "Private Chef",
-    description:
-      "Custom dining support for private meals, events, meal plans, and personal food experiences.",
-    href: "/personal-chef",
-    cta: "Plan an Experience",
-    imageSrc: "/PERSONAL-CHEF.jpg",
-  },
-];
-
 export default function AboutPage() {
   return (
     <main className="brand-page">
@@ -75,18 +48,6 @@ export default function AboutPage() {
             Rah&apos;s Twisted Kitchen.
           </p>
 
-          <div className="mt-8 flex flex-wrap gap-3">
-            <Link href="/menu" className="brand-button-primary px-6 py-3 text-sm">
-              View Meal Plans
-            </Link>
-
-            <Link
-              href="/catering"
-              className="brand-button-secondary px-6 py-3 text-sm"
-            >
-              Request Catering
-            </Link>
-          </div>
         </div>
       </section>
 
@@ -197,34 +158,6 @@ export default function AboutPage() {
           </div>
         </div>
 
-        <div className="mt-5 grid gap-6 lg:grid-cols-3">
-          {services.map((service) => (
-            <Link
-              key={service.href}
-              href={service.href}
-              className="brand-card group p-6 transition hover:-translate-y-1 hover:shadow-2xl"
-            >
-              <div className="relative mb-5 aspect-square overflow-hidden rounded-3xl">
-                <Image
-                  src={service.imageSrc}
-                  alt={service.title}
-                  fill
-                  sizes="300px"
-                  className="object-cover"
-                />
-              </div>
-              {/* <h3 className="text-2xl font-black">{service.title}</h3> */}
-
-              <p className="mt-1 min-h-24 text-sm leading-6 text-[#6b5a50]">
-                {service.description}
-              </p>
-
-              <span className="mt-1 inline-flex text-sm font-bold text-[#9f2f18] transition group-hover:text-[#6f1f12]">
-                {service.cta}
-              </span>
-            </Link>
-          ))}
-        </div>
       </section>
 
       <section className="border-y border-[#ead8c1] bg-white/70">
@@ -259,35 +192,42 @@ export default function AboutPage() {
       </section>
 
       <section className="bg-[#24130e] text-white">
-        <div className="brand-container grid gap-8 py-16 lg:grid-cols-[1fr_0.8fr] lg:items-center">
+        <div className="brand-container grid gap-8 py-16 lg:grid-cols-[1fr_0.9fr] lg:items-center">
           <div>
             <p className="text-sm font-bold uppercase tracking-[0.24em] text-[#f4c46f]">
               Ready to taste the twist?
             </p>
 
             <h2 className="mt-4 text-4xl font-black leading-tight">
-              Start with meal plans, catering, or a private chef request.
+              Bring the Twisted Kitchen experience to your table.
             </h2>
 
             <p className="mt-4 max-w-2xl leading-7 text-[#f3dcc4]">
-              Chef Rah&apos;s Twisted Kitchen offers meal plans, catering,
-              private chef service, food consultation, and more.
+              Explore weekly meal plans, plan a catering event, or request a
+              personalized chef experience.
             </p>
           </div>
 
-          <div className="flex flex-wrap gap-3 lg:justify-end">
+          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap lg:justify-end">
             <Link
               href="/menu"
-              className="brand-button-primary bg-white px-6 py-3 text-sm text-[#bfebf4] hover:bg-[#f4c46f]"
+              className="brand-button-primary bg-white px-6 py-3 text-sm text-[#24130f] hover:bg-[#f4c46f]"
             >
-              Start an Order
+              View Meal Plans
+            </Link>
+
+            <Link
+              href="/catering"
+              className="brand-button-secondary border-white/20 bg-white/10 px-6 py-3 text-sm text-white hover:bg-white hover:text-[#24130f]"
+            >
+              Plan a Catering Event
             </Link>
 
             <Link
               href="/personal-chef"
-              className="brand-button-secondary border-white/20 bg-white/10 px-6 py-3 text-sm text-white hover:bg-white hover:text-[#bfebf4]"
+              className="brand-button-secondary border-white/20 bg-white/10 px-6 py-3 text-sm text-white hover:bg-white hover:text-[#24130f]"
             >
-              Plan Private Chef Service
+              Request Personal Chef Service
             </Link>
           </div>
         </div>
