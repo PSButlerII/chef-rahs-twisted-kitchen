@@ -1,15 +1,21 @@
 @import "tailwindcss";
 
 :root {
-  --background: #fff8ee;
+  --background: #eef1e7;
   --foreground: #24130f;
+  --brand-page-background: #eef1e7;
+  --brand-surface: #fffaf4;
+  --brand-surface-soft: #f6f8f1;
+  --brand-section-blush: #f7e2e2;
+  --brand-border-blush: #e6cac8;
+  --brand-sage: #687861;
   --brand-ember: #9f2f18;
   --brand-ember-dark: #6f1f12;
   --brand-gold: #d99426;
-  --brand-cream: #fff8ee;
+  --brand-cream: #fffaf4;
   --brand-ink: #24130f;
   --brand-muted: #6b5a50;
-  --brand-border: #ead8c1;
+  --brand-border: #ced8c8;
 }
 
 @theme inline {
@@ -43,7 +49,8 @@ body {
 .brand-page {
   min-height: 100vh;
   background:
-    linear-gradient(180deg, rgba(255, 248, 238, 0.94), #fffaf2 38%), #fff8ee;
+    linear-gradient(180deg, rgba(238, 241, 231, 0.96), #f6f8f1 38%),
+    var(--brand-page-background);
   color: var(--brand-ink);
 }
 
@@ -56,14 +63,14 @@ body {
 .brand-card {
   border: 1px solid var(--brand-border);
   border-radius: 0.5rem;
-  background: rgba(255, 255, 255, 0.94);
+  background: rgba(255, 250, 244, 0.96);
   box-shadow: 0 18px 45px rgba(76, 36, 18, 0.08);
 }
 
 .brand-card-soft {
-  border: 1px solid rgba(234, 216, 193, 0.9);
+  border: 1px solid var(--brand-border-blush);
   border-radius: 0.5rem;
-  background: rgba(255, 251, 245, 0.88);
+  background: rgba(247, 226, 226, 0.82);
 }
 
 .brand-button-primary {
@@ -99,7 +106,7 @@ body {
   justify-content: center;
   border: 1px solid rgba(36, 19, 15, 0.18);
   border-radius: 0.5rem;
-  background: rgba(255, 255, 255, 0.86);
+  background: rgba(255, 250, 244, 0.92);
   color: var(--brand-ink);
   font-weight: 700;
   transition:
@@ -111,7 +118,7 @@ body {
 .brand-button-secondary:hover {
   transform: translateY(-1px);
   border-color: var(--brand-ember);
-  background: white;
+  background: var(--brand-surface-soft);
 }
 
 .brand-button-secondary:disabled,
@@ -124,6 +131,15 @@ body {
   font-size: 0.78rem;
   font-weight: 800;
   text-transform: uppercase;
+}
+
+.brand-page :focus-visible {
+  outline-color: var(--brand-ember);
+}
+
+.brand-section-blush {
+  border-color: var(--brand-border-blush);
+  background: var(--brand-section-blush);
 }
 
 .admin-page {

@@ -44,7 +44,7 @@ export function AccountProfileForm({ user, onSaved }: Props) {
   return (
     <form
       action={handleSubmit}
-      className="rounded-lg border border-[#ead8c1] bg-white p-5"
+      className="rounded-lg border border-[var(--brand-border)] bg-white p-5"
     >
       <h2 className="text-2xl font-black">Account Information</h2>
 
@@ -59,7 +59,7 @@ export function AccountProfileForm({ user, onSaved }: Props) {
           <input
             name="name"
             defaultValue={user.name ?? ""}
-            className="mt-2 w-full rounded-lg border border-[#d7bea1] px-4 py-3 outline-none transition focus:border-[#9f2f18] focus:ring-2 focus:ring-[#f4c46f]/40"
+            className="mt-2 w-full rounded-lg border border-[var(--brand-border)] px-4 py-3 outline-none transition focus:border-[#9f2f18] focus:ring-2 focus:ring-[#f4c46f]/40"
           />
         </div>
 
@@ -68,7 +68,7 @@ export function AccountProfileForm({ user, onSaved }: Props) {
           <input
             value={user.email ?? ""}
             disabled
-            className="mt-2 w-full rounded-lg border border-[#ead8c1] bg-[#fff8ee] px-4 py-3 text-[#6b5a50]"
+            className="mt-2 w-full rounded-lg border border-[var(--brand-border)] bg-[var(--brand-surface-soft)] px-4 py-3 text-[#6b5a50]"
           />
           <p className="mt-1 text-xs text-neutral-500">
             Email changes are not available here yet.
@@ -80,7 +80,7 @@ export function AccountProfileForm({ user, onSaved }: Props) {
           <input
             name="phone"
             defaultValue={user.phone ?? ""}
-            className="mt-2 w-full rounded-lg border border-[#d7bea1] px-4 py-3 outline-none transition focus:border-[#9f2f18] focus:ring-2 focus:ring-[#f4c46f]/40"
+            className="mt-2 w-full rounded-lg border border-[var(--brand-border)] px-4 py-3 outline-none transition focus:border-[#9f2f18] focus:ring-2 focus:ring-[#f4c46f]/40"
           />
         </div>
 
@@ -89,7 +89,7 @@ export function AccountProfileForm({ user, onSaved }: Props) {
           <input
             name="postalCode"
             defaultValue={user.postalCode ?? ""}
-            className="mt-2 w-full rounded-lg border border-[#d7bea1] px-4 py-3 outline-none transition focus:border-[#9f2f18] focus:ring-2 focus:ring-[#f4c46f]/40"
+            className="mt-2 w-full rounded-lg border border-[var(--brand-border)] px-4 py-3 outline-none transition focus:border-[#9f2f18] focus:ring-2 focus:ring-[#f4c46f]/40"
           />
         </div>
 
@@ -98,7 +98,7 @@ export function AccountProfileForm({ user, onSaved }: Props) {
           <input
             name="addressLine1"
             defaultValue={user.addressLine1 ?? ""}
-            className="mt-2 w-full rounded-lg border border-[#d7bea1] px-4 py-3 outline-none transition focus:border-[#9f2f18] focus:ring-2 focus:ring-[#f4c46f]/40"
+            className="mt-2 w-full rounded-lg border border-[var(--brand-border)] px-4 py-3 outline-none transition focus:border-[#9f2f18] focus:ring-2 focus:ring-[#f4c46f]/40"
           />
         </div>
 
@@ -108,7 +108,7 @@ export function AccountProfileForm({ user, onSaved }: Props) {
             name="addressLine2"
             defaultValue={user.addressLine2 ?? ""}
             placeholder="Apartment, suite, unit, building, etc."
-            className="mt-2 w-full rounded-lg border border-[#d7bea1] px-4 py-3 outline-none transition placeholder:text-[#9c897d] focus:border-[#9f2f18] focus:ring-2 focus:ring-[#f4c46f]/40"
+            className="mt-2 w-full rounded-lg border border-[var(--brand-border)] px-4 py-3 outline-none transition placeholder:text-[#9c897d] focus:border-[#9f2f18] focus:ring-2 focus:ring-[#f4c46f]/40"
           />
         </div>
 
@@ -117,7 +117,7 @@ export function AccountProfileForm({ user, onSaved }: Props) {
           <input
             name="city"
             defaultValue={user.city ?? ""}
-            className="mt-2 w-full rounded-lg border border-[#d7bea1] px-4 py-3 outline-none transition focus:border-[#9f2f18] focus:ring-2 focus:ring-[#f4c46f]/40"
+            className="mt-2 w-full rounded-lg border border-[var(--brand-border)] px-4 py-3 outline-none transition focus:border-[#9f2f18] focus:ring-2 focus:ring-[#f4c46f]/40"
           />
         </div>
 
@@ -126,7 +126,7 @@ export function AccountProfileForm({ user, onSaved }: Props) {
           <input
             name="state"
             defaultValue={user.state ?? ""}
-            className="mt-2 w-full rounded-lg border border-[#d7bea1] px-4 py-3 outline-none transition focus:border-[#9f2f18] focus:ring-2 focus:ring-[#f4c46f]/40"
+            className="mt-2 w-full rounded-lg border border-[var(--brand-border)] px-4 py-3 outline-none transition focus:border-[#9f2f18] focus:ring-2 focus:ring-[#f4c46f]/40"
           />
         </div>
 
@@ -137,7 +137,7 @@ export function AccountProfileForm({ user, onSaved }: Props) {
             defaultValue={user.deliveryNotes ?? ""}
             rows={4}
             placeholder="Gate code, apartment instructions, preferred drop-off notes, parking details, etc."
-            className="mt-2 w-full rounded-lg border border-[#d7bea1] px-4 py-3 outline-none transition placeholder:text-[#9c897d] focus:border-[#9f2f18] focus:ring-2 focus:ring-[#f4c46f]/40"
+            className="mt-2 w-full rounded-lg border border-[var(--brand-border)] px-4 py-3 outline-none transition placeholder:text-[#9c897d] focus:border-[#9f2f18] focus:ring-2 focus:ring-[#f4c46f]/40"
           />
         </div>
       </div>

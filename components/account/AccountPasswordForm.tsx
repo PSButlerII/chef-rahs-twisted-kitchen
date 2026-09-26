@@ -79,7 +79,7 @@ export function AccountPasswordForm() {
   }
 
   return (
-    <section className="mt-8 border-t border-[#d7bea1] pt-7">
+    <section className="mt-8 border-t border-[var(--brand-border)] pt-7">
       <p className="brand-eyebrow">Account Security</p>
       <h2 className="mt-2 text-2xl font-black">Change Password</h2>
       <p className="mt-2 text-sm leading-6 text-[#6b5a50]">
@@ -95,7 +95,7 @@ export function AccountPasswordForm() {
             type="password"
             autoComplete="current-password"
             required
-            className="mt-2 w-full rounded-lg border border-[#d7bea1] px-4 py-3 outline-none transition focus:border-[#9f2f18] focus:ring-2 focus:ring-[#f4c46f]/40"
+            className="mt-2 w-full rounded-lg border border-[var(--brand-border)] px-4 py-3 outline-none transition focus:border-[#9f2f18] focus:ring-2 focus:ring-[#f4c46f]/40"
           />
         </label>
 
@@ -108,7 +108,7 @@ export function AccountPasswordForm() {
               autoComplete="new-password"
               minLength={MINIMUM_PASSWORD_LENGTH}
               required
-              className="mt-2 w-full rounded-lg border border-[#d7bea1] px-4 py-3 outline-none transition focus:border-[#9f2f18] focus:ring-2 focus:ring-[#f4c46f]/40"
+              className="mt-2 w-full rounded-lg border border-[var(--brand-border)] px-4 py-3 outline-none transition focus:border-[#9f2f18] focus:ring-2 focus:ring-[#f4c46f]/40"
             />
           </label>
 
@@ -120,7 +120,7 @@ export function AccountPasswordForm() {
               autoComplete="new-password"
               minLength={MINIMUM_PASSWORD_LENGTH}
               required
-              className="mt-2 w-full rounded-lg border border-[#d7bea1] px-4 py-3 outline-none transition focus:border-[#9f2f18] focus:ring-2 focus:ring-[#f4c46f]/40"
+              className="mt-2 w-full rounded-lg border border-[var(--brand-border)] px-4 py-3 outline-none transition focus:border-[#9f2f18] focus:ring-2 focus:ring-[#f4c46f]/40"
             />
           </label>
         </div>

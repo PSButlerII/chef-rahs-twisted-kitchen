@@ -143,7 +143,7 @@ export function CartSummary() {
                   )}
 
                   {item.customerInstructions && (
-                    <div className="mt-3 rounded-lg bg-[#fff8ee] p-3 text-sm text-[#6b5a50]">
+                    <div className="mt-3 rounded-lg bg-[var(--brand-surface-soft)] p-3 text-sm text-[#6b5a50]">
                       <p className="font-bold">Special Instructions</p>
                       <p className="mt-1 whitespace-pre-wrap">
                         {item.customerInstructions}
@@ -160,12 +160,12 @@ export function CartSummary() {
                 </button>
               </div>
 
-              <div className="mt-5 flex flex-wrap items-center justify-between gap-4 border-t border-[#ead8c1] pt-4">
+              <div className="mt-5 flex flex-wrap items-center justify-between gap-4 border-t border-[var(--brand-border)] pt-4">
                 <div className="flex items-center gap-3">
                   <button
                     onClick={() => decreaseQuantity(item.cartId)}
                     aria-label={`Decrease quantity for ${item.name}`}
-                    className="h-10 w-10 rounded-full border border-[#d7bea1] bg-white text-lg font-bold transition hover:border-[#9f2f18]"
+                    className="h-10 w-10 rounded-full border border-[var(--brand-border)] bg-white text-lg font-bold transition hover:border-[#9f2f18]"
                   >
                     -
                   </button>
@@ -177,7 +177,7 @@ export function CartSummary() {
                   <button
                     onClick={() => increaseQuantity(item.cartId)}
                     aria-label={`Increase quantity for ${item.name}`}
-                    className="h-10 w-10 rounded-full border border-[#d7bea1] bg-white text-lg font-bold transition hover:border-[#9f2f18]"
+                    className="h-10 w-10 rounded-full border border-[var(--brand-border)] bg-white text-lg font-bold transition hover:border-[#9f2f18]"
                   >
                     +
                   </button>
@@ -230,7 +230,7 @@ export function CartSummary() {
             </span>
           </div>
 
-          <div className="border-t border-[#ead8c1] pt-3 text-base font-black text-[#24130f]">
+          <div className="border-t border-[var(--brand-border)] pt-3 text-base font-black text-[#24130f]">
             <div className="flex justify-between">
               <span>Total</span>
               <span>${total.toFixed(2)}</span>

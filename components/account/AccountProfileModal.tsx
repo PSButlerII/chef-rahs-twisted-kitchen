@@ -37,7 +37,7 @@ export function AccountProfileModal({
 
       {open && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#24130f]/70 px-4 backdrop-blur-sm">
-          <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-lg bg-[#fff8ee] p-6 shadow-2xl">
+          <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-lg bg-[var(--brand-surface-soft)] p-6 shadow-2xl">
             <div className="mb-5 flex items-start justify-between gap-4">
               <div>
                 <p className="brand-eyebrow">Account</p>
@@ -53,7 +53,7 @@ export function AccountProfileModal({
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                className="rounded-full border border-[#d7bea1] bg-white px-3 py-1 text-sm font-bold transition hover:border-[#9f2f18]"
+                className="rounded-full border border-[var(--brand-border)] bg-white px-3 py-1 text-sm font-bold transition hover:border-[#9f2f18]"
               >
                 Close
               </button>

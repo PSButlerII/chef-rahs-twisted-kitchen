@@ -1,6 +1,6 @@
 # Client Launch Information Needed
 
-Last updated: July 14, 2026
+Last updated: September 26, 2026
 
 Use this list to request the remaining information and assets from the client before launching Chef Rah's Twisted Kitchen.
 
@@ -119,7 +119,7 @@ These items may not block launch, but they improve quality and client confidence
 ### Brand Assets
 
 - Final approved logo files.
-- Final brand colors if different from the current site style.
+- Public color palette approval — complete September 26, 2026. The selected production direction is Sage-forward; dark brand sections and ember/gold accents remain unchanged.
 - Final social media profile URLs.
 - Final business phone number.
 - Final business email.

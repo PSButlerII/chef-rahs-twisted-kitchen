@@ -307,7 +307,7 @@ export function WeeklyMenuOrderForm({ weeklyMenu }: Props) {
   }
 
   return (
-    <div className="mb-8 rounded-lg border border-[#f4c46f]/35 bg-[#fff8ee] p-5 text-[#24130f] shadow-xl sm:p-6">
+    <div className="mb-8 rounded-lg border border-[#f4c46f]/35 bg-[var(--brand-surface-soft)] p-5 text-[#24130f] shadow-xl sm:p-6">
       <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-start">
         <div>
           <h3 className="text-2xl font-black">Build Your Weekly Plan</h3>
@@ -348,7 +348,7 @@ export function WeeklyMenuOrderForm({ weeklyMenu }: Props) {
               setSlotSelections({});
               setAdded(false);
             }}
-            className="w-full min-w-0 rounded-lg border border-[#d7bea1] bg-white px-4 py-3 text-sm font-medium text-[#24130f] outline-none transition focus:border-[#9f2f18] focus:ring-2 focus:ring-[#f4c46f]/40"
+            className="w-full min-w-0 rounded-lg border border-[var(--brand-border)] bg-white px-4 py-3 text-sm font-medium text-[#24130f] outline-none transition focus:border-[#9f2f18] focus:ring-2 focus:ring-[#f4c46f]/40"
             disabled={unavailable}
           >
             {weeklyMenu.packages.map((pkg) => (
@@ -361,13 +361,13 @@ export function WeeklyMenuOrderForm({ weeklyMenu }: Props) {
           </select>
         </label>
 
-        <div className="rounded-lg border border-[#ead8c1] bg-white px-4 py-3 text-sm font-bold text-[#6f1f12]">
+        <div className="rounded-lg border border-[var(--brand-border)] bg-white px-4 py-3 text-sm font-bold text-[#6f1f12]">
           {selectedSlotCount}/{requiredSlotCount} meals selected
         </div>
       </div>
 
       {selectedPackage && (
-        <section className="mt-5 rounded-lg border border-[#ead8c1] bg-white p-4">
+        <section className="mt-5 rounded-lg border border-[var(--brand-border)] bg-white p-4">
           <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
             <div>
               <p className="text-xs font-black uppercase text-[#9f2f18]">
@@ -408,7 +408,7 @@ export function WeeklyMenuOrderForm({ weeklyMenu }: Props) {
               return (
                 <div
                   key={dayNumber}
-                  className="rounded-lg border border-[#ead8c1] bg-[#fff8ee] p-4"
+                  className="rounded-lg border border-[var(--brand-border)] bg-[var(--brand-surface-soft)] p-4"
                 >
                   <h5 className="text-sm font-black uppercase text-[#6f1f12]">
                     Day {dayNumber}
@@ -434,7 +434,7 @@ export function WeeklyMenuOrderForm({ weeklyMenu }: Props) {
                               onChange={(event) =>
                                 updateSlot(slot.key, event.target.value)
                               }
-                              className="w-full min-w-0 rounded-lg border border-[#d7bea1] bg-white px-4 py-3 text-sm font-medium text-[#24130f] outline-none transition focus:border-[#9f2f18] focus:ring-2 focus:ring-[#f4c46f]/40"
+                              className="w-full min-w-0 rounded-lg border border-[var(--brand-border)] bg-white px-4 py-3 text-sm font-medium text-[#24130f] outline-none transition focus:border-[#9f2f18] focus:ring-2 focus:ring-[#f4c46f]/40"
                               disabled={unavailable}
                             >
                               <option value="">Choose a weekly offering</option>
@@ -455,7 +455,7 @@ export function WeeklyMenuOrderForm({ weeklyMenu }: Props) {
 
                           {selectedOffering &&
                             Object.keys(groupedOptions).length > 0 && (
-                              <div className="grid gap-3 rounded-lg border border-[#ead8c1] bg-white p-3">
+                              <div className="grid gap-3 rounded-lg border border-[var(--brand-border)] bg-white p-3">
                                 {Object.entries(groupedOptions).map(
                                   ([optionType, options]) => {
                                     const label =
@@ -485,7 +485,7 @@ export function WeeklyMenuOrderForm({ weeklyMenu }: Props) {
                                               event.target.value,
                                             )
                                           }
-                                          className="w-full min-w-0 rounded-lg border border-[#d7bea1] bg-white px-3 py-2 text-sm font-medium normal-case text-[#24130f] outline-none transition focus:border-[#9f2f18] focus:ring-2 focus:ring-[#f4c46f]/40"
+                                          className="w-full min-w-0 rounded-lg border border-[var(--brand-border)] bg-white px-3 py-2 text-sm font-medium normal-case text-[#24130f] outline-none transition focus:border-[#9f2f18] focus:ring-2 focus:ring-[#f4c46f]/40"
                                           disabled={unavailable}
                                         >
                                           {!required && (

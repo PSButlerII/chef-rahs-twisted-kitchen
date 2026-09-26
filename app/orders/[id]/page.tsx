@@ -162,21 +162,21 @@ export default async function OrderPage({ params }: OrderPageProps) {
           <p className="mt-3 break-all text-sm text-[#6b5a50]">{order.id}</p>
 
           <section className="mt-8 grid gap-4 md:grid-cols-3">
-            <div className="rounded-lg bg-[#fff8ee] p-4">
+            <div className="rounded-lg bg-[var(--brand-surface-soft)] p-4">
               <p className="text-sm font-bold text-[#9f2f18]">Status</p>
               <p className="mt-2 font-black">
                 {formatOrderStatus(order.status)}
               </p>
             </div>
 
-            <div className="rounded-lg bg-[#fff8ee] p-4">
+            <div className="rounded-lg bg-[var(--brand-surface-soft)] p-4">
               <p className="text-sm font-bold text-[#9f2f18]">Approval</p>
               <p className="mt-2 font-black">
                 {formatApprovalStatus(order.approvalStatus)}
               </p>
             </div>
 
-            <div className="rounded-lg bg-[#fff8ee] p-4">
+            <div className="rounded-lg bg-[var(--brand-surface-soft)] p-4">
               <p className="text-sm font-bold text-[#9f2f18]">Payment</p>
               <p className="mt-2 font-black">
                 {formatPaymentStatus(order.paymentStatus) ?? "Not set"}
@@ -319,7 +319,7 @@ export default async function OrderPage({ params }: OrderPageProps) {
               </div>
             </div>
           </section>
-          <section className="mt-8 rounded-lg border border-[#ead8c1] bg-white p-6 shadow-sm">
+          <section className="mt-8 rounded-lg border border-[var(--brand-border)] bg-white p-6 shadow-sm">
             <h2 className="text-2xl font-black">
               Contact / Delivery Information
             </h2>
@@ -373,7 +373,7 @@ export default async function OrderPage({ params }: OrderPageProps) {
               {order.items.map((item) => (
                 <div
                   key={item.id}
-                  className="rounded-lg border border-[#ead8c1] p-4"
+                  className="rounded-lg border border-[var(--brand-border)] p-4"
                 >
                   {item.weeklyMealPlanSelection ? (
                     <div className="mb-3 border-l-4 border-emerald-500 bg-emerald-50 px-3 py-2 text-sm text-emerald-950">
@@ -465,7 +465,7 @@ export default async function OrderPage({ params }: OrderPageProps) {
             </div>
           </section>
 
-          <section className="mt-8 border-t border-[#ead8c1] pt-6">
+          <section className="mt-8 border-t border-[var(--brand-border)] pt-6">
             <div className="space-y-3 text-sm">
               <div className="flex justify-between">
                 <span>Subtotal</span>

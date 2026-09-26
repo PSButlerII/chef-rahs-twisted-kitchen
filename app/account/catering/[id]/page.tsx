@@ -66,21 +66,21 @@ export default async function AccountCateringDetailsPage({
           </h1>
 
           <div className="mt-6 grid gap-4 md:grid-cols-3">
-            <div className="rounded-lg bg-[#fff8ee] p-4">
+            <div className="rounded-lg bg-[var(--brand-surface-soft)] p-4">
               <p className="text-sm font-bold text-[#9f2f18]">Status</p>
               <p className="mt-2 font-black">
                 {formatServiceRequestStatus(request.status)}
               </p>
             </div>
 
-            <div className="rounded-lg bg-[#fff8ee] p-4">
+            <div className="rounded-lg bg-[var(--brand-surface-soft)] p-4">
               <p className="text-sm font-bold text-[#9f2f18]">Approval</p>
               <p className="mt-2 font-black">
                 {formatApprovalStatus(request.approvalStatus)}
               </p>
             </div>
 
-            <div className="rounded-lg bg-[#fff8ee] p-4">
+            <div className="rounded-lg bg-[var(--brand-surface-soft)] p-4">
               <p className="text-sm font-bold text-[#9f2f18]">Guests</p>
               <p className="mt-2 font-black">
                 {request.guestCount ?? "Not provided"}
@@ -89,7 +89,7 @@ export default async function AccountCateringDetailsPage({
           </div>
 
           {request.approvalNote && (
-            <div className="mt-6 rounded-lg border border-[#ead8c1] bg-[#fff8ee] p-4 text-sm">
+            <div className="mt-6 rounded-lg border border-[var(--brand-border)] bg-[var(--brand-surface-soft)] p-4 text-sm">
               <p className="font-black">Approval Note</p>
               <p className="mt-2 whitespace-pre-wrap text-[#6b5a50]">
                 {request.approvalNote}
@@ -156,7 +156,7 @@ export default async function AccountCateringDetailsPage({
                   )}
 
                 {depositAmount === 0 && !request.depositPaidAt && (
-                  <div className="mt-4 rounded-lg border border-[#ead8c1] bg-[#fff8ee] p-4 text-sm text-[#6b5a50]">
+                  <div className="mt-4 rounded-lg border border-[var(--brand-border)] bg-[var(--brand-surface-soft)] p-4 text-sm text-[#6b5a50]">
                     <p className="font-black">No Deposit Due</p>
 
                     <p className="mt-2">

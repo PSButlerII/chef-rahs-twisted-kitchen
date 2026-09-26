@@ -31,7 +31,7 @@ export function WeeklyMenuSection({ weeklyMenu }: Props) {
   return (
     <section
       id="weekly-meal-plans"
-      className="mb-14 rounded-lg border border-[#ead8c1] bg-[#24130f] p-4 text-white shadow-2xl sm:p-6 lg:p-8"
+      className="mb-14 rounded-lg border border-[var(--brand-border)] bg-[#24130f] p-4 text-white shadow-2xl sm:p-6 lg:p-8"
     >
       <div className="mb-8 flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
         <div>
@@ -71,7 +71,7 @@ export function WeeklyMenuSection({ weeklyMenu }: Props) {
         <h3 className="text-xl font-black">Choose In This Order</h3>
 
         {!weeklyMenu.customerSchedulingEnabled && (
-          <div className="mt-4 rounded-lg border border-[#f4c46f]/45 bg-[#fff8ee] p-4 text-sm font-semibold leading-6 text-[#24130f]">
+          <div className="mt-4 rounded-lg border border-[#f4c46f]/45 bg-[var(--brand-surface-soft)] p-4 text-sm font-semibold leading-6 text-[#24130f]">
             {weeklyMenu.deliveryWindowLabel ??
               DEFAULT_WEEKLY_FIXED_MESSAGE}{" "}
             Ordering opens {weeklyMenu.orderingOpenLabel} and closes{" "}
@@ -171,7 +171,7 @@ export function WeeklyMenuSection({ weeklyMenu }: Props) {
                 className="rounded-lg border border-white/15 bg-white p-4 text-[#24130f] shadow-sm"
               >
                 <div className="flex flex-col gap-4 sm:flex-row">
-                  <div className="relative aspect-[4/3] w-full overflow-hidden rounded-lg border border-[#ead8c1] bg-[#f7ead7] sm:h-32 sm:w-32 sm:shrink-0">
+                  <div className="relative aspect-[4/3] w-full overflow-hidden rounded-lg border border-[var(--brand-border)] bg-[#f7ead7] sm:h-32 sm:w-32 sm:shrink-0">
                     <Image
                       src={offering.imageUrl || "/placeholder1.png"}
                       alt={offering.name}
@@ -220,7 +220,7 @@ export function WeeklyMenuSection({ weeklyMenu }: Props) {
                       ([optionType, options]) => (
                         <div
                           key={optionType}
-                          className="rounded-lg border border-[#ead8c1] bg-[#fff8ee] p-4"
+                          className="rounded-lg border border-[var(--brand-border)] bg-[var(--brand-surface-soft)] p-4"
                         >
                           <h5 className="text-sm font-black">
                             {formatWeeklyMealPlanOptionType(optionType)}

@@ -164,7 +164,7 @@ export function AccountAllergenPreferencesForm() {
                 className={
                   selected
                     ? "flex cursor-pointer items-center gap-3 rounded-lg border border-[#9f2f18] bg-[#fff3cf] p-4 text-sm font-bold text-[#6f1f12]"
-                    : "flex cursor-pointer items-center gap-3 rounded-lg border border-[#ead8c1] bg-[#fff8ee] p-4 text-sm font-bold text-[#24130f] transition hover:bg-white"
+                    : "flex cursor-pointer items-center gap-3 rounded-lg border border-[var(--brand-border)] bg-[var(--brand-surface-soft)] p-4 text-sm font-bold text-[#24130f] transition hover:bg-white"
                 }
               >
                 <input

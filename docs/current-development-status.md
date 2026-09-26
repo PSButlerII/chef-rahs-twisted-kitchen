@@ -1,5 +1,13 @@
 You are helping continue development on a Next.js/Prisma food service web app for Chef Rah's Twisted Kitchen.
 
+## September 26, 2026 — Client-approved Sage public theme
+
+- Applied the client-selected Sage-forward palette to public and customer-facing pages using shared semantic theme tokens for page backgrounds, cards, subtle surfaces, blush sections, borders, and the sage accent.
+- Preserved the existing dark heroes, calls to action, gallery treatment, footer, ember/gold accents, operational status colors, content, layout, navigation, and business workflows.
+- The shared header now uses the translucent Sage treatment on public/customer routes while `/admin` and `/admin/*` retain the prior cream header and tan borders.
+- Public focus treatment uses the higher-contrast ember outline identified during concept accessibility review; the existing admin focus treatment remains unchanged.
+- No payment, authentication, ordering, upload, database schema, migration, dependency, or Admin Dashboard styling behavior changed.
+
 ## September 17, 2026 — Client-approved About biography
 
 - Refreshed the public About page in a warm first-person voice using the client-approved biography direction: more than 20 years of culinary experience, South Florida roots, an Atlanta culinary career, and weekly meal-plan terminology.

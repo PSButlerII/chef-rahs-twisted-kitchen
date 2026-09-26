@@ -36,9 +36,9 @@ import {
 } from "@/lib/square-display-labels";
 
 const sectionClass =
-  "rounded-lg border border-[#ead8c1] bg-white/95 p-5 shadow-[0_18px_45px_rgba(76,36,18,0.08)] sm:p-6";
+  "rounded-lg border border-[var(--brand-border)] bg-white/95 p-5 shadow-[0_18px_45px_rgba(76,36,18,0.08)] sm:p-6";
 const inputClass =
-  "w-full rounded-lg border border-[#d7bea1] bg-white px-4 py-3 text-sm text-[#24130f] outline-none transition placeholder:text-[#9c897d] focus:border-[#9f2f18] focus:ring-2 focus:ring-[#f4c46f]/40";
+  "w-full rounded-lg border border-[var(--brand-border)] bg-white px-4 py-3 text-sm text-[#24130f] outline-none transition placeholder:text-[#9c897d] focus:border-[#9f2f18] focus:ring-2 focus:ring-[#f4c46f]/40";
 const labelClass = "block text-sm font-bold text-[#24130f]";
 
 const orderTypeOptions: {
@@ -599,7 +599,7 @@ export default function CheckoutPage() {
             <section className={sectionClass}>
               <h2 className="text-2xl font-black">Order Method</h2>
 
-              <div className="mt-5 grid grid-cols-2 rounded-lg border border-[#ead8c1] bg-[#fff8ee] p-1">
+              <div className="mt-5 grid grid-cols-2 rounded-lg border border-[var(--brand-border)] bg-[var(--brand-surface-soft)] p-1">
                 {orderTypeOptions.map((option) => {
                   const selected = details.orderType === option.value;
 
@@ -635,7 +635,7 @@ export default function CheckoutPage() {
                 </button>
               </div>
 
-              <div className="mt-5 divide-y divide-[#ead8c1]">
+              <div className="mt-5 divide-y divide-[var(--brand-border)]">
                 {uniqueCheckoutAllergenConflicts.length > 0 && (
                   <div className="mb-5">
                     <AllergenConflictWarning
@@ -797,7 +797,7 @@ export default function CheckoutPage() {
               </p>
 
               {isGuestCheckout && (
-                <p className="mt-3 rounded-lg border border-[#ead8c1] bg-[#fff8ee] p-3 text-sm leading-6 text-[#6b5a50]">
+                <p className="mt-3 rounded-lg border border-[var(--brand-border)] bg-[var(--brand-surface-soft)] p-3 text-sm leading-6 text-[#6b5a50]">
                   Already have an account?{" "}
                   <Link href="/login" className="font-bold text-[#9f2f18]">
                     Sign in
@@ -1213,7 +1213,7 @@ export default function CheckoutPage() {
                   </span>
                 </div>
 
-                <div className="border-t border-[#ead8c1] pt-3 text-lg font-black text-[#24130f]">
+                <div className="border-t border-[var(--brand-border)] pt-3 text-lg font-black text-[#24130f]">
                   <div className="flex justify-between gap-4">
                     <span>Total</span>
                     <span>${total.toFixed(2)}</span>
@@ -1233,7 +1233,7 @@ export default function CheckoutPage() {
               )}
 
               {details.orderType === "delivery" && (
-                <div className="mt-5 border-t border-[#ead8c1] pt-5 text-sm text-[#6b5a50]">
+                <div className="mt-5 border-t border-[var(--brand-border)] pt-5 text-sm text-[#6b5a50]">
                   <p className="font-black text-[#24130f]">Delivery To</p>
 
                   <p className="mt-2">{details.name || "Name not provided"}</p>

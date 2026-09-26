@@ -126,7 +126,7 @@ export function MenuItemModal({ item, open, onClose }: Props) {
 
   return createPortal(
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#24130f]/70 px-4 backdrop-blur-sm">
-      <div className="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-lg bg-[#fff8ee] p-5 shadow-2xl sm:p-6">
+      <div className="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-lg bg-[var(--brand-surface-soft)] p-5 shadow-2xl sm:p-6">
         {item.imageUrl && (
           <div className="relative mb-6 aspect-[16/7] overflow-hidden rounded-lg bg-[#f7ead7]">
             <Image
@@ -166,14 +166,14 @@ export function MenuItemModal({ item, open, onClose }: Props) {
           </div>
           <button
             onClick={onClose}
-            className="rounded-full border border-[#d7bea1] bg-white px-3 py-1 text-sm font-bold text-[#24130f] transition hover:border-[#9f2f18]"
+            className="rounded-full border border-[var(--brand-border)] bg-white px-3 py-1 text-sm font-bold text-[#24130f] transition hover:border-[#9f2f18]"
           >
             Close
           </button>
         </div>
 
         <div className="mt-5 grid gap-3 md:grid-cols-3">
-          <div className="rounded-lg border border-[#ead8c1] bg-white p-4">
+          <div className="rounded-lg border border-[var(--brand-border)] bg-white p-4">
             <p className="text-xs font-black uppercase text-[#9f2f18]">
               Starting At
             </p>
@@ -182,7 +182,7 @@ export function MenuItemModal({ item, open, onClose }: Props) {
             </p>
           </div>
 
-          <div className="rounded-lg border border-[#ead8c1] bg-white p-4">
+          <div className="rounded-lg border border-[var(--brand-border)] bg-white p-4">
             <p className="text-xs font-black uppercase text-[#9f2f18]">
               Options
             </p>
@@ -195,7 +195,7 @@ export function MenuItemModal({ item, open, onClose }: Props) {
             </p>
           </div>
 
-          <div className="rounded-lg border border-[#ead8c1] bg-white p-4">
+          <div className="rounded-lg border border-[var(--brand-border)] bg-white p-4">
             <p className="text-xs font-black uppercase text-[#9f2f18]">
               Allergens
             </p>
@@ -228,7 +228,7 @@ export function MenuItemModal({ item, open, onClose }: Props) {
                     ? "border-red-400 bg-red-50"
                     : group.required && selected[group.id]?.length > 0
                       ? "border-green-300 bg-green-50"
-                      : "border-[#ead8c1] bg-white"
+                      : "border-[var(--brand-border)] bg-white"
                 }`}
               >
                 <div className="flex flex-wrap items-center gap-2">
@@ -262,7 +262,7 @@ export function MenuItemModal({ item, open, onClose }: Props) {
                         className={`flex cursor-pointer gap-4 rounded-lg border p-4 transition ${
                           checked
                             ? "border-[#9f2f18] bg-[#fff3cf]"
-                            : "border-[#ead8c1] hover:bg-[#fff8ee]"
+                            : "border-[var(--brand-border)] hover:bg-[var(--brand-surface-soft)]"
                         }`}
                       >
                         <input
@@ -342,27 +342,27 @@ export function MenuItemModal({ item, open, onClose }: Props) {
         </div>
 
         {item.customerInstructionsEnabled && (
-          <section className="mt-6 rounded-lg border border-[#ead8c1] bg-white p-5">
+          <section className="mt-6 rounded-lg border border-[var(--brand-border)] bg-white p-5">
             <label className="block font-bold">Special Instructions</label>
 
             <textarea
               rows={4}
               value={customerInstructions}
               onChange={(e) => setCustomerInstructions(e.target.value)}
-              className="mt-3 w-full rounded-lg border border-[#d7bea1] px-4 py-3 text-sm outline-none transition focus:border-[#9f2f18] focus:ring-2 focus:ring-[#f4c46f]/40"
+              className="mt-3 w-full rounded-lg border border-[var(--brand-border)] px-4 py-3 text-sm outline-none transition focus:border-[#9f2f18] focus:ring-2 focus:ring-[#f4c46f]/40"
               placeholder="Share relevant preferences or notes for this item."
             />
           </section>
         )}
         {selectedSummary.length > 0 && (
-          <section className="mt-6 rounded-lg border border-[#ead8c1] bg-white p-5">
+          <section className="mt-6 rounded-lg border border-[var(--brand-border)] bg-white p-5">
             <h3 className="font-black">Your Selections</h3>
 
             <div className="mt-3 space-y-2 text-sm">
               {selectedSummary.map((selection, index) => (
                 <div
                   key={`${selection.groupName}-${selection.choiceName}-${index}`}
-                  className="flex flex-wrap justify-between gap-2 rounded-lg bg-[#fff8ee] p-3"
+                  className="flex flex-wrap justify-between gap-2 rounded-lg bg-[var(--brand-surface-soft)] p-3"
                 >
                   <div>
                     <span className="font-medium">{selection.groupName}:</span>{" "}
@@ -384,7 +384,7 @@ export function MenuItemModal({ item, open, onClose }: Props) {
             </div>
           </section>
         )}
-        <div className="mt-8 flex flex-col gap-4 border-t border-[#ead8c1] pt-5 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mt-8 flex flex-col gap-4 border-t border-[var(--brand-border)] pt-5 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-sm font-bold text-[#9f2f18]">Item total</p>
             <p className="text-3xl font-black">${displayTotal.toFixed(2)}</p>

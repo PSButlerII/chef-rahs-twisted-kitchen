@@ -15,7 +15,7 @@ export default async function CheckoutThankYouPage({
   return (
     <main className="brand-page px-4 py-12 text-[#24130f] sm:px-6">
       <div className="mx-auto max-w-3xl">
-        <section className="rounded-lg border border-[#ead8c1] bg-white/95 p-6 shadow-[0_18px_45px_rgba(76,36,18,0.08)] sm:p-8">
+        <section className="rounded-lg border border-[var(--brand-border)] bg-white/95 p-6 shadow-[0_18px_45px_rgba(76,36,18,0.08)] sm:p-8">
           <p className="brand-eyebrow">Order received</p>
           <h1 className="mt-3 text-4xl font-black sm:text-5xl">
             Thank You For Your Order
@@ -27,7 +27,7 @@ export default async function CheckoutThankYouPage({
           </p>
 
           {orderId && (
-            <div className="mt-6 rounded-lg border border-[#ead8c1] bg-[#fff8ee] p-4">
+            <div className="mt-6 rounded-lg border border-[var(--brand-border)] bg-[var(--brand-surface-soft)] p-4">
               <p className="text-sm font-bold text-[#9f2f18]">Order ID</p>
               <p className="mt-2 break-all font-mono text-sm text-[#24130f]">
                 {orderId}

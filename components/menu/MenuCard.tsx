@@ -80,7 +80,7 @@ export function MenuCard({ item }: MenuCardProps) {
         <div className="mt-5 grid gap-2">
           <a
             href={`#${detailsId}`}
-            className="rounded-lg border border-[#d7bea1] bg-white px-4 py-3 text-sm font-black text-[#6f1f12] transition hover:border-[#9f2f18] hover:bg-[#fff8ee]"
+            className="rounded-lg border border-[var(--brand-border)] bg-white px-4 py-3 text-sm font-black text-[#6f1f12] transition hover:border-[#9f2f18] hover:bg-[var(--brand-surface-soft)]"
           >
             View Details
           </a>
@@ -96,7 +96,7 @@ export function MenuCard({ item }: MenuCardProps) {
           aria-label="Close item details"
         />
 
-        <div className="relative max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-lg bg-[#fff8ee] p-5 shadow-2xl sm:p-6">
+        <div className="relative max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-lg bg-[var(--brand-surface-soft)] p-5 shadow-2xl sm:p-6">
           {item.imageUrl && (
             <div className="relative mb-6 aspect-[16/7] overflow-hidden rounded-lg bg-[#f7ead7]">
               <Image
@@ -129,14 +129,14 @@ export function MenuCard({ item }: MenuCardProps) {
 
             <a
               href="#menu"
-              className="rounded-full border border-[#d7bea1] bg-white px-3 py-1 text-sm font-bold text-[#24130f] transition hover:border-[#9f2f18]"
+              className="rounded-full border border-[var(--brand-border)] bg-white px-3 py-1 text-sm font-bold text-[#24130f] transition hover:border-[#9f2f18]"
             >
               Close
             </a>
           </div>
 
           <div className="mt-5 grid gap-3 md:grid-cols-3">
-            <div className="rounded-lg border border-[#ead8c1] bg-white p-4">
+            <div className="rounded-lg border border-[var(--brand-border)] bg-white p-4">
               <p className="text-xs font-black uppercase text-[#9f2f18]">
                 Starting At
               </p>
@@ -145,7 +145,7 @@ export function MenuCard({ item }: MenuCardProps) {
               </p>
             </div>
 
-            <div className="rounded-lg border border-[#ead8c1] bg-white p-4">
+            <div className="rounded-lg border border-[var(--brand-border)] bg-white p-4">
               <p className="text-xs font-black uppercase text-[#9f2f18]">
                 Options
               </p>
@@ -158,7 +158,7 @@ export function MenuCard({ item }: MenuCardProps) {
               </p>
             </div>
 
-            <div className="rounded-lg border border-[#ead8c1] bg-white p-4">
+            <div className="rounded-lg border border-[var(--brand-border)] bg-white p-4">
               <p className="text-xs font-black uppercase text-[#9f2f18]">
                 Allergens
               </p>
@@ -175,7 +175,7 @@ export function MenuCard({ item }: MenuCardProps) {
               {item.optionGroups.map((group) => (
                 <section
                   key={group.id}
-                  className="rounded-lg border border-[#ead8c1] bg-white p-5"
+                  className="rounded-lg border border-[var(--brand-border)] bg-white p-5"
                 >
                   <div className="flex flex-wrap items-center gap-2">
                     <h3 className="text-lg font-black">{group.name}</h3>
@@ -194,7 +194,7 @@ export function MenuCard({ item }: MenuCardProps) {
                     {group.choices.map((choice) => (
                       <div
                         key={choice.id}
-                        className="rounded-lg border border-[#ead8c1] bg-[#fff8ee] p-4"
+                        className="rounded-lg border border-[var(--brand-border)] bg-[var(--brand-surface-soft)] p-4"
                       >
                         <div className="flex flex-wrap items-center justify-between gap-2">
                           <p className="font-bold">{choice.name}</p>

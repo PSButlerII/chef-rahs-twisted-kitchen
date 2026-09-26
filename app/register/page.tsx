@@ -11,7 +11,7 @@ export default function RegisterPage() {
           <input
             name="name"
             placeholder="Name"
-            className="w-full rounded-lg border border-[#d7bea1] px-4 py-3 outline-none transition focus:border-[#9f2f18] focus:ring-2 focus:ring-[#f4c46f]/40"
+            className="w-full rounded-lg border border-[var(--brand-border)] px-4 py-3 outline-none transition focus:border-[#9f2f18] focus:ring-2 focus:ring-[#f4c46f]/40"
             required
           />
 
@@ -19,7 +19,7 @@ export default function RegisterPage() {
             name="email"
             type="email"
             placeholder="Email"
-            className="w-full rounded-lg border border-[#d7bea1] px-4 py-3 outline-none transition focus:border-[#9f2f18] focus:ring-2 focus:ring-[#f4c46f]/40"
+            className="w-full rounded-lg border border-[var(--brand-border)] px-4 py-3 outline-none transition focus:border-[#9f2f18] focus:ring-2 focus:ring-[#f4c46f]/40"
             required
           />
 
@@ -27,11 +27,11 @@ export default function RegisterPage() {
             name="password"
             type="password"
             placeholder="Password"
-            className="w-full rounded-lg border border-[#d7bea1] px-4 py-3 outline-none transition focus:border-[#9f2f18] focus:ring-2 focus:ring-[#f4c46f]/40"
+            className="w-full rounded-lg border border-[var(--brand-border)] px-4 py-3 outline-none transition focus:border-[#9f2f18] focus:ring-2 focus:ring-[#f4c46f]/40"
             required
           />
 
-          <div className="border-t border-[#ead8c1] pt-5">
+          <div className="border-t border-[var(--brand-border)] pt-5">
             <h2 className="font-black">Optional delivery information</h2>
             <p className="mt-1 text-sm text-[#6b5a50]">
               You can add this now or update it later from your account page.
@@ -42,39 +42,39 @@ export default function RegisterPage() {
             <input
               name="phone"
               placeholder="Phone number optional"
-              className="rounded-lg border border-[#d7bea1] px-4 py-3 outline-none transition focus:border-[#9f2f18] focus:ring-2 focus:ring-[#f4c46f]/40"
+              className="rounded-lg border border-[var(--brand-border)] px-4 py-3 outline-none transition focus:border-[#9f2f18] focus:ring-2 focus:ring-[#f4c46f]/40"
             />
 
             <input
               name="postalCode"
               placeholder="ZIP / Postal code optional"
-              className="rounded-lg border border-[#d7bea1] px-4 py-3 outline-none transition focus:border-[#9f2f18] focus:ring-2 focus:ring-[#f4c46f]/40"
+              className="rounded-lg border border-[var(--brand-border)] px-4 py-3 outline-none transition focus:border-[#9f2f18] focus:ring-2 focus:ring-[#f4c46f]/40"
             />
           </div>
 
           <input
             name="addressLine1"
             placeholder="Delivery address optional"
-            className="w-full rounded-lg border border-[#d7bea1] px-4 py-3 outline-none transition focus:border-[#9f2f18] focus:ring-2 focus:ring-[#f4c46f]/40"
+            className="w-full rounded-lg border border-[var(--brand-border)] px-4 py-3 outline-none transition focus:border-[#9f2f18] focus:ring-2 focus:ring-[#f4c46f]/40"
           />
 
           <input
             name="addressLine2"
             placeholder="Apartment, suite, unit optional"
-            className="w-full rounded-lg border border-[#d7bea1] px-4 py-3 outline-none transition focus:border-[#9f2f18] focus:ring-2 focus:ring-[#f4c46f]/40"
+            className="w-full rounded-lg border border-[var(--brand-border)] px-4 py-3 outline-none transition focus:border-[#9f2f18] focus:ring-2 focus:ring-[#f4c46f]/40"
           />
 
           <div className="grid gap-4 md:grid-cols-2">
             <input
               name="city"
               placeholder="City optional"
-              className="rounded-lg border border-[#d7bea1] px-4 py-3 outline-none transition focus:border-[#9f2f18] focus:ring-2 focus:ring-[#f4c46f]/40"
+              className="rounded-lg border border-[var(--brand-border)] px-4 py-3 outline-none transition focus:border-[#9f2f18] focus:ring-2 focus:ring-[#f4c46f]/40"
             />
 
             <input
               name="state"
               placeholder="State optional"
-              className="rounded-lg border border-[#d7bea1] px-4 py-3 outline-none transition focus:border-[#9f2f18] focus:ring-2 focus:ring-[#f4c46f]/40"
+              className="rounded-lg border border-[var(--brand-border)] px-4 py-3 outline-none transition focus:border-[#9f2f18] focus:ring-2 focus:ring-[#f4c46f]/40"
             />
           </div>
 

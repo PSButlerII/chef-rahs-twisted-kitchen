@@ -38,7 +38,7 @@ export function ReorderButton({ items }: ReorderButtonProps) {
         className={
           hasReorderableItems
             ? "brand-button-secondary px-5 py-2 text-sm"
-            : "inline-flex cursor-not-allowed rounded-lg border border-[#ead8c1] bg-neutral-100 px-5 py-2 text-sm font-bold text-neutral-500"
+            : "inline-flex cursor-not-allowed rounded-lg border border-[var(--brand-border)] bg-neutral-100 px-5 py-2 text-sm font-bold text-neutral-500"
         }
       >
         {skippedWeeklyItemCount > 0 ? "Reorder Available Items" : "Reorder"}

@@ -20,7 +20,7 @@ const experienceHighlights = [
 export default function AboutPage() {
   return (
     <main className="brand-page">
-      <section className="relative isolate overflow-hidden border-b border-[#ead8c1] bg-[#24130f]">
+      <section className="relative isolate overflow-hidden border-b border-[var(--brand-border)] bg-[#24130f]">
         <Image
           src="/kitchen-view.png"
           alt="Chef-prepared food from Chef Rah's Twisted Kitchen"
@@ -97,7 +97,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      <section className="border-y border-[#ead8c1] bg-white/70">
+      <section className="brand-section-blush border-y">
         <div className="brand-container py-16">
           <div className="grid gap-10 lg:grid-cols-[1fr_1fr] lg:items-start">
             <div>
@@ -123,7 +123,7 @@ export default function AboutPage() {
               {experienceHighlights.map((item) => (
                 <div
                   key={item}
-                  className="brand-card-soft rounded-2xl border border-[#ead8c1] p-4"
+                  className="brand-card-soft rounded-2xl p-4"
                 >
                   <p className="font-bold text-[#24130f]">{item}</p>
                 </div>
@@ -133,7 +133,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      <section className="border-y border-[#ead8c1] bg-[#fff3e4]">
+      <section className="border-y border-[var(--brand-border)] bg-[var(--brand-surface-soft)]">
         <div className="brand-container grid gap-10 py-16 lg:grid-cols-[1.15fr_0.85fr] lg:items-center">
           <div>
             <p className="brand-eyebrow">The Twisted Kitchen</p>
@@ -159,7 +159,7 @@ export default function AboutPage() {
             </div>
           </div>
 
-          <aside className="rounded-3xl border border-[#e4c9a7] bg-white/75 p-7 shadow-sm">
+          <aside className="rounded-3xl border border-[var(--brand-border)] bg-[var(--brand-surface)]/90 p-7 shadow-sm">
             <p className="brand-eyebrow">What guides every menu</p>
 
             <ul className="mt-5 space-y-4 text-lg font-bold text-[#24130f]">
@@ -172,7 +172,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      <section className="border-y border-[#ead8c1] bg-gradient-to-br from-[#eef8f7] via-white to-[#fff3e4]">
+      <section className="border-y border-[var(--brand-border)] bg-gradient-to-br from-[#eef1e7] via-[#fffaf4] to-[#f7e2e2]">
         <div className="brand-container grid gap-10 py-16 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
           <div>
             <p className="brand-eyebrow">
@@ -192,7 +192,7 @@ export default function AboutPage() {
             </p>
           </div>
 
-          <blockquote className="rounded-r-3xl border-l-4 border-[#d99426] bg-[#fff8ee]/90 px-7 py-8 text-[#24130f] shadow-sm">
+          <blockquote className="rounded-r-3xl border-l-4 border-[#d99426] bg-[var(--brand-surface)]/90 px-7 py-8 text-[#24130f] shadow-sm">
             <p className="font-script text-3xl leading-snug">
               Welcome to my kitchen. I&apos;m glad you&apos;re here.
             </p>

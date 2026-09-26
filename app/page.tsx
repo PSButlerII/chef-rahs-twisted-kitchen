@@ -141,7 +141,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="border-y border-[#ead8c1] bg-white/70">
+      <section className="brand-section-blush border-y">
         <div className="brand-container grid gap-8 py-14 lg:grid-cols-[1fr_0.85fr] lg:items-center">
           <div>
             <p className="brand-eyebrow">Ordering Notes</p>
@@ -159,7 +159,7 @@ export default function HomePage() {
           <div className="grid gap-3 sm:grid-cols-2">
             <Link
               href="/menu"
-              className="brand-card-soft p-5 transition hover:-translate-y-1 hover:bg-white"
+              className="brand-card-soft p-5 transition hover:-translate-y-1 hover:bg-[var(--brand-surface)]"
             >
               <p className="text-sm font-bold text-[#9f2f18]">1</p>
               <p className="mt-2 font-bold">Pick a meal path</p>
@@ -169,7 +169,7 @@ export default function HomePage() {
             </Link>
             <Link
               href="/checkout"
-              className="brand-card-soft p-5 transition hover:-translate-y-1 hover:bg-white"
+              className="brand-card-soft p-5 transition hover:-translate-y-1 hover:bg-[var(--brand-surface)]"
             >
               <p className="text-sm font-bold text-[#9f2f18]">2</p>
               <p className="mt-2 font-bold">Review checkout</p>

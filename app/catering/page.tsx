@@ -11,7 +11,7 @@ type PageProps = {
 };
 
 const inputClass =
-  "mt-2 w-full rounded-lg border border-[#d7bea1] bg-white px-4 py-3 text-sm outline-none transition placeholder:text-[#9c897d] focus:border-[#9f2f18] focus:ring-2 focus:ring-[#f4c46f]/40";
+  "mt-2 w-full rounded-lg border border-[var(--brand-border)] bg-white px-4 py-3 text-sm outline-none transition placeholder:text-[#9c897d] focus:border-[#9f2f18] focus:ring-2 focus:ring-[#f4c46f]/40";
 const labelClass = "block text-sm font-bold text-[#24130f]";
 
 export default async function CateringPage({ searchParams }: PageProps) {

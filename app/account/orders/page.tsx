@@ -213,14 +213,14 @@ export default async function AccountOrdersPage() {
                 </div>
               </div>
 
-              <div className="mt-5 border-t border-[#ead8c1] pt-5">
+              <div className="mt-5 border-t border-[var(--brand-border)] pt-5">
                 <h3 className="font-black">Items</h3>
 
                 <div className="mt-3 space-y-2">
                   {order.items.map((item) => (
                     <div
                       key={item.id}
-                      className="flex justify-between gap-4 rounded-lg bg-[#fff8ee] p-3 text-sm"
+                      className="flex justify-between gap-4 rounded-lg bg-[var(--brand-surface-soft)] p-3 text-sm"
                     >
                       <div>
                         <p className="font-bold">

@@ -280,7 +280,7 @@ export default async function AccountPage() {
               return (
                 <div
                   key={order.id}
-                  className="rounded-lg border border-[#ead8c1] p-4 transition hover:bg-[#fff8ee]"
+                  className="rounded-lg border border-[var(--brand-border)] p-4 transition hover:bg-[var(--brand-surface-soft)]"
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div>
@@ -341,7 +341,7 @@ export default async function AccountPage() {
             })}
 
             {orders.length === 0 && (
-              <div className="rounded-lg bg-[#fff8ee] p-6 text-center">
+              <div className="rounded-lg bg-[var(--brand-surface-soft)] p-6 text-center">
                 <p className="font-bold">No recent activity yet.</p>
 
                 <Link

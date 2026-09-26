@@ -54,7 +54,7 @@ export function LoginForm({ passwordChanged }: LoginFormProps) {
               name="email"
               type="email"
               placeholder="Email"
-              className="mt-2 w-full rounded-lg border border-[#d7bea1] px-4 py-3 outline-none transition focus:border-[#9f2f18] focus:ring-2 focus:ring-[#f4c46f]/40"
+              className="mt-2 w-full rounded-lg border border-[var(--brand-border)] px-4 py-3 outline-none transition focus:border-[#9f2f18] focus:ring-2 focus:ring-[#f4c46f]/40"
               required
             />
           </label>
@@ -65,7 +65,7 @@ export function LoginForm({ passwordChanged }: LoginFormProps) {
               name="password"
               type="password"
               placeholder="Password"
-              className="mt-2 w-full rounded-lg border border-[#d7bea1] px-4 py-3 outline-none transition focus:border-[#9f2f18] focus:ring-2 focus:ring-[#f4c46f]/40"
+              className="mt-2 w-full rounded-lg border border-[var(--brand-border)] px-4 py-3 outline-none transition focus:border-[#9f2f18] focus:ring-2 focus:ring-[#f4c46f]/40"
               required
             />
           </label>
