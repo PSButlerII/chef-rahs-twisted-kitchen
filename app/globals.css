@@ -21,8 +21,11 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+
+  --font-sans: var(--font-inter);
+  --font-heading: var(--font-marcellus);
+  --font-script: var(--font-great-vibes);
+  --font-technical: var(--font-oxanium);
 }
 
 html {
@@ -31,35 +34,27 @@ html {
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
   font-family: var(--font-inter), Arial, Helvetica, sans-serif;
 }
-
-/* Primary typography */
 
 .font-body {
   font-family: var(--font-inter), Arial, Helvetica, sans-serif;
 }
 
+.font-optima-inspired,
 .font-heading {
-  font-family: var(--font-playfair-display), Georgia, "Times New Roman", serif;
-}
-
-/* Decorative typography */
-
-.font-great-vibes {
-  font-family: var(--font-great-vibes), cursive;
-}
-
-.font-optima-inspired {
   font-family: var(--font-marcellus), "Trebuchet MS", sans-serif;
 }
 
-.font-eurostile-inspired {
+.font-eurostile-inspired,
+.font-technical {
   font-family: var(--font-oxanium), Arial, sans-serif;
 }
 
+.font-great-vibes,
+.font-script {
+  font-family: var(--font-great-vibes), cursive;
+}
 ::selection {
   background: #f4c46f;
   color: var(--brand-ink);

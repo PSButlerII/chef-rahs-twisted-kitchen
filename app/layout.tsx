@@ -4,15 +4,10 @@ import { SiteHeader } from "@/components/layout/SiteHeader";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { AuthProvider } from "@/components/providers/AuthProvider";
 import {
-  berkshireSwash,
   greatVibes,
   inter,
-  playfairDisplay, 
-  belleza,
   oxanium,
-  aldrich,
   marcellus,
-  michroma,
 } from "./fonts";
 
 
@@ -29,14 +24,8 @@ export default function RootLayout({
 }>) {
   const fontVariables = [
     inter.variable,
-    playfairDisplay.variable,
     greatVibes.variable,
-    berkshireSwash.variable,
-    belleza.variable,
     oxanium.variable,
-    aldrich.variable,
-    michroma.variable,
-    
     marcellus.variable
   ].join(" ");
 
