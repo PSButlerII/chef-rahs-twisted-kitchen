@@ -318,7 +318,7 @@ export default async function MenuPage() {
             Meal Plans & A La Carte
           </p>
 
-          <h1 className="mt-3 max-w-4xl text-5xl font-great-vibes font-black leading-tight md:text-6xl">
+          <h1 className="mt-3 max-w-4xl text-5xl font-optima-inspired font-bold font-black leading-tight md:text-6xl">
             Weekly meals and chef-prepared favorites.
           </h1>
 
@@ -346,7 +346,7 @@ export default async function MenuPage() {
 
       <div className="brand-container py-12">
         <div className="brand-card-soft p-5 text-[#6f1f12]">
-          <h2 className="text-xl font-black">How Weekly Meal Plans Work</h2>
+          <h2 className="text-xl font-optima-inspired font-bold">How Weekly Meal Plans Work</h2>
 
           <p className="mt-2 text-sm leading-6">
             Pick a package for the number of days and meals, then choose one of

@@ -65,7 +65,7 @@ export default async function PersonalChefPage({ searchParams }: PageProps) {
           <p className="text-sm font-bold uppercase text-[#f4c46f]">
             Personal Chef 
           </p>
-          <h1 className="mt-3 max-w-3xl text-5xl font-great-vibes font-black leading-tight">
+          <h1 className="mt-3 max-w-3xl text-5xl font-optima-inspired font-bold leading-tight">
             Plan a private chef experience.
           </h1>
           <p className="mt-5 max-w-2xl text-lg leading-8 text-[#fff1df]">

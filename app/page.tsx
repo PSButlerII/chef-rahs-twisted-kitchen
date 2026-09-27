@@ -51,7 +51,7 @@ export default function HomePage() {
             Meal Plans / Catering / Personal Chef
           </p>
 
-          <h1 className="mt-4 max-w-4xl font-great-vibes text-5xl leading-[0.95] sm:text-6xl lg:text-7xl">
+          <h1 className="mt-4 max-w-4xl font-optima-inspired text-5xl leading-[0.95] sm:text-6xl lg:text-7xl">
             Chef Rah&apos;s Twisted Kitchen
           </h1>
 

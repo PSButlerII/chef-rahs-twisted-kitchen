@@ -8,6 +8,7 @@
   --brand-surface-soft: #f6f8f1;
   --brand-section-blush: #f7e2e2;
   --brand-border-blush: #e6cac8;
+  --brand-border-green: #ddecbfd1;
   --brand-sage: #687861;
   --brand-ember: #9f2f18;
   --brand-ember-dark: #6f1f12;
@@ -89,7 +90,7 @@ body {
 .brand-card-soft {
   border: 1px solid var(--brand-border-blush);
   border-radius: 0.5rem;
-  background: rgba(247, 226, 226, 0.82);
+  background: rgba(220, 231, 198, 0.82);
 }
 
 .brand-button-primary {
@@ -157,8 +158,8 @@ body {
 }
 
 .brand-section-blush {
-  border-color: var(--brand-border-blush);
-  background: var(--brand-section-blush);
+  border-color: var(--brand-border-green);
+  background: var(--brand-section-green);
 }
 
 .admin-page {

@@ -37,7 +37,7 @@ export default function AboutPage() {
             Meet Chef Rah
           </p>
 
-          <h1 className="mt-5 max-w-4xl text-5xl font-great-vibes font-black leading-[0.95] sm:text-6xl lg:text-7xl">
+          <h1 className="mt-5 max-w-4xl text-5xl font-optima-inspired font-bold leading-[0.95] sm:text-6xl lg:text-7xl">
             Familiar foods with an unexpected twist.
           </h1>
 
