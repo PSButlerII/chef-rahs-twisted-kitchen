@@ -425,7 +425,7 @@ export default async function MenuPage() {
 
           {visibleCategories.length === 0 && !publicWeeklyMenu && (
             <div className="brand-card p-8 text-center">
-              <h2 className="text-2xl font-black">Menu coming soon</h2>
+              <h2 className="text-2xl font-optima-inspired">Menu coming soon</h2>
               <p className="mt-2 text-[#6b5a50]">
                 No meal plan or menu items are available yet.
               </p>

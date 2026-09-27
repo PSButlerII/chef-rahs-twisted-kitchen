@@ -82,7 +82,7 @@ export default async function CateringPage({ searchParams }: PageProps) {
         >
           <div>
             <p className="brand-eyebrow">Tell Us About The Event</p>
-            <h2 className="mt-2 text-3xl font-black">Catering Request</h2>
+            <h2 className="mt-2 text-3xl font-optima-inspired font-black">Catering Request</h2>
           </div>
 
           {errorMessage ? (

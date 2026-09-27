@@ -84,7 +84,7 @@ export default async function PersonalChefPage({ searchParams }: PageProps) {
         >
           <div>
             <p className="brand-eyebrow">Tell Us What You Need</p>
-            <h2 className="mt-2 text-3xl font-black">Personal Chef Request</h2>
+            <h2 className="mt-2 text-3xl font-optima-inspired font-black">Personal Chef Request</h2>
           </div>
 
           {errorMessage ? (
