@@ -318,7 +318,7 @@ export default async function MenuPage() {
             Meal Plans & A La Carte
           </p>
 
-          <h1 className="mt-3 max-w-4xl text-5xl font-script font-black leading-tight md:text-6xl">
+          <h1 className="mt-3 max-w-4xl text-5xl font-great-vibes font-black leading-tight md:text-6xl">
             Weekly meals and chef-prepared favorites.
           </h1>
 
@@ -369,7 +369,7 @@ export default async function MenuPage() {
               <div className="mb-5 flex flex-col justify-between gap-3 md:flex-row md:items-end">
                 <div>
                   <p className="brand-eyebrow">Chef-Prepared</p>
-                  <h2 className="mt-2 text-3xl font-black">{category.name}</h2>
+                  <h2 className="mt-2 text-3xl font-optima-inspired font-bold">{category.name}</h2>
                 </div>
 
                 <p className="text-sm font-medium text-[#6b5a50]">

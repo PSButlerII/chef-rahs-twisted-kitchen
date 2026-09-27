@@ -63,7 +63,7 @@ export default async function CateringPage({ searchParams }: PageProps) {
 
         <div className="brand-container relative z-10 py-16 text-white">
           <p className="text-sm font-bold uppercase text-[#f4c46f]">Catering</p>
-          <h1 className="mt-3 max-w-3xl text-5xl font-script font-black leading-tight">
+          <h1 className="mt-3 max-w-3xl text-5xl font-great-vibes font-black leading-tight">
             Request catering for your next event.
           </h1>
           <p className="mt-5 max-w-2xl text-lg leading-8 text-[#fff1df]">

@@ -37,7 +37,7 @@ export default function AboutPage() {
             Meet Chef Rah
           </p>
 
-          <h1 className="mt-5 max-w-4xl text-5xl font-script font-black leading-[0.95] sm:text-6xl lg:text-7xl">
+          <h1 className="mt-5 max-w-4xl text-5xl font-great-vibes font-black leading-[0.95] sm:text-6xl lg:text-7xl">
             Familiar foods with an unexpected twist.
           </h1>
 
@@ -68,7 +68,7 @@ export default function AboutPage() {
           <div>
             <p className="brand-eyebrow">My Story</p>
 
-            <h2 className="mt-3 text-4xl font-black leading-tight">
+            <h2 className="mt-3 text-4xl font-optima-inspired font-bold leading-tight">
               From South Florida roots to Atlanta kitchens.
             </h2>
 
@@ -103,7 +103,7 @@ export default function AboutPage() {
             <div>
               <p className="brand-eyebrow">Experience</p>
 
-              <h2 className="mt-3 text-4xl font-black leading-tight">
+              <h2 className="mt-3 text-4xl font-optima-inspired font-bold leading-tight">
                 Professional experience, personal care.
               </h2>
 
@@ -138,7 +138,7 @@ export default function AboutPage() {
           <div>
             <p className="brand-eyebrow">The Twisted Kitchen</p>
 
-            <h2 className="mt-3 text-4xl font-black leading-tight">
+            <h2 className="mt-3 text-4xl font-optima-inspired font-bold leading-tight">
               The twist is the experience.
             </h2>
 
@@ -178,7 +178,7 @@ export default function AboutPage() {
             <p className="brand-eyebrow">
               Food, Wellness, and What Comes Next
             </p>
-            <h2 className="mt-3 text-4xl font-black leading-tight">
+            <h2 className="mt-3 text-4xl font-optima-inspired font-bold leading-tight">
               Flavor with purpose.
             </h2>
             <p className="mt-6 text-base leading-8 text-[#6b5a50]">
@@ -193,7 +193,7 @@ export default function AboutPage() {
           </div>
 
           <blockquote className="rounded-r-3xl border-l-4 border-[#d99426] bg-[var(--brand-surface)]/90 px-7 py-8 text-[#24130f] shadow-sm">
-            <p className="font-script text-3xl leading-snug">
+            <p className="font-optima-inspired font-bold text-3xl leading-snug">
               Welcome to my kitchen. I&apos;m glad you&apos;re here.
             </p>
             <footer className="mt-3 text-sm font-bold uppercase tracking-[0.18em] text-[#9f2f18]">
