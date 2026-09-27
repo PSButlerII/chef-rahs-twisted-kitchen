@@ -52,50 +52,6 @@ body {
   font-family: var(--font-great-vibes), cursive;
 }
 
-.font-berkshire-swash {
-  font-family: var(--font-berkshire-swash), Georgia, serif;
-}
-
-.font-pinyon-script {
-  font-family: var(--font-pinyon-script), cursive;
-}
-
-.font-rochester {
-  font-family: var(--font-rochester), cursive;
-}
-
-.font-italianno {
-  font-family: var(--font-italianno), cursive;
-}
-
-.font-lavishlyyours {
-  font-family: var(--font-lavishly-yours), cursive;
-}
-
-.font-monsieur-la-doulaise {
-  font-family: var(--font-monsieur-la-doulaise), cursive;
-}
-
-.font-tangerine {
-  font-family: var(--font-tangerine), cursive;
-}
-
-.font-parisienne {
-  font-family: var(--font-parisienne), cursive;
-}
-
-.font-allura {
-  font-family: var(--font-allura), cursive;
-}
-
-.font-sacramento {
-  font-family: var(--font-sacramento), cursive;
-}
-
-.font-alex-brush {
-  font-family: var(--font-alex-brush), cursive;
-}
-
 .font-optima-inspired {
   font-family: var(--font-marcellus), "Trebuchet MS", sans-serif;
 }
