@@ -159,7 +159,7 @@ export default function AboutPage() {
             </div>
           </div>
 
-          <aside className="rounded-3xl border border-[var(--brand-border)] bg-[var(--brand-surface)]/90 p-7 shadow-sm">
+          <aside className="brand-card-soft rounded-3xl border border-[var(--brand-card-soft)] bg-[var(--brand-card-soft)]/90 p-7 shadow-sm">
             <p className="brand-eyebrow">What guides every menu</p>
 
             <ul className="mt-5 space-y-4 text-lg font-bold text-[#24130f]">
