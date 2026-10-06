@@ -1,468 +1,437 @@
-# Engineering Design Review
+# Food Service Platform Engineering Design Review
 
 ## Document status and evidence convention
 
-This document is the primary technical reference for the repository at commit `9e2ca66703e903890e2a14de1f1e7a3f6bfbfba5`. It is a design review of the implementation in that revision, not a statement of undocumented product intent. It intentionally does not reproduce credentials, environment values, private URLs, client information, or infrastructure identifiers.
+This internal Recon Dev document is the primary technical reference for the repository at commit `0698f173ecd30a835d2936e756bbd49e8a04bda2`, reviewed on 2026-10-06. It describes the implementation in that revision, not undocumented product intent.
 
-Conclusions use these confidence labels:
+The review intentionally excludes client identity, customer data, contact addresses, credentials, secret or configuration names, private URLs, infrastructure identifiers, and business-sensitive pricing. Client-specific rules are described only as generic food-service workflows.
 
-- **Confirmed** — directly demonstrated by application code, schema, configuration, scripts, or committed documentation.
-- **Likely** — supported by multiple repository signals but not expressed as an enforceable contract.
-- **Speculative** — a plausible interpretation for which repository evidence is insufficient. Speculative items are not treated as facts or recommendations without further validation.
+Conclusions use these labels:
 
-Repository paths in backticks are the evidence citations. Existing documentation is used as supporting operational context; executable code and schema take precedence where the two differ.
+- **Confirmed** — demonstrated directly by application code, schema, configuration, scripts, committed documentation, or Git history.
+- **Likely** — a bounded inference supported by multiple repository signals but not enforced as a formal contract.
+- **Speculative** — plausible but unsupported; speculative items are not treated as facts or planned work.
+
+Repository paths are the evidence citations. Executable code and schema take precedence where historical documentation differs from the current implementation.
 
 ## 1. Executive Summary
 
-**Confirmed.** Chef Rah's Twisted Kitchen is a full-stack, database-backed ordering and operations application built as a single Next.js App Router deployment. It supports a public marketing site, standard menu ordering, configurable weekly meal plans, catering and personal-chef requests, customer accounts, allergen preferences, and an authenticated administration area. Evidence: `app/`, `components/`, `app/api/`, `prisma/schema.prisma`, and `app/layout.tsx`.
+**Confirmed.** This repository implements a production-oriented food-service platform for meal plans, à la carte ordering, catering requests, and personal-chef requests. It combines a public storefront, customer accounts, guest and authenticated checkout, configurable scheduling, approval workflows, payments, transactional notifications, and an authenticated operations dashboard. Evidence: `app/`, `components/`, `app/api/`, and `prisma/schema.prisma`.
 
-The system is a modular monolith. Server-rendered pages and Route Handlers run in the same Next.js application; Prisma connects those server paths to MySQL; browser-side Zustand stores provide persisted cart and checkout state. There is no separate API service, job worker, event bus, or independently deployable frontend in the repository. Evidence: `package.json`, `lib/prisma.ts`, `store/cart-store.ts`, and `store/checkout-store.ts`.
+The system is a modular monolith built with Next.js 16, React 19, Auth.js, Prisma 7, and a MySQL-compatible database accessed through the MariaDB adapter. The repository does **not** implement PostgreSQL; that assumption is unsupported by the current schema and adapter. Browser-side Zustand stores hold cart and checkout drafts, while server routes remain authoritative for availability, pricing, scheduling, approval, payment, and persistence. Evidence: `package.json`, `prisma/schema.prisma`, `lib/prisma.ts`, `store/cart-store.ts`, and `store/checkout-store.ts`.
 
-The design is strongest where business correctness matters. The order API treats browser cart data as untrusted, reloads live menu and weekly-plan records, validates option selections and scheduling, computes totals on the server, snapshots mutable product data into order records, and writes the order in a transaction. Administrative access is guarded both in pages and APIs, and role authorization is rechecked against persisted user data rather than trusting only JWT role claims. Evidence: `app/api/orders/route.ts`, `lib/menu-option-validation.ts`, `lib/weekly-menu-validation.ts`, `lib/auth-guards.ts`, and `prisma/schema.prisma`.
+The strongest design properties are server-authoritative order construction, transactional persistence, immutable order snapshots, persisted-role authorization, payment idempotency and webhook reconciliation, explicit service-request states, configurable meal-plan scheduling, and broad administrative tooling. Evidence: `app/api/orders/route.ts`, `lib/auth-guards.ts`, `prisma/schema.prisma`, `app/api/webhooks/square/route.ts`, and `app/admin/`.
 
-The principal engineering risks are concentrated in operations and maintainability:
-
-1. There is no general automated unit, integration, or end-to-end test framework. The only executable rule-focused QA script is `scripts/qa-late-fee-rules.ts`; most verification is documented manual QA.
-2. `app/api/orders/route.ts` is a large orchestration boundary that combines parsing, validation, live catalog resolution, pricing, capacity handling, persistence, profile updates, and notifications.
-3. Rate limiting uses an in-memory process map and forwarded IP headers. It is not shared across replicas and resets on process restart. Evidence: `lib/rate-limit.ts`.
-4. Production image writes are deliberately blocked unless explicitly enabled, while no durable object-storage adapter is implemented. Evidence: `lib/public-upload.ts` and `docs/production-runbook.md`.
-5. Automated online payment is not implemented; the current workflow records manual/offline payment state. The installed Stripe dependency and optional environment schema are legacy residue, not an active checkout integration. Evidence: `app/checkout/page.tsx`, `app/admin/payments/page.tsx`, `env.ts`, `package.json`, and `docs/provider-transition-review.md`.
-
-Overall assessment: the repository is a credible launch-oriented modular monolith with unusually explicit operational and business-rule documentation. It should remain a monolith for the foreseeable scope, but needs automated tests, smaller application services around ordering, durable uploads, distributed abuse controls, and a deliberate payment integration before higher scale or unattended operation.
+The main engineering risks are insufficient automated regression coverage, a large order orchestration handler, process-local rate limiting, synchronous best-effort email, filesystem-dependent uploads, extensive manual launch procedures, and documentation drift across a large operational document set. The codebase should remain a modular monolith; repository evidence does not justify microservices.
 
 ## 2. Project Purpose
 
-**Confirmed.** The application provides a digital storefront and operations console for a food-service business. Public pages promote meal plans, catering, and personal-chef services; `/menu`, `/cart`, and `/checkout` form the ordering funnel; `/catering` and `/personal-chef` collect service requests; `/account` exposes customer data; `/admin` exposes operational management. Evidence: `app/page.tsx`, `app/menu/page.tsx`, `app/cart/page.tsx`, `app/checkout/page.tsx`, `app/catering/page.tsx`, `app/personal-chef/page.tsx`, `app/account/page.tsx`, and `app/admin/page.tsx`.
+**Confirmed.** The platform supports public discovery, direct ordering, quote-and-approval service requests, and administrative operations. Public pages cover menus, meal plans, gallery content, catering, and personal-chef services. Cart and checkout support purchases. Separate request flows support work that is not a direct catalog purchase. The dashboard manages menus, weekly plans, orders, kitchen work, service requests, customers, payments, gallery content, notifications, reports, settings, audit history, roles, and help content. Evidence: `app/`, `app/api/`, and `components/admin/`.
 
-**Confirmed.** The system is not merely a brochure site. It persists users, orders, order line snapshots, weekly menu configuration, service requests, business rules, gallery content, allergen associations, status history, and administrative audit records. Evidence: `prisma/schema.prisma`.
+**Confirmed.** This is not merely a brochure site. It persists identity, catalog, weekly plans, orders, service requests, payment attempts, webhook events, retry tokens, business settings, gallery records, allergens, status history, and administrative audit records (`prisma/schema.prisma`).
 
-**Likely.** The current architecture is optimized for a single business and a relatively small operator team. Evidence includes a singleton-style `BusinessSettings` concept, global menu/gallery administration, one-owner bootstrap protection, and no tenant identifier in any model. Evidence: `lib/business-settings.ts`, `app/api/setup/promote-owner/route.ts`, and `prisma/schema.prisma`.
+**Likely.** The architecture targets one food-service business and a small operations team. The schema has no tenant boundary, menu and settings are global, and owner bootstrap is singleton-oriented (`prisma/schema.prisma`, `lib/business-settings.ts`, `app/api/setup/promote-owner/route.ts`).
 
-**Speculative.** Multi-location or multi-brand support may eventually be desirable, but no repository evidence establishes that requirement.
+**Speculative.** Multi-tenant, multi-brand, or multi-location operation is not established by repository evidence.
 
 ## 3. Intended Users
 
 ### Public visitors
 
-**Confirmed.** Unauthenticated visitors can browse marketing content, menus, weekly offerings, and galleries, and can submit catering or personal-chef requests. Evidence: public pages under `app/` and public POST handlers `app/api/catering/route.ts` and `app/api/personal-chef/route.ts`.
+**Confirmed.** Unauthenticated visitors can browse public content, active menus, weekly offerings, and gallery images, and can submit service requests (`app/`, `app/api/catering/route.ts`, `app/api/personal-chef/route.ts`).
 
-### Customers
+### Guests and registered customers
 
-**Confirmed.** Registered customers can authenticate with email and password, manage contact information and allergen preferences, change a password, view their orders and service requests, and reorder eligible items. Evidence: `auth.ts`, `app/register/page.tsx`, `app/account/`, `app/api/account/`, and `components/account/`.
-
-**Confirmed.** Guest ordering is supported because `Order.userId` is nullable and the order handler permits a missing session while always storing customer contact fields. Service requests follow the same optional user relationship. Evidence: `prisma/schema.prisma`, `app/api/orders/route.ts`, `app/api/catering/route.ts`, and `app/api/personal-chef/route.ts`.
+**Confirmed.** Guest checkout is supported because order and service-request ownership is optional while contact snapshots are required. Registered customers can sign in, maintain profile and allergen preferences, change passwords, view orders and service requests, retry eligible payments, and reorder eligible items (`auth.ts`, `app/account/`, `app/api/account/`, `prisma/schema.prisma`).
 
 ### Administrators
 
-**Confirmed.** `ADMIN` and `OWNER` roles operate orders, kitchen views, service requests, menus, weekly menus, gallery content, customers, payments, reports, notifications, business settings, and audit records. Evidence: the `UserRole` enum, `lib/auth-guards.ts`, and pages under `app/admin/`.
+**Confirmed.** Administrators operate menus, weekly periods and packages, orders, kitchen views, service requests, payments, reports, gallery content, notifications, settings, customer records, audit history, and help content (`app/admin/`, `components/admin/`).
 
 ### Owners
 
-**Confirmed.** Owners have the administrator capability set plus exclusive access to role management. The role API protects the last owner from demotion, and initial owner creation has a dedicated token-protected bootstrap route. Evidence: `app/admin/role-manager/page.tsx`, `app/api/admin/users/[id]/role/route.ts`, and `app/api/setup/promote-owner/route.ts`.
+**Confirmed.** Owners have administrative capabilities plus role management. The system protects the final owner from demotion and provides configuration-gated bootstrap utilities for the first owner (`app/admin/role-manager/page.tsx`, `app/api/admin/users/[id]/role/route.ts`, `app/api/setup/promote-owner/route.ts`).
 
 ## 4. Business Workflow
 
 ### Standard and weekly ordering
 
-1. **Confirmed.** The public menu page loads available, non-archived menu items and the current published weekly menu. Evidence: `app/menu/page.tsx` and `components/menu/WeeklyMenuSection.tsx`.
-2. **Confirmed.** Customers configure regular item options or construct required day/meal slots for a weekly plan. Browser state is placed in a versioned, local-storage-backed Zustand cart. Evidence: `components/menu/MenuItemModal.tsx`, `components/menu/WeeklyMenuOrderForm.tsx`, and `store/cart-store.ts`.
-3. **Confirmed.** Checkout collects fulfillment/contact information, allergen acknowledgement, tips, and a manual payment method. Some contact data can be persisted for an authenticated user. Evidence: `app/checkout/page.tsx`, `store/checkout-store.ts`, and `types/order.ts`.
-4. **Confirmed.** `POST /api/orders` rate-limits the request, parses it, resolves live catalog records, rejects invalid or stale selections, enforces weekly ordering windows/capacity and cart-composition rules, calculates server-authoritative charges, derives approval requirements, snapshots selections, and creates order records transactionally. Evidence: `app/api/orders/route.ts`, `lib/order-calculations.ts`, `lib/menu-option-validation.ts`, `lib/weekly-ordering-window.ts`, and `lib/weekly-menu-validation.ts`.
-5. **Confirmed.** Administrators approve or deny orders, advance fulfillment status, record manual payment, and use the kitchen view. Status changes can append history, and mutations are audit logged. Evidence: `app/api/admin/orders/[id]/approval/route.ts`, `app/api/admin/orders/[id]/status/route.ts`, `app/api/admin/orders/[id]/mark-paid/route.ts`, `app/admin/kitchen/page.tsx`, and `lib/admin-audit-log.ts`.
+1. Public menu pages load available catalog items and an eligible published weekly period (`app/menu/page.tsx`, `components/menu/WeeklyMenuSection.tsx`).
+2. Customers configure ordinary item options or weekly meal-plan slots. Versioned Zustand state stores cart and checkout drafts locally (`components/menu/MenuItemModal.tsx`, `components/menu/WeeklyMenuOrderForm.tsx`, `store/cart-store.ts`).
+3. Checkout collects fulfillment, contact, allergen acknowledgement, tip, and payment input. Account data may prefill and optionally update the authenticated profile (`app/checkout/page.tsx`, `store/checkout-store.ts`).
+4. `POST /api/orders` treats browser input as untrusted. It reloads live menu and weekly records, validates current availability and options, enforces schedule and capacity rules, recalculates amounts, determines approval requirements, creates immutable snapshots, and persists the workflow transactionally (`app/api/orders/route.ts`, `lib/menu-option-validation.ts`, `lib/weekly-menu-validation.ts`, `lib/order-calculations.ts`).
+5. Orders that do not require approval can enter configured online payment. Approval-required weekly orders remain awaiting approval and use a hosted payment request after approval (`app/api/orders/route.ts`, `app/api/admin/orders/[id]/payment-request/route.ts`, `lib/payment-config.ts`).
+6. Administrators approve or deny, update fulfillment state, review kitchen work, reconcile payment, and process eligible refunds (`app/api/admin/orders/`, `app/admin/kitchen/page.tsx`, `app/api/admin/payments/[id]/refund/route.ts`).
 
-### Service requests
+### Catering and personal-chef requests
 
-1. **Confirmed.** Catering and personal-chef forms submit into the shared `CateringRequest` model, distinguished by `ServiceRequestType`. Evidence: `app/api/catering/route.ts`, `app/api/personal-chef/route.ts`, and `prisma/schema.prisma`.
-2. **Confirmed.** Administrators review, approve or deny, quote, update workflow status, and record a deposit. State-dependent guards prevent inappropriate quote or deposit operations. Evidence: `app/api/admin/catering/`, `lib/service-request-workflow.ts`, and `components/admin/CateringQuoteForm.tsx`.
-3. **Confirmed.** Customer and administrator email templates exist for request receipt and lifecycle changes, with live, preview, dry-run, and disabled delivery modes. Evidence: `emails/`, `lib/email.ts`, and `lib/email-preview.ts`.
+**Confirmed.** Both request types share one persisted service-request aggregate distinguished by a type discriminator. Public submissions create reviewable requests rather than direct catalog orders (`app/api/catering/route.ts`, `app/api/personal-chef/route.ts`, `prisma/schema.prisma`).
 
-### Menu administration
+Administrators can approve or deny, add a quote, advance guarded workflow states, request a deposit and final balance, or record externally confirmed payments. Payment requests use the shared payment ledger (`app/api/admin/catering/`, `lib/service-request-workflow.ts`, `lib/service-request-payment-phase.ts`).
 
-**Confirmed.** Administrators create and edit menu items, categories, allergens, option groups/choices, availability, archival state, weekly periods, weekly packages, weekly offerings, offering options, and clones. Destructive relations use Prisma cascade or set-null policies according to whether dependent history must survive. Evidence: `app/api/admin/menu/`, `components/admin/`, and `prisma/schema.prisma`.
+### Pickup, delivery, and scheduling
+
+**Confirmed.** Checkout supports pickup and delivery. Contact and delivery information is snapshotted on the order. Customer-selected scheduling can be enabled, otherwise the server resolves a fixed fulfillment date from persisted settings. Weekly periods can override ordering-open, late-fee, ordering-close, and fixed-fulfillment values (`lib/checkout-fulfillment.ts`, `lib/server-business-rules.ts`, `lib/weekly-ordering-window.ts`, `prisma/schema.prisma`).
+
+### Notifications
+
+**Confirmed.** React Email templates cover order confirmation, approval, payment requests, payment receipt, cancellation for nonpayment, refunds, and service-request lifecycle events. Delivery supports live, dry-run, preview-file, and disabled modes (`emails/`, `lib/email.ts`, `lib/email-preview.ts`).
+
+**Confirmed limitation.** Notification delivery is synchronous and fail-open relative to the core mutation; no durable outbox or retry queue is implemented.
 
 ## 5. System Architecture
 
 ### Architectural style
 
-**Confirmed.** The application is a TypeScript modular monolith using Next.js 16 App Router and React 19. Server Components are the default rendering model; Client Components are used for forms, browser state, and interactions. Next.js Route Handlers form the HTTP API. Evidence: `package.json`, `app/`, and the `"use client"` boundaries throughout `components/` and `store/`.
-
 ```text
 Browser
-  |-- Server-rendered pages and layouts
-  |-- Client components
-  |-- Zustand local persistence (cart and checkout)
+  |-- Server-rendered pages
+  |-- Client interaction components
+  |-- Versioned local cart/checkout state
   v
-Next.js application
-  |-- App Router pages
-  |-- Route Handlers
-  |-- Auth.js session/authentication
-  |-- Domain and validation helpers in lib/
-  |-- React Email rendering and email adapter
+Next.js modular monolith
+  |-- App Router pages and Route Handlers
+  |-- Auth.js authentication
+  |-- Domain helpers and business rules
+  |-- Payment and email adapters
   v
 Prisma Client -> MariaDB adapter -> MySQL-compatible database
+  |
+  +-- Payment provider APIs and verified webhooks
+  +-- Email provider
+  +-- Configured filesystem image storage
 ```
+
+**Confirmed.** Server Components are the default; Client Components are used for forms, local state, drag-and-drop, payment SDK interaction, and other browser behavior. Route Handlers provide the HTTP boundary (`app/`, `components/`, `store/`).
 
 ### Module boundaries
 
-- `app/`: route-level composition, Server Components, Client pages, and HTTP handlers.
-- `components/`: reusable public, account, menu, cart, layout, allergen, and admin UI.
-- `lib/`: domain rules, persistence singleton, authorization, email, uploads, reporting, audit, revalidation, and display adapters.
-- `store/`: persisted browser state for cart and checkout.
-- `prisma/`: schema, migrations, seed/bootstrap utilities.
-- `emails/`: branded transactional email components.
-- `scripts/`: production-environment validation and focused rules QA.
-- `docs/`: operational, design, security, launch, and QA records.
+- `app/`: pages, layouts, route composition, and 57 Route Handler modules.
+- `components/`: public, account, menu, checkout, allergen, and administration UI.
+- `lib/`: domain rules, authorization, persistence, scheduling, payment, refunds, email, uploads, reporting, audit, and cache revalidation.
+- `store/`: versioned browser cart and checkout state.
+- `prisma/`: schema, 10 committed migrations, seeds, and role-promotion utilities.
+- `emails/`: transactional email components.
+- `scripts/`: environment checks, focused QA, maintenance, and payment recovery.
+- `docs/`: design, security, launch, operations, QA, and handoff records.
 
 ### Runtime boundaries
 
-**Confirmed.** Database and authorization work stays in server code; `lib/auth-guards.ts` explicitly imports `server-only`. Interactive state and browser storage stay behind Client Component boundaries. Evidence: `lib/auth-guards.ts`, `app/menu/page.tsx`, `store/cart-store.ts`, and `store/checkout-store.ts`.
+**Confirmed.** Database and authorization modules are server-only. Privileged routes recheck persisted roles instead of trusting only token claims (`lib/auth-guards.ts`). Cache invalidation for mutable menu content is explicit (`lib/menu-revalidation.ts`, `lib/weekly-menu-revalidation.ts`).
 
-**Confirmed.** Cache invalidation is explicit for menu and weekly-menu mutations through helpers in `lib/menu-revalidation.ts` and `lib/weekly-menu-revalidation.ts`.
-
-**Likely.** The architecture is appropriate for current complexity because most workflows share a database and transactional consistency boundary. Splitting services would add coordination cost without evidence of independent scaling or ownership needs.
+**Likely.** One deployment remains appropriate because ordering, catalog, approval, payment, and customer workflows share a single transactional data model. Separate services would add coordination cost without evidence of independent scale or team ownership.
 
 ## 6. Data Architecture
 
 ### Persistence technology
 
-**Confirmed.** Prisma 7 models a MySQL data source. Runtime connectivity uses `@prisma/adapter-mariadb`, and `lib/prisma.ts` maintains a development singleton to avoid repeated client creation. Evidence: `prisma/schema.prisma`, `prisma.config.ts`, `lib/prisma.ts`, and `package.json`.
+**Confirmed.** Prisma models a MySQL data source and the runtime uses the MariaDB adapter. The repository contains a MySQL-family migration baseline, not PostgreSQL (`prisma/schema.prisma`, `lib/prisma.ts`, `prisma/migrations/`).
 
-### Domain model
+### Domain aggregates
 
-The schema has six major aggregates:
-
-1. **Identity:** `User`, `Account`, `Session`, `VerificationToken`, and `UserAllergen`.
-2. **Catalog:** `MenuCategory`, `MenuItem`, item allergens, option groups, and option choices.
-3. **Weekly planning:** `WeeklyMenuPeriod`, packages, offerings, allowed options, and allergen links.
-4. **Orders:** `Order`, `OrderItem`, weekly selection snapshots, meal-slot snapshots, option snapshots, and `OrderStatusHistory`.
-5. **Service requests:** `CateringRequest`, with a discriminator for catering versus personal chef.
-6. **Operations:** `BusinessSettings`, `GalleryImage`, and `AdminAuditLog`.
+1. **Identity:** users, Auth.js accounts/sessions, verification tokens, roles, and allergen preferences.
+2. **Catalog:** categories, items, allergens, option groups, and option choices.
+3. **Weekly planning:** periods, packages, offerings, allowed options, schedules, and capacity.
+4. **Orders:** contact/fulfillment snapshots, item snapshots, weekly slot snapshots, option snapshots, approval, and status history.
+5. **Service requests:** shared catering/personal-chef request workflow and approval/quote/deposit state.
+6. **Payments:** attempts, provider identity, purpose, idempotency keys, webhook events, retry tokens, status timestamps, and refund lineage.
+7. **Operations:** business settings, gallery images, and administrative audit logs.
 
 Evidence: `prisma/schema.prisma`.
 
-### Historical snapshots
+### Historical integrity
 
-**Confirmed.** Orders intentionally copy names, descriptions, prices, package characteristics, selected options, allergen conflict data, and weekly-period labels rather than depending exclusively on mutable catalog rows. Optional foreign keys use `onDelete: SetNull` while snapshot fields remain. This preserves the commercial record when menus change. Evidence: `OrderItem`, `OrderWeeklyMealPlanSelection`, `OrderWeeklyMealPlanSlotSelection`, and `OrderWeeklyMealPlanSlotOptionSelection` in `prisma/schema.prisma`, plus persistence logic in `app/api/orders/route.ts`.
+**Confirmed.** Orders snapshot names, prices, package shape, offering details, selected options, allergens, and fulfillment/contact information. Optional catalog relationships use `SetNull` while snapshots survive, preserving historical meaning after catalog changes (`prisma/schema.prisma`, `app/api/orders/route.ts`).
+
+### Monetary and payment data
+
+**Confirmed.** Catalog and order amounts use fixed-precision database decimals. Payment attempts store integer minor units, currency, provider identifiers, idempotency keys, purpose, website/provider state, and timestamps. Webhook event IDs are unique per provider, enabling duplicate delivery handling (`prisma/schema.prisma`, `app/api/webhooks/square/route.ts`).
 
 ### Integrity and concurrency
 
-**Confirmed.** The schema uses unique constraints for user email, category name, join pairs, weekly package shape, weekly offering names, and per-slot option types. It also supplies indexes for common weekly-menu, gallery, allergen-option, and audit queries. Evidence: `prisma/schema.prisma`.
+**Confirmed.** The schema uses unique constraints and indexes across identity, catalog joins, weekly configurations, payment identifiers, webhook events, and retry tokens. Order creation and payment reconciliation use database transactions (`prisma/schema.prisma`, `app/api/orders/route.ts`, `app/api/webhooks/square/route.ts`).
 
-**Confirmed.** Order creation uses a Prisma transaction. Weekly capacity is represented by `capacity` and `ordersPlaced`, and server code, not the browser, owns the increment and availability decision. Evidence: `app/api/orders/route.ts` and `WeeklyMenuPeriod` in `prisma/schema.prisma`.
-
-**Confirmed.** Owner bootstrap uses a serializable transaction and maps the relevant Prisma write-conflict error to a retry response. Evidence: `app/api/setup/promote-owner/route.ts`.
-
-### Migration posture
-
-**Confirmed.** Nine timestamped migration directories are committed, beginning with the MySQL initialization and adding weekly-plan selection, scheduling, and fulfillment changes. `prebuild` runs Prisma generation and `prisma migrate deploy`. Evidence: `prisma/migrations/` and `package.json`.
-
-### Data concerns
-
-- **Confirmed:** Monetary values are stored as `Decimal(10,2)` in the database and converted deliberately at application boundaries.
-- **Confirmed:** `BusinessSettings` has no database-enforced singleton key. Singleton behavior therefore depends on application access helpers. Evidence: `prisma/schema.prisma` and `lib/business-settings.ts`.
-- **Likely:** Free-form `paymentProvider` and `paymentStatus` strings ease provider evolution but weaken database-level state integrity compared with enums.
-- **Confirmed:** There is no repository implementation of backup, restore automation, retention, or data deletion workflows. The production runbook describes migration and operational checks, but evidence is insufficient to claim an automated recovery objective.
+**Known concern.** `BusinessSettings` has no database-enforced singleton key; singleton behavior is application-managed (`lib/business-settings.ts`, `prisma/schema.prisma`).
 
 ## 7. API Architecture
 
-### Shape and conventions
+### Route organization
 
-**Confirmed.** The application exposes 47 App Router `route.ts` modules. The API is internal JSON/form-data HTTP rather than a separately versioned public API. Dynamic resources use filesystem parameters such as `[id]`; handlers use Next.js 16 asynchronous route context where applicable. Evidence: `app/api/`.
+**Confirmed.** The application has 57 App Router route modules. They are co-deployed application APIs, not a separately versioned public platform API.
 
-API groups are:
-
-- `/api/auth/*`: Auth.js handlers.
-- `/api/register`: account creation.
-- `/api/account/*` and legacy `/api/profile`: authenticated profile, allergen, and password operations.
-- `/api/orders`: public/guest-capable order creation; administrative order mutations exist under `/api/admin/orders/*`, plus a duplicate-compatible admin-gated mark-paid path under `/api/orders/[id]/mark-paid`.
-- `/api/catering` and `/api/personal-chef`: public service request creation.
-- `/api/business-settings`: public-safe business rule read.
-- `/api/admin/*`: role-gated operational mutations.
-- `/api/setup/*`: disabled-by-configuration, token-protected bootstrap operations.
+- Authentication and registration: `app/api/auth/`, `app/api/register/`.
+- Customer profile and allergens: `app/api/account/`.
+- Orders and service requests: `app/api/orders/`, `app/api/catering/`, `app/api/personal-chef/`.
+- Public-safe settings and payment configuration: `app/api/business-settings/`, `app/api/payments/`.
+- Administrative operations: `app/api/admin/`.
+- Operational bootstrap/jobs: `app/api/setup/`, `app/api/jobs/`.
+- Provider callbacks: `app/api/webhooks/`.
 
 ### Validation and authority
 
-**Confirmed.** Handlers generally normalize input and return explicit 4xx responses. High-complexity weekly-menu mutations delegate parsing to `lib/weekly-menu-validation.ts`; order option checks use `lib/menu-option-validation.ts`; settings use server-side business-rule helpers. Evidence: those helpers and their callers under `app/api/admin/`.
+**Confirmed.** The server re-derives catalog availability, selection validity, pricing, tips, fees, approval, scheduling, and capacity from persisted state. Client prices and browser state are not accepted as commercial authority (`app/api/orders/route.ts`). Weekly-menu and option validation are delegated to focused helpers (`lib/weekly-menu-validation.ts`, `lib/menu-option-validation.ts`).
 
-**Confirmed.** Price, availability, approval, allergens, scheduling, and weekly capacity are re-derived from database state during checkout. The client is an input device, not the commercial authority. Evidence: `app/api/orders/route.ts`.
+### Payment API behavior
 
-**Confirmed.** Unsupported historical order-mutation endpoints for allergens and options explicitly return HTTP 410 instead of silently mutating immutable snapshots. Evidence: `app/api/admin/orders/[id]/allergens/route.ts` and `app/api/admin/orders/[id]/options/route.ts`.
+**Confirmed.** Payment readiness fails closed when required configuration is incomplete. Payment attempts use unique idempotency keys. Verified webhooks deduplicate events, match amount/currency/location to the ledger, reconcile payment/refund state, and update linked orders or service requests transactionally (`lib/square-readiness.ts`, `lib/square.ts`, `app/api/webhooks/square/route.ts`).
 
-### Error and response design
+Hosted payment-request routes safely create or reuse active requests for approved orders and service-request phases. A protected job expires eligible pending attempts, and recovery scripts exist for a narrowly documented refund incident (`app/api/admin/orders/[id]/payment-request/route.ts`, `app/api/admin/catering/`, `app/api/jobs/expire-pending-payments/route.ts`, `scripts/reconcile-affected-square-refund.ts`).
 
-**Confirmed.** Error handling is local to each handler. Auth guards provide common 401/403 JSON responses, while most domain handlers catch errors and return a generic server error after logging. Evidence: `lib/auth-guards.ts` and `app/api/`.
+### API limitations
 
-**Tradeoff.** Local handlers keep behavior obvious but produce repetition and inconsistent response shapes. There is no shared error envelope, request correlation identifier, generated API schema, or OpenAPI contract.
-
-### API concerns
-
-- `POST /api/orders` is approximately the central application service but remains a single large handler. It should be decomposed behind the same HTTP contract.
-- Rate limits cover order creation, service request creation, registration, password change, and setup operations, but are process-local. Evidence: `lib/rate-limit.ts`.
-- Evidence is insufficient to claim idempotency for order or service-request submission. Network retries could therefore create duplicates.
-- Evidence is insufficient to claim formal API compatibility guarantees; routes appear designed for the co-deployed UI.
+- Error handling and response shapes remain local to handlers; there is no shared error contract or OpenAPI description.
+- Order creation remains a large orchestration module.
+- Evidence is insufficient to claim idempotency for initial order and service-request submissions.
+- Route compatibility appears designed for the co-deployed UI; no external stability contract is documented.
 
 ## 8. UI Architecture
 
-### Rendering model
+### Rendering and state
 
-**Confirmed.** The root layout supplies global fonts, styles, authentication context, header, and footer. Most data-list/detail pages are async Server Components that query Prisma directly. Forms, modals, filters, charts, and stateful controls are Client Components. Evidence: `app/layout.tsx`, `components/providers/AuthProvider.tsx`, pages under `app/admin/`, and interactive components under `components/`.
+**Confirmed.** Public, account, and admin pages use Server Components for initial reads. Client Components own interactive forms, modal state, sortable gallery operations, cart, checkout, payment SDK usage, and admin actions (`app/`, `components/`).
 
-### State management
+Zustand stores persist cart and checkout drafts with versioned migrations. Checkout deliberately resets and reloads identity-sensitive contact data to avoid cross-user leakage (`store/cart-store.ts`, `store/checkout-store.ts`, `app/checkout/page.tsx`).
 
-**Confirmed.** Zustand owns browser-local cart and checkout state. Both stores use persistence middleware and explicit schema versions. Cart migration intentionally clears old data; checkout persistence excludes/reset sensitive or transient acknowledgement state. Evidence: `store/cart-store.ts` and `store/checkout-store.ts`.
+### Shared components
 
-**Tradeoff.** Local persistence supports guests and recovery across reloads, but the cart is not a durable server-side object and may become stale. Server-side revalidation at order submission is therefore essential and is implemented.
+The UI is organized by domain: account, admin, allergens, authentication, cart, checkout, gallery, layout, menu, providers, and service requests (`components/`). Administrative help content is searchable in-app and contextual links connect operational pages to relevant guidance (`components/admin/AdminHelpCenter.tsx`, `data/admin-help.ts`, `app/api/admin/help/`).
 
-### Component organization
+### Administrative dashboard
 
-**Confirmed.** Components are grouped by business surface (`account`, `admin`, `allergens`, `auth`, `cart`, `layout`, `menu`, `providers`, and `service-requests`). Shared styling is primarily Tailwind CSS 4 plus semantic utility compositions in `app/globals.css`. Evidence: `components/`, `app/globals.css`, `postcss.config.mjs`, and `package.json`.
+**Confirmed.** The dashboard provides operational entry points and summaries, while dedicated pages handle orders, kitchen work, service requests, customers, payments, reports, notifications, menu configuration, gallery, settings, audit history, help, and roles (`app/admin/`).
 
-### Accessibility and responsive design
+### Accessibility
 
-**Confirmed.** The code includes semantic labels, keyboard focus styles, disabled states, responsive layouts, and image alt properties across primary surfaces. Existing QA documents record desktop and compact-mobile smoke passes. Evidence: `app/globals.css`, form components, `docs/pre-launch-qa-runbook.md`, and `docs/current-development-status.md`.
+**Confirmed strengths.** Native controls, explicit labels, keyboard-aware sortable gallery interactions, semantic status messaging, focus treatments, responsive layouts, and Next.js image handling are present across major paths (`components/`, `app/globals.css`).
 
-**Insufficient evidence.** There is no automated accessibility test configuration or committed audit output, so conformance to a specific WCAG level cannot be claimed.
-
-### UI concerns
-
-- `app/checkout/page.tsx` and the weekly menu administration page are large components with multiple responsibilities.
-- The root layout wraps the full application in an authentication Client Provider. This is functional, but client-boundary size should be monitored. Evidence: `app/layout.tsx` and `components/providers/AuthProvider.tsx`.
-- There is no Storybook or isolated component-test environment.
-- Error/loading boundaries are not systematically present at every route segment; evidence is insufficient to claim a consistent route-level recovery UX.
+**Insufficient evidence.** No formal accessibility conformance target, automated accessibility suite, or assistive-technology test record is established repository-wide.
 
 ## 9. Security Review
 
-### Positive controls
+### Confirmed controls
 
-**Confirmed.** Passwords are hashed with bcrypt cost 12. Authentication uses Auth.js credentials and JWT sessions. Evidence: `app/api/register/route.ts`, `app/api/account/password/route.ts`, and `auth.ts`.
+- Passwords are hashed and verified with bcrypt through Auth.js credentials authentication (`auth.ts`, `app/api/register/route.ts`).
+- Admin/owner authorization rechecks the persisted role on privileged access (`lib/auth-guards.ts`).
+- Customer-owned records are queried and mutated with ownership constraints (`app/account/`, `app/api/account/`, `app/orders/[id]/page.tsx`).
+- Setup routes are configuration-gated, token-protected, rate-limited, and designed to disable after use (`app/api/setup/`).
+- Server-authoritative repricing prevents browser cart manipulation from setting commercial amounts (`app/api/orders/route.ts`).
+- Payment creation fails closed; provider webhooks require signature verification and ledger matching (`lib/square-readiness.ts`, `app/api/webhooks/square/route.ts`).
+- Uploads are admin-only, size-limited, content-signature checked, UUID-named, context-isolated, and fail closed until durable storage is configured (`app/api/admin/uploads/route.ts`, `lib/uploads/filesystem-storage.ts`).
+- Global headers include CSP, HSTS in production, framing, MIME-sniffing, referrer, and permissions controls (`next.config.ts`).
+- Administrative mutations broadly emit audit records (`lib/admin-audit-log.ts`, `app/admin/audit/page.tsx`).
 
-**Confirmed.** Administrative authorization is centralized and re-reads the user's current database role, limiting stale JWT privilege after demotion. Admin pages return not-found to unauthorized signed-in users; APIs return 401/403. Owner-only guards are separate. Evidence: `lib/auth-guards.ts`.
+### Confirmed risks and gaps
 
-**Confirmed.** Customer order detail uses ownership criteria tied to the signed-in customer rather than loading solely by order ID. Account service-request detail similarly checks ownership. Evidence: `app/orders/[id]/page.tsx` and `app/account/catering/[id]/page.tsx`.
+1. **Process-local rate limiting.** Counters are memory-resident, reset on restart, do not coordinate across replicas, and trust proxy-supplied address headers (`lib/rate-limit.ts`).
+2. **No MFA or password-reset workflow.** Credentials authentication lacks a recovery flow and stronger privileged authentication (`auth.ts`, `app/`).
+3. **Email is not durable.** Notification failures are logged but do not enter a retryable outbox (`lib/email.ts`).
+4. **Filesystem upload dependency.** Durability and backup depend on host-mounted storage outside the application/database transaction (`lib/uploads/filesystem-storage.ts`).
+5. **CSP uses inline-script/style allowances.** The policy is materially stronger than no CSP but retains allowances required by the current UI/provider integration (`next.config.ts`).
+6. **Security policy document is boilerplate.** `SECURITY.md` lists unrelated version examples and does not provide an actionable disclosure policy.
+7. **Test coverage is incomplete.** Security-critical ownership, authorization, payment reconciliation, and concurrency paths are not covered by a general automated test runner (`package.json`, `scripts/`).
 
-**Confirmed.** Security headers apply globally: HSTS in production, content-type sniffing protection, referrer and permissions policies, frame restriction, and a baseline CSP restricting base URI, form action, framing, and objects. Evidence: `next.config.ts`.
+### Privacy posture
 
-**Confirmed.** Setup routes are unavailable when their secrets are absent/short, compare token digests using constant-time comparison, are rate-limited, disable caching, and instruct operators to remove the token after use. Evidence: `app/api/setup/promote-owner/route.ts` and `app/api/setup/seed-foundation/route.ts`.
-
-**Confirmed.** Admin mutation coverage is recorded in `AdminAuditLog`; the helper intentionally avoids failing the business mutation if audit persistence fails. Evidence: `lib/admin-audit-log.ts`, admin handlers, and `docs/admin-audit-log.md`.
-
-**Confirmed.** Uploads restrict declared MIME types, size, generated filename characters, and deletion paths. Local production writes are denied by default. Evidence: `lib/public-upload.ts`.
-
-### Risks and gaps
-
-- **High operational priority, confirmed:** process-local rate limiting does not provide a global limit across horizontal replicas and trusts proxy-derived IP headers. Deployments must normalize trusted proxy headers and use a shared rate-limit store before relying on this as the primary abuse control. Evidence: `lib/rate-limit.ts`.
-- **Confirmed:** no MFA or step-up authentication exists for privileged users. Evidence: `auth.ts` and `docs/security-hardening-audit.md`.
-- **Confirmed:** no password-reset workflow is implemented, although password change for authenticated users exists. Evidence: `app/api/account/password/route.ts` and `docs/password-management-review.md`.
-- **Confirmed:** the CSP is intentionally minimal and does not constrain `default-src`, `script-src`, `style-src`, `img-src`, or `connect-src`. It provides useful targeted protections but is not a restrictive resource policy. Evidence: `next.config.ts`.
-- **Likely:** Auth.js same-origin/session protections reduce CSRF exposure for normal form/API use, but the repository has no explicit application-wide Origin/Referer validation helper or CSRF token layer for custom mutation routes. Security behavior should be validated against the exact deployed Auth.js/Next.js version before making a stronger claim.
-- **Confirmed:** file validation trusts the browser-provided MIME type and does not inspect image magic bytes or re-encode content. This is partly mitigated by download context, extension normalization, and CSP, but durable storage work should add content inspection.
-- **Confirmed:** application errors are written to process logs without a structured logging/redaction layer. The reviewed code does not intentionally print configured secrets, and the environment checker explicitly avoids values, but operational log governance is not implemented in the repository.
-- **Insufficient evidence:** there is no committed SAST/DAST workflow or CI configuration in scope. Git history documents dependency advisory fixes, but continuous scanning cannot be claimed.
-
-No credentials, tokens, environment values, private URLs, or infrastructure identifiers were included in this review.
+**Confirmed.** The system stores customer contact, fulfillment, allergen, order, request, and payment metadata. The EDR does not reproduce those values. Repository evidence is insufficient to establish a complete retention, deletion, privacy-request, or compliance program.
 
 ## 10. Deployment Review
 
 ### Build and release model
 
-**Confirmed.** Standard commands are `next build` and `next start`. `prebuild` first generates Prisma Client and applies committed migrations with `prisma migrate deploy`. Evidence: `package.json`.
+**Confirmed.** The production build runs Prisma client generation and committed migration deployment before Next.js compilation (`package.json`). The production process is a standard Next.js server; static export is incompatible with authenticated, database, payment, and mutation workflows.
 
-**Confirmed.** The application requires a Node.js runtime capable of running Next.js and filesystem/server code, plus a reachable MySQL-compatible database. The repository's runbook recommends an LTS Node line and explicitly treats other runtime output as needing review. Evidence: `package.json`, `lib/public-upload.ts`, and `docs/production-runbook.md`.
+### Persistence and migrations
 
-**Confirmed.** `scripts/check-production-env.mjs` provides a preflight check for required configuration, URL posture, email mode, upload posture, scheduling timezone, and setup settings without printing secret values. Evidence: that script and the `env:check` package command.
+Ten migrations are committed. Migration execution during `prebuild` couples build success to database reachability and mutates the configured schema during artifact creation. This is operationally simple but weaker than a separate, controlled release phase (`package.json`, `prisma/migrations/`).
 
-### External integrations
+### External services
 
-- **Database:** MySQL-compatible server via Prisma/MariaDB adapter.
-- **Email:** Resend when configured; preview/dry-run/disabled modes otherwise. Evidence: `lib/email.ts`.
-- **Payments:** manual/offline workflow only. No active gateway callbacks or webhooks are present.
-- **Storage:** repository-local public filesystem in development; production use is denied by default and no durable adapter exists.
+The application depends on a MySQL-compatible database, an email provider, a payment provider, and configured durable filesystem storage for admin uploads. Exact account, endpoint, credential, and infrastructure details are intentionally omitted (`lib/prisma.ts`, `lib/email.ts`, `lib/square.ts`, `lib/uploads/filesystem-storage.ts`).
 
-### Deployment risks
+### Operational tooling
 
-1. Running migrations automatically during every build couples artifact construction to database reachability and mutation. This may be acceptable for a simple single-environment host, but build and release responsibilities should be separated in mature CI/CD.
-2. A read-only or ephemeral application filesystem cannot support enabled local uploads.
-3. No container definition, infrastructure-as-code, CI workflow, health endpoint, readiness check, or telemetry backend is committed. Deployment automation and observability are therefore outside the verified repository design.
-4. Email rendering failure is caught and does not roll back completed business operations. This favors order durability, but without a queue/outbox there is no guaranteed retry. Evidence: `lib/email.ts` and order/service handlers.
+**Confirmed.** The repository includes production-environment validation, launch/readiness checklists, fresh-database rehearsal, payment configuration dry-runs, payment/refund QA, upload QA, release validation, and recovery scripts (`scripts/`, `docs/`).
 
-### Current verification status
+### Deployment limitations
 
-The final lint and build results for this review are recorded in the Verification Record near the end of this document. No deployment was performed.
+- No committed CI workflow enforces lint, typecheck, tests, migration validation, and build.
+- Build-time migration deployment increases rollback and concurrent-deploy risk.
+- Backup/restore objectives and automated recovery are not encoded in the repository.
+- Filesystem uploads require independent backup and a stable writable mount.
+- Documentation records manual deployment and smoke-test steps, but their execution is not automatically evidenced.
 
 ## 11. Engineering Decisions
 
-The repository demonstrates the following decisions; descriptions of motivation are limited to what code or committed design records support.
+1. **Modular monolith:** UI, API, authentication, payments, and domain orchestration share one Next.js deployment.
+2. **MySQL-compatible persistence through Prisma:** schema and runtime use the MariaDB adapter, not PostgreSQL.
+3. **Server-authoritative commerce:** current database state controls prices, options, availability, fees, schedules, approval, and payment amounts.
+4. **Immutable order snapshots:** mutable catalog details are copied into order-owned history.
+5. **Approval separated from fulfillment:** commercial approval and operational order status evolve independently.
+6. **Shared service-request aggregate:** catering and personal-chef workflows use one model with a type discriminator.
+7. **Configurable scheduling:** global defaults and weekly overrides determine ordering and fulfillment windows.
+8. **Payment ledger before provider state:** attempts, purposes, idempotency, events, and refunds are persisted independently of display fields.
+9. **Verified webhook reconciliation:** provider callbacks update internal state only after signature and ledger checks.
+10. **Fail-open side effects:** audit/email failures generally do not reverse the primary business mutation.
+11. **Persisted-role authorization:** privileged access does not rely solely on JWT role claims.
+12. **Fail-closed uploads and payments:** incomplete production configuration disables the feature rather than silently degrading.
 
-1. **Modular monolith:** one Next.js application owns UI, API, authentication, and domain orchestration. **Confirmed** by repository structure.
-2. **Server-first rendering:** database reads generally occur in Server Components, with client boundaries reserved for interaction. **Confirmed** by `app/` and `components/`.
-3. **Server-authoritative commerce:** client prices and selections are revalidated against live data. **Confirmed** by `app/api/orders/route.ts`.
-4. **Snapshot order history:** mutable menu data is copied into order-owned records. **Confirmed** by `prisma/schema.prisma`.
-5. **Approval-first workflows:** orders and service requests carry approval state independently from fulfillment status. **Confirmed** by schema enums/models and admin routes.
-6. **One shared service-request aggregate:** catering and personal-chef requests share storage and administration using a type discriminator. **Confirmed** by `CateringRequest.requestType`.
-7. **Configurable scheduling with server resolution:** global and per-week defaults control ordering and fulfillment; customer scheduling can be disabled. **Confirmed** by `BusinessSettings`, `WeeklyMenuPeriod`, and scheduling helpers.
-8. **Manual payment launch posture:** payment status is operationally recorded without automated capture. **Confirmed** by checkout/admin code and launch documentation.
-9. **Fail-open audit and notification side effects:** core mutations are not undone solely because audit logging or email fails. **Confirmed** by `lib/admin-audit-log.ts` and `lib/email.ts` callers.
-10. **Protected one-time setup endpoints:** operational bootstrap is configuration-gated and auditable. **Confirmed** by `app/api/setup/`.
-
-Implementation history or the identity of decision makers is not inferred; repository evidence is insufficient.
+Motivation is stated only where current code or committed design documentation supports it; decision-maker identity is not inferred.
 
 ## 12. Design Tradeoffs
 
-| Choice                                  | Benefit                                            | Cost                                                                             |
-| --------------------------------------- | -------------------------------------------------- | -------------------------------------------------------------------------------- |
-| Next.js modular monolith                | Simple deployment and direct transactional access  | UI/API/domain boundaries can blur; large route modules emerge                    |
-| Server Components query Prisma directly | Low ceremony and limited client data exposure      | Page logic couples rendering to persistence and complicates isolated tests       |
-| Zustand local cart                      | Guest-friendly, responsive, survives reload        | Not cross-device; stale and user-editable; requires strong submission validation |
-| Snapshot order data                     | Historical and financial stability                 | More schema complexity and duplicate values                                      |
-| JWT session plus DB role recheck        | Fast identity transport with current authorization | Extra database query on protected access; session invalidation remains limited   |
-| Manual payment tracking                 | Enables operations without gateway risk            | Reconciliation is manual; no immediate payment guarantee                         |
-| Synchronous email after mutation        | Simple implementation                              | Adds latency and lacks durable retry/outbox semantics                            |
-| In-memory rate limiting                 | No external dependency                             | Per-process only, restart-sensitive, proxy-header dependent                      |
-| Filesystem uploads                      | Easy local development                             | Unsuitable for ephemeral or multi-instance production hosts                      |
-| Application-managed settings singleton  | Easy retrieval and evolution                       | Singleton invariant is not enforced by the database                              |
+| Choice | Benefit | Cost |
+| --- | --- | --- |
+| Next.js modular monolith | One deployment and shared transaction boundary | UI, API, and domain boundaries can blur |
+| Server Components query Prisma | Low ceremony and limited client exposure | Rendering couples directly to persistence |
+| Zustand browser cart | Fast guest experience and reload persistence | Editable, stale, and device-local state |
+| Order snapshots | Stable historical and financial meaning | More tables and duplicated values |
+| JWT sessions plus role recheck | Efficient identity with current authorization | Extra database read; limited token revocation |
+| Approval-first weekly workflow | Avoids charging unapproved requests | Adds hosted-payment and expiration states |
+| Synchronous email | Simple operational path | Adds latency and lacks durable retry |
+| In-memory rate limits | No external dependency | Not distributed or restart-safe |
+| Filesystem uploads | Compatible with a durable single host | Requires host-specific storage and backup |
+| Build-time migration deploy | Simple hosting workflow | Couples schema mutation to builds |
+| Rich manual runbooks | Strong operator guidance | Can drift and does not execute itself |
 
 ## 13. Technical Debt
 
 ### Priority 1
 
-- Add automated coverage for order pricing, weekly capacity/concurrency, scheduling windows, authorization/ownership, and service-request state transitions.
-- Extract `POST /api/orders` into testable application services while retaining one transaction boundary and the existing HTTP contract.
-- Replace process-local rate limiting with a shared, atomic store and trusted-proxy configuration.
-- Implement durable object storage before enabling production uploads.
+- Add automated unit, integration, and end-to-end coverage for order pricing, weekly capacity, scheduling, authorization, approval, payment reconciliation, refunds, and service-request transitions.
+- Decompose `POST /api/orders` into testable parse, resolve, validate, price, persist, payment, and notify services without changing its transaction semantics.
+- Replace process-local rate limiting with a shared atomic store and verified trusted-proxy configuration.
+- Add durable notification delivery or an outbox for customer-visible lifecycle events.
 
 ### Priority 2
 
-- Introduce idempotency keys for order and service-request creation.
-- Add an outbox/queue or retryable notification record for transactional email.
-- Strengthen privileged access with MFA or step-up authentication and implement password reset.
-- Expand CSP in report-only mode, measure violations, then enforce explicit resource directives.
-- Add structured, redacted logs, request correlation, error monitoring, and health/readiness signals.
-- Separate migration execution from artifact build when a deployment pipeline exists.
+- Add idempotency for initial order and service-request creation.
+- Separate migration deployment from artifact build when the hosting pipeline permits.
+- Implement MFA or step-up authentication and a secure password-reset workflow.
+- Add structured redacted logging, request correlation, error monitoring, and health/readiness endpoints.
+- Establish automated backup/restore rehearsal for database and uploaded files.
+- Replace the boilerplate security policy with a project-specific disclosure and supported-version policy.
 
 ### Priority 3
 
-- Remove legacy Stripe dependency, optional Stripe configuration, and disabled checkout state once payment-provider migration boundaries are finalized. Evidence: `package.json`, `env.ts`, and `app/checkout/page.tsx`.
-- Consolidate the legacy `/api/profile` route with `/api/account/profile` and remove duplicate mark-paid route surfaces after compatibility analysis.
-- Add a database-enforced singleton strategy or an explicit settings key.
-- Standardize validation and error response envelopes, ideally with shared Zod schemas where useful.
-- Split large checkout and weekly administration UI modules into smaller view-model and presentation units.
-- Remove dormant/commented font experiments from `app/layout.tsx`.
+- Remove residual legacy provider configuration/dependencies after confirming no rollback path requires them (`env.ts`, `package.json`).
+- Consolidate duplicate/legacy profile and payment mutation surfaces after compatibility analysis.
+- Enforce the business-settings singleton in the database.
+- Standardize request schemas and API error envelopes.
+- Break large checkout and weekly-menu components into smaller view-model and presentation layers.
+- Reconcile stale operational documents with the current payment and upload implementation.
 
 ## 14. Known Limitations
 
 **Confirmed:**
 
-- Automated online checkout is disabled; payment is manual/offline.
-- Production-local uploads are disabled unless an explicit unsafe-for-most-hosts override is set; durable storage is absent.
+- Rate limiting is local to one process.
+- Email has no durable retry queue.
 - Password reset and MFA are absent.
-- Cart and checkout state are local to one browser profile.
-- Email has no durable retry mechanism.
-- Rate limiting is local to one running process.
-- Historical order allergen/option mutation endpoints return 410 by design.
-- Customer-selected scheduling can be disabled and fixed fulfillment can omit a public time.
-- Capacity is weekly order-slot based rather than total item/package quantity. Evidence: `WeeklyMenuPeriod` and ordering logic/documentation.
-- No general automated test runner is configured in `package.json`.
+- Cart and checkout drafts are local to one browser profile.
+- Filesystem uploads require explicitly configured durable storage and separate backup.
+- Initial order and service-request submissions have no demonstrated idempotency contract.
+- Business settings rely on an application-managed singleton.
+- No general automated test runner is configured.
+- Migration deployment occurs during prebuild.
+- Capacity is represented at the weekly-order level rather than as total prepared-item inventory.
 
-**Insufficient evidence:** supported traffic volume, uptime target, recovery objectives, browser support policy beyond Next.js defaults, formal accessibility target, data-retention policy, privacy/compliance classification, and multi-region capability.
+**Insufficient evidence:** sustained traffic capacity, uptime and recovery objectives, formal browser support, accessibility conformance target, data-retention policy, privacy/compliance classification, multi-region operation, and disaster-recovery guarantees.
 
 ## 15. Lessons Learned
 
-These are architectural lessons supported by the current design, not claims about past team intent.
+These lessons are derived from the implemented design and committed reviews, not invented history:
 
-1. Commerce clients must be treated as untrusted caches. The server-side repricing and option resolution in `app/api/orders/route.ts` is essential because Zustand state is editable and can be stale.
-2. Historical records need snapshots. The weekly-plan snapshot hierarchy protects order meaning after catalogs are edited or deleted.
-3. Authentication claims are not sufficient authorization state. `lib/auth-guards.ts` correctly rechecks persisted roles for privileged work.
-4. Configurable time rules require timezone-aware, centralized helpers. The dedicated weekly and checkout scheduling modules avoid scattering calendar rules across UI and handlers.
-5. Launch-safe degradation should be explicit. Email modes, disabled gateway UI, and production upload denial make incomplete integrations visible rather than silently pretending they are operational.
-6. Thorough manual runbooks are valuable but do not replace executable regression coverage. The documentation is a strength; converting its most critical scenarios into tests is the next maturity step.
+1. Browser commerce state must be treated as an untrusted draft; live server resolution is required before persistence.
+2. Historical orders need snapshots because menus, prices, offerings, and options change.
+3. Authentication claims are not sufficient authorization state; privileged roles should be rechecked against persistence.
+4. Weekly meal plans need a separate scheduling/capacity model rather than overloading ordinary menu items.
+5. Approval-required orders need a distinct post-approval payment phase rather than premature capture.
+6. Payment integration is a ledger and reconciliation problem, not only a checkout widget.
+7. Webhook event uniqueness and provider idempotency keys are necessary for retry-safe payment state.
+8. Time rules should be centralized and timezone-aware; customer-facing schedules must not expose internal fallback times.
+9. Fail-closed provider and upload configuration makes incomplete deployment visible.
+10. Manual runbooks are valuable operational memory but do not replace executable regression tests.
 
 ## 16. Future Roadmap
 
-### Near term: reliability baseline
+### Confirmed or directly supported near-term work
 
-1. Establish unit tests for pure domain helpers and integration tests against an isolated MySQL-compatible database.
-2. Add end-to-end tests for guest/authenticated checkout, weekly plans, ownership, admin approval/status/payment, and service requests.
-3. Refactor order creation into parse, resolve, validate, price, persist, and notify phases.
-4. Add shared rate limiting, idempotency, structured logs, and health/readiness checks.
+1. Establish automated regression coverage around ordering, authorization, payment, refunds, and service requests.
+2. Refactor order orchestration behind characterization tests.
+3. Move rate limiting to shared infrastructure.
+4. Add durable notification delivery and request idempotency.
+5. Formalize backup/restore procedures for both database and uploads.
+6. Keep payment/refund reconciliation and production-readiness documentation aligned with the implemented provider workflow.
 
-### Launch infrastructure
+### Operational maturity
 
-1. Choose and implement durable image storage with content inspection and lifecycle management.
-2. Create CI that runs lint, typecheck, tests, production environment checks in safe/report mode, and build.
-3. Run migrations as an explicit release step with verified backup/restore procedures.
-4. Configure production email and conduct the documented live-send and end-to-end QA processes.
-
-### Product capability
-
-1. Implement the selected payment providers as a dedicated phase with webhook verification, idempotency, reconciliation, refunds, and audited state transitions.
-2. Add password reset and stronger administrator authentication.
-3. Consider customer-visible notification history and delivery retries.
+1. Add CI gates for lint, typecheck, tests, migration validation, environment validation, and build.
+2. Move migrations to an explicit release phase with rollback compatibility checks.
+3. Add health/readiness, structured logs, alerting, and production error monitoring.
+4. Add stronger privileged authentication and account recovery.
 
 ### Scale only when evidence requires it
 
-Keep the modular monolith. Introduce separate workers first for durable notifications or image processing if those needs materialize. There is currently insufficient evidence to recommend microservices, multi-tenancy, or multi-region data architecture.
+Retain the modular monolith. Introduce a worker first for durable notifications or background reconciliation if needed. There is insufficient evidence to recommend microservices, multi-tenancy, or multi-region persistence.
 
 ## 17. Repository Strengths
 
-- Server-authoritative order validation and pricing.
-- Transactional persistence and capacity updates.
+- Server-authoritative pricing, availability, selection, and schedule validation.
+- Transactional order persistence and weekly capacity handling.
 - Rich immutable snapshots for complex weekly selections.
-- Central persisted-role authorization guards.
-- Clear `ADMIN` versus `OWNER` separation and last-owner protection.
+- Persisted-role authorization and clear administrator/owner separation.
+- Last-owner protection and configuration-gated bootstrap paths.
+- Payment ledger with explicit purpose, idempotency, provider state, retry tokens, and refund lineage.
+- Verified and deduplicated webhook reconciliation.
 - Broad administrative audit coverage.
-- Thoughtful allergen acknowledgement and conflict snapshots.
-- Centralized scheduling and business-rule helpers.
-- Safe configuration-gated setup endpoints.
-- Secure-by-default production upload posture.
+- Central scheduling and business-rule helpers.
+- Thoughtful allergen preferences, conflict warnings, and acknowledgement snapshots.
+- Fail-closed payment and upload readiness.
 - Versioned browser-state migrations.
-- Extensive launch, security, operations, weekly-menu, and manual-QA documentation under `docs/`.
-- Dependency pinning/overrides and recent Git history showing targeted advisory remediation.
-- A production environment checker designed not to disclose secret values.
+- Accessible sortable gallery management and searchable in-app administrator help.
+- Extensive operational, security, payment, launch, handoff, and QA documentation.
+- Dependency overrides and Git history showing active advisory remediation.
+- Production-environment checks designed to avoid printing secret values.
 
 ## 18. Recommendations
 
-1. **Approve the current modular-monolith direction.** It matches the shared transactional domain and observed operating scope.
-2. **Make regression automation the next engineering investment.** Start with the order transaction and authorization boundaries; these carry the greatest business risk.
-3. **Refactor without changing behavior.** Extract the order handler behind characterization tests before adding payment functionality.
-4. **Do not enable filesystem uploads in a typical production deployment.** Add durable storage first.
-5. **Do not treat the current rate limiter as a distributed security boundary.** Replace it before horizontal scaling or meaningful hostile traffic.
-6. **Design payment as a state machine and reconciliation system, not only a checkout button.** Preserve server-authoritative totals and immutable order snapshots.
-7. **Add idempotency and durable notifications.** These close common retry/failure gaps without requiring service decomposition.
-8. **Strengthen privileged identity.** Add password reset, MFA/step-up, and documented session revocation behavior.
-9. **Create a release pipeline.** Run lint, typecheck, tests, migration validation, build, dependency/security checks, and environment validation with explicit promotion gates.
-10. **Keep this EDR current.** Update it when data boundaries, payment, storage, authentication, or deployment topology change; derive narrower engineering records from those decisions.
+1. **Approve the modular-monolith direction.** It matches the shared transactional domain and current operating scope.
+2. **Make regression automation the next major investment.** Begin with the order transaction, authorization, payment webhooks, and refunds.
+3. **Refactor order creation without changing behavior.** Characterize it first, then extract application services behind the existing route contract.
+4. **Treat rate limiting as a distributed security control.** Replace memory counters before horizontal scaling or material hostile traffic.
+5. **Add idempotency and durable notifications.** These close the largest retry/failure gaps without requiring service decomposition.
+6. **Separate schema migration from compilation.** Use an explicit release phase with backup and rollback gates.
+7. **Strengthen privileged identity.** Add recovery, MFA or step-up authentication, and documented revocation behavior.
+8. **Operationalize recovery.** Test database and upload restore, payment reconciliation, and rollback procedures.
+9. **Replace boilerplate security guidance.** Publish an accurate internal disclosure and supported-version policy without exposing client or infrastructure details.
+10. **Keep this EDR current.** Update it whenever payment, storage, authentication, scheduling, or deployment boundaries change.
 
 ## Repository Areas Reviewed
 
-The review covered:
-
 - Application routes, layouts, and pages: `app/`
 - All Route Handlers: `app/api/`
-- Shared UI and workflow components: `components/`
-- Domain, security, persistence, email, upload, reporting, and scheduling helpers: `lib/`
+- Public, customer, checkout, and administration components: `components/`
+- Domain, authorization, persistence, scheduling, payment, refund, email, upload, reporting, and audit helpers: `lib/`
 - Browser state and hooks: `store/`, `hooks/`
-- Prisma schema, nine committed migrations, seed, and promotion utilities: `prisma/`
-- Email templates: `emails/`
-- Types and static option/gallery data: `types/`, `data/`
-- Build, TypeScript, lint, Next.js, Prisma, PostCSS, environment example, package, and ignore configuration
-- Production/environment and focused QA scripts: `scripts/`
-- Project documentation under `docs/` plus root documentation
-- Recent Git history and the reviewed commit identity
-- Public asset organization and upload paths, without treating binary/generated assets as application source
-- The bundled Next.js 16 documentation relevant to Server/Client Components, Route Handlers, authentication, and deployment, as required by `AGENTS.md`
+- Prisma schema, 10 committed migrations, seed, and role utilities: `prisma/`
+- Transactional email templates: `emails/`
+- Shared types and static data: `types/`, `data/`
+- Build, TypeScript, lint, Next.js, Prisma, PostCSS, package, and example configuration
+- Environment validation, QA, import, maintenance, and recovery scripts: `scripts/`
+- Engineering, security, payment, launch, operations, QA, and handoff documentation: `docs/`, `handoff/`
+- Current `SECURITY.md`, README, root notes, and relevant Git history
+- Bundled Next.js 16 documentation for Server/Client Components, Route Handlers, authentication, and deployment, as required by `AGENTS.md`
 
-Excluded from design inspection: `node_modules` implementation, `.next`, build output, generated TypeScript build metadata, local logs, and secret-bearing environment files. The bundled Next.js documentation was read only to satisfy the repository's version-specific framework instruction.
+Excluded from substantive review: `node_modules` implementation, `.next`, generated output, local logs, secret-bearing environment files, customer records, and binary handoff artifacts. Binary handoff files were inventoried but not mined for private content.
 
 ## Verification Record
 
-| Check                             | Result                                                                                                                                                          |
-| --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Reviewed commit                   | `9e2ca66703e903890e2a14de1f1e7a3f6bfbfba5`                                                                                                                      |
-| Working tree before documentation | Clean                                                                                                                                                           |
-| `npm run lint`                    | Passed with no ESLint warnings or errors                                                                                                                        |
-| `npm run build`                   | Passed; Prisma Client generated, all nine committed migrations were already applied, Next.js compiled, TypeScript completed, and 57 static pages were generated |
-| Deployment                        | Not performed                                                                                                                                                   |
+| Check | Result |
+| --- | --- |
+| Reviewed commit | `0698f173ecd30a835d2936e756bbd49e8a04bda2` |
+| Documentation change | `docs/engineering-design-review.md` only |
+| `npm run lint` | Passed with zero errors and one existing Next.js navigation warning in `components/account/AccountPasswordForm.tsx` |
+| `npm run build` | Passed; Prisma generation and migration checks, Next.js compilation, TypeScript validation, static generation, and build tracing completed successfully |
+| Deployment | Not performed |
 
-Build is expected to run the repository-defined `prebuild` hook, which generates Prisma Client and executes `prisma migrate deploy`. The recorded result must therefore be interpreted as validation against the configured review environment, not as proof that every future production environment is reachable or correctly configured.
-
-The successful build emitted a Node.js deprecation warning for `module.register()` from the build toolchain. The repository evidence does not identify an application call site; treat this as a dependency/runtime compatibility warning to monitor rather than an application build failure.
+The repository-defined build runs Prisma generation and migration deployment before Next.js compilation. A successful build therefore validates the configured review environment but does not prove that every future production environment is reachable, correctly configured, or safely recoverable.
